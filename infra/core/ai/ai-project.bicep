@@ -176,7 +176,6 @@ output search object = {
   serviceName: azureAiSearch.outputs.searchServiceName
   serviceEndpoint: 'https://${azureAiSearch.outputs.searchServiceName}.search.windows.net'
   connectionName: azureAiSearch.outputs.searchConnectionName
-  kbMcpConnectionName: azureAiSearch.outputs.kbMcpConnectionName
 }
 output storage object = {
   accountName: storage.outputs.storageAccountName

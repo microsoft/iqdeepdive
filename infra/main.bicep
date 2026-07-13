@@ -135,7 +135,6 @@ output AZURE_AI_SEARCH_SERVICE_NAME string = aiProject.outputs.search.serviceNam
 output AZURE_AI_SEARCH_SERVICE_ENDPOINT string = aiProject.outputs.search.serviceEndpoint
 output AZURE_SEARCH_SERVICE_NAME string = aiProject.outputs.search.serviceName
 output AZURE_SEARCH_SERVICE_ENDPOINT string = aiProject.outputs.search.serviceEndpoint
-output AZURE_AI_SEARCH_KB_MCP_CONNECTION_NAME string = aiProject.outputs.search.kbMcpConnectionName
 
 output AZURE_STORAGE_CONNECTION_NAME string = aiProject.outputs.storage.connectionName
 output AZURE_STORAGE_ACCOUNT_NAME string = aiProject.outputs.storage.accountName

@@ -64,11 +64,7 @@ def main() -> None:
         "AZURE_SEARCH_SERVICE_ENDPOINT": os.environ["AZURE_AI_SEARCH_SERVICE_ENDPOINT"],
         "AZURE_SEARCH_SERVICE_NAME": search_name,
         "AZURE_SEARCH_ADMIN_KEY": search_key,
-        "AZURE_AI_SEARCH_KNOWLEDGE_BASE_NAME": "zava-company-kb",
-        "AZURE_AI_SEARCH_KB_MCP_CONNECTION_NAME": os.environ[
-            "AZURE_AI_SEARCH_KB_MCP_CONNECTION_NAME"
-        ],
-        "CUSTOM_FOUNDRY_AGENT_TOOLBOX_NAME": "hr-agent-tools",
+        "AZURE_AI_SEARCH_KNOWLEDGE_BASE_NAME": "contoso-company-kb",
         "APPLICATIONINSIGHTS_CONNECTION_STRING": os.environ.get(
             "APPLICATIONINSIGHTS_CONNECTION_STRING", ""
         ),

@@ -1,64 +1,41 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
 
-name: iqdeepdive-foundryiq
-
 requiredVersions:
-  extensions:
-    azure.ai.agents: ">=0.1.0-preview"
-
+    extensions:
+        azure.ai.agents: '>=0.1.0-preview'
+name: iqdeepdive-foundryiq
 services:
-  ai-project:
-    host: azure.ai.project
-    deployments:
-      - name: gpt-5.4
-        model:
-          format: OpenAI
-          name: gpt-5.4
-          version: "2026-03-05"
-        sku:
-          name: GlobalStandard
-          capacity: 50
-      - name: text-embedding-3-large
-        model:
-          format: OpenAI
-          name: text-embedding-3-large
-          version: "1"
-        sku:
-          name: GlobalStandard
-          capacity: 30
-
-  hr-agent:
-    host: azure.ai.agent
-    project: src/hr-agent
-    uses:
-      - ai-project
-    kind: hosted
-    name: hr-agent
-    description: An internal HR helper grounded in its own Foundry IQ knowledge base and toolbox.
-    protocols:
-      - protocol: responses
-        version: 2.0.0
-    env:
-      AZURE_AI_MODEL_DEPLOYMENT_NAME: ${AZURE_AI_MODEL_DEPLOYMENT_NAME}
-      CUSTOM_FOUNDRY_AGENT_TOOLBOX_NAME: hr-agent-tools
-    codeConfiguration:
-      runtime: python_3_13
-      entryPoint:
-        - python
-        - main.py
-      dependencyResolution: remote_build
-
+    hr-agent:
+        project: src/hr-agent
+        host: azure.ai.agent
+        language: "python"
+        config:
+            container:
+                resources:
+                    cpu: "0.5"
+                    memory: 1Gi
+        codeConfiguration:
+            dependencyResolution: remote_build
+            entryPoint:
+                - python
+                - main.py
+            runtime: python_3_13
+        description: An internal HR helper grounded through a direct Foundry IQ MCP endpoint.
+        kind: hosted
+        name: hr-agent
+        protocols:
+            - protocol: responses
+              version: 2.0.0
 infra:
-  provider: bicep
-  path: infra
-
+    provider: bicep
+    path: infra
 hooks:
-  postprovision:
-    posix:
-      shell: sh
-      run: infra/hooks/postprovision.sh
-      interactive: true
-    windows:
-      shell: pwsh
-      run: infra/hooks/postprovision.ps1
-      interactive: true
+    postprovision:
+        windows:
+            shell: pwsh
+            run: infra/hooks/postprovision.ps1
+            interactive: true
+        posix:
+            shell: sh
+            run: infra/hooks/postprovision.sh
+            interactive: true

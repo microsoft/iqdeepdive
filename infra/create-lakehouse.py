@@ -1,9 +1,9 @@
 """
-Create Fabric Lakehouse and load Zava DIY dataset as Delta tables.
+Create a Fabric Lakehouse and load the Contoso DIY dataset as Delta tables.
 
 This script:
 1. Creates a lakehouse in Microsoft Fabric using the REST API
-2. Downloads the Zava DIY dataset (product_data.json, reference_data.json) from GitHub
+2. Downloads the Contoso DIY sample data (product_data.json, reference_data.json) from GitHub
 3. Flattens JSON data into CSV files
 4. Uploads CSVs to OneLake (lakehouse Files section)
 5. Loads CSVs as Delta tables using the Load Table API
@@ -13,9 +13,9 @@ Environment variables (from .env):
   FABRIC_WORKSPACE_ID  - Existing Fabric workspace GUID
   FABRIC_CAPACITY_ID   - Fabric capacity GUID or ARM resource ID for workspace creation
   FABRIC_TENANT_ID     - Microsoft Entra tenant ID for Fabric auth
-  LAKEHOUSE_NAME       - Name for the lakehouse (default: zava-diy-lakehouse)
+    LAKEHOUSE_NAME       - Name for the lakehouse (default: ContosoDIYLakehouse)
   FABRIC_ONTOLOGY_ID   - Existing ontology GUID to update, if known
-  FABRIC_ONTOLOGY_NAME - Name for the ontology (default: ZavaDIYOntology)
+    FABRIC_ONTOLOGY_NAME - Name for the ontology (default: ContosoDIYOntology)
   CREATE_ONTOLOGY      - Create/update ontology after table load (default: true)
   INCLUDE_EMBEDDINGS   - Include vector embeddings in products table (default: false)
 """
@@ -47,18 +47,15 @@ STORAGE_SCOPE = "https://storage.azure.com/.default"
 FABRIC_RETRY_ATTEMPTS = 6
 FABRIC_RETRYABLE_STATUS_CODES = (429, 500, 502, 503, 504)
 
-GITHUB_RAW_BASE = (
-    "https://raw.githubusercontent.com/microsoft/ai-tour-26-zava-diy-dataset-plus-mcp"
-    "/main/data/database"
-)
+GITHUB_CONTENTS_BASE = "https://api.github.com/repositories/1021950905/contents/data/database"
 
 WORKSPACE_ID = os.getenv("FABRIC_WORKSPACE_ID", "")
-LAKEHOUSE_NAME = os.getenv("LAKEHOUSE_NAME", "ZavaDIYLakehouse")
-WORKSPACE_NAME = os.getenv("FABRIC_WORKSPACE_NAME", "ZavaDIYWorkspace")
+LAKEHOUSE_NAME = os.getenv("LAKEHOUSE_NAME", "ContosoDIYLakehouse")
+WORKSPACE_NAME = os.getenv("FABRIC_WORKSPACE_NAME", "ContosoDIYWorkspace")
 FABRIC_CAPACITY_ID = os.getenv("FABRIC_CAPACITY_ID", "")
 FABRIC_TENANT_ID = os.getenv("FABRIC_TENANT_ID") or os.getenv("AZURE_TENANT_ID", "")
 FABRIC_ONTOLOGY_ID = os.getenv("FABRIC_ONTOLOGY_ID", "")
-FABRIC_ONTOLOGY_NAME = os.getenv("FABRIC_ONTOLOGY_NAME", "ZavaDIYOntology")
+FABRIC_ONTOLOGY_NAME = os.getenv("FABRIC_ONTOLOGY_NAME", "ContosoDIYOntology")
 FABRIC_LAB_USER_UPN = os.getenv("FABRIC_LAB_USER_UPN", "")
 FABRIC_LAB_USER_OID = os.getenv("FABRIC_LAB_USER_OID", "")
 CREATE_ONTOLOGY = os.getenv("CREATE_ONTOLOGY", "true").lower() == "true"
@@ -293,11 +290,28 @@ def get_lakehouse_properties(workspace_id: str, lakehouse_id: str) -> dict:
 
 def download_json(filename: str) -> dict:
     """Download a JSON file from the GitHub repository."""
-    url = f"{GITHUB_RAW_BASE}/{filename}"
+    url = f"{GITHUB_CONTENTS_BASE}/{filename}"
     log_message(f"Downloading {filename}...")
-    resp = requests.get(url, timeout=120)
+    resp = requests.get(
+        url,
+        headers={"Accept": "application/vnd.github.raw+json"},
+        params={"ref": "main"},
+        timeout=120,
+    )
     resp.raise_for_status()
-    return resp.json()
+    return normalize_company_locations(resp.json())
+
+
+def normalize_company_locations(value):
+    """Normalize company-prefixed retail locations in nested sample data."""
+    if isinstance(value, dict):
+        return {key: normalize_company_locations(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [normalize_company_locations(item) for item in value]
+    if isinstance(value, str) and " Retail " in value:
+        _, separator, location = value.partition(" Retail ")
+        return f"Contoso{separator}{location}"
+    return value
 
 
 def flatten_products(product_data: dict) -> list[dict]:
@@ -571,8 +585,8 @@ def make_entity_parts(
     ]
 
 
-def build_zava_ontology_definition(workspace_id: str, lakehouse_id: str) -> dict:
-    """Build a Fabric IQ ontology definition for the Zava DIY lakehouse tables."""
+def build_contoso_ontology_definition(workspace_id: str, lakehouse_id: str) -> dict:
+    """Build a Fabric IQ ontology definition for the Contoso DIY lakehouse tables."""
     parts = [
         create_definition_part(
             ".platform",
@@ -697,7 +711,7 @@ def create_or_get_ontology(workspace_id: str, name: str) -> dict:
     url = f"{FABRIC_API_BASE}/workspaces/{workspace_id}/ontologies"
     payload = {
         "displayName": name,
-        "description": "Ontology for the Zava DIY lakehouse data.",
+        "description": "Ontology for the Contoso DIY lakehouse data.",
     }
     log_message(f"Creating ontology '{name}'...")
     resp = fabric_post(url, payload)
@@ -724,13 +738,13 @@ def create_or_get_ontology(workspace_id: str, name: str) -> dict:
 def update_ontology_definition(
     workspace_id: str, ontology_id: str, lakehouse_id: str
 ) -> bool:
-    """Replace the ontology definition with Zava DIY lakehouse entity bindings."""
+    """Replace the ontology definition with Contoso DIY lakehouse entity bindings."""
     url = (
         f"{FABRIC_API_BASE}/workspaces/{workspace_id}"
         f"/ontologies/{ontology_id}/updateDefinition"
     )
-    payload = build_zava_ontology_definition(workspace_id, lakehouse_id)
-    log_message("Updating ontology definition with Zava DIY entity bindings...")
+    payload = build_contoso_ontology_definition(workspace_id, lakehouse_id)
+    log_message("Updating ontology definition with Contoso DIY entity bindings...")
     resp = fabric_post(url, payload)
     if resp.status_code not in (200, 202):
         log_message(
@@ -748,7 +762,7 @@ def update_ontology_definition(
 def main():
     """Main execution flow."""
     log_message("=" * 60)
-    log_message("Fabric Lakehouse Creator - Zava DIY Dataset")
+    log_message("Fabric Lakehouse Creator - Contoso DIY Dataset")
     log_message("=" * 60)
 
     # Resolve workspace: use provided ID, or create one on the given capacity
@@ -762,7 +776,7 @@ def main():
         log_message("No workspace ID provided. Creating workspace on Fabric capacity...")
         # Use a unique workspace name to avoid collisions with leftover
         # workspaces from previous lab sessions in the same tenant.
-        workspace_name = f"ZavaDIY-{uuid.uuid4().hex[:8]}"
+        workspace_name = f"ContosoDIY-{uuid.uuid4().hex[:8]}"
         ws = create_workspace(workspace_name, capacity_guid)
         workspace_id = ws["id"]
         update_root_env({"FABRIC_WORKSPACE_ID": workspace_id})

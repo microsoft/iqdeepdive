@@ -164,8 +164,8 @@ async def main_async() -> int:
     # Check if knowledge base already exists — skip if so
     async with SearchIndexClient(endpoint=endpoint, credential=credential) as index_client:
         try:
-            await index_client.get_knowledge_base("zava-company-kb")
-            print("Knowledge base 'zava-company-kb' already exists. Skipping index creation.")
+            await index_client.get_knowledge_base("contoso-company-kb")
+            print("Knowledge base 'contoso-company-kb' already exists. Skipping index creation.")
             await credential.close()
             return 0
         except ResourceNotFoundError:
@@ -198,7 +198,7 @@ async def main_async() -> int:
     await create_knowledge_base(
         endpoint=endpoint,
         credential=credential,
-        kb_name="zava-company-kb",
+        kb_name="contoso-company-kb",
         kb_description=(
             "Contains internal HR documents about employee benefits and health/wellness programs."
         ),

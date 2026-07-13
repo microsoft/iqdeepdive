@@ -4,8 +4,7 @@ This repository combines a five-part Microsoft Foundry IQ notebook lab with one 
 [Microsoft Agent Framework](https://learn.microsoft.com/agent-framework/) HR agent. One `azd`
 project provisions the shared Foundry project, `gpt-5.4` and `text-embedding-3-large` deployments,
 Azure AI Search, storage, monitoring, and an optional F2 Fabric capacity. It then prepares Search
-data, creates the agent's HR knowledge base and toolbox, and deploys the agent directly from Python
-source.
+data, creates the agent's HR knowledge base, and deploys the agent directly from Python source.
 
 ## Architecture
 
@@ -14,16 +13,15 @@ flowchart LR
   azd[azd up] --> foundry[Foundry project and models]
   azd --> search[Azure AI Search]
   azd --> fabric[Optional Fabric F2 capacity]
-  search --> agentkb[zava-company-kb]
-  agentkb --> toolbox[hr-agent-tools]
-  toolbox --> agent[Hosted HR agent]
+  search --> agentkb[contoso-company-kb]
+  agentkb -->|Direct MCP endpoint| agent[Hosted HR agent]
   search --> notebooks[Five notebook-created KBs]
   fabric --> notebooks
 ```
 
 The examples intentionally remain independent. The notebooks create learning-path knowledge bases.
-The hosted agent always uses its own `zava-company-kb` and `hr-agent-tools`; it does not depend on a
-knowledge base created by a notebook.
+The hosted agent always uses its own `contoso-company-kb` through its direct Foundry IQ MCP endpoint;
+it does not depend on a knowledge base created by a notebook.
 
 ## Prerequisites
 
@@ -44,8 +42,8 @@ azd up
 ```
 
 `azd up` provisions the resources, writes the generated local settings to `.env`, restores the
-sample HR and health indexes, creates the independent HR agent knowledge base/toolbox, prepares
-Fabric when enabled, and deploys `hr-agent`. No Azure resources are included in this repository.
+sample HR and health indexes, creates the independent HR agent knowledge base, prepares Fabric when
+enabled, and deploys `hr-agent`. No Azure resources are included in this repository.
 
 Set `DEPLOY_FABRIC_CAPACITY=false` before `azd up` to use an existing Fabric workspace or skip the
 Fabric portions. Set `FABRIC_WORKSPACE_ID` and `FABRIC_ONTOLOGY_ID` in `.env` before running parts 3

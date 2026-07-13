@@ -18,7 +18,7 @@
       "value": "${AZURE_PRINCIPAL_TYPE}"
     },
     "aiProjectDeploymentsJson": {
-      "value": "${AI_PROJECT_DEPLOYMENTS=[]}"
+      "value": "${AZURE_AI_PROJECT_DEPLOYMENTS=[]}"
     },
     "enableMonitoring": {
       "value": "${ENABLE_MONITORING=true}"
