@@ -1,10 +1,12 @@
 """Internal HR helper built with Agent Framework for Foundry hosted agents."""
 
+import asyncio
 import logging
 import os
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Generator
 from datetime import date
 
+import httpx
 from agent_framework import Agent, MCPStreamableHTTPTool, tool
 from agent_framework._middleware import ChatContext
 from agent_framework._types import ChatResponse, Message
@@ -12,6 +14,7 @@ from agent_framework.foundry import FoundryChatClient
 from agent_framework.observability import enable_instrumentation
 from agent_framework_foundry_hosting import ResponsesHostServer
 from agent_framework_openai._exceptions import OpenAIContentFilterException
+from azure.core.credentials import TokenCredential
 from azure.identity import (
     AzureDeveloperCliCredential,
     ChainedTokenCredential,
@@ -34,6 +37,22 @@ CONTENT_FILTER_MESSAGE = (
     "I can't help with that request because it violates content safety policies. "
     "If you have a safer or policy-compliant version of the question, I can help with that instead."
 )
+
+
+class AzureTokenCredentialAuth(httpx.Auth):
+    """Add a current Azure bearer token to each HTTP request."""
+
+    def __init__(self, credential: TokenCredential, scope: str) -> None:
+        self.credential = credential
+        self.scope = scope
+
+    def auth_flow(
+        self, request: httpx.Request
+    ) -> Generator[httpx.Request, httpx.Response, None]:
+        request.headers["Authorization"] = (
+            f"Bearer {self.credential.get_token(self.scope).token}"
+        )
+        yield request
 
 
 @tool
@@ -67,7 +86,7 @@ async def content_filter_middleware(
         )
 
 
-def main() -> None:
+async def main() -> None:
     """Main function to run the agent as a web server."""
     managed_identity_credential = ManagedIdentityCredential()
     azure_dev_cli_credential = AzureDeveloperCliCredential(
@@ -81,42 +100,44 @@ def main() -> None:
         "/mcp?api-version=2026-05-01-preview"
     )
     logger.info("Using Foundry IQ MCP at %s", knowledge_base_endpoint)
-    knowledge_base_mcp_tool = MCPStreamableHTTPTool(
-        name="knowledge-base",
-        url=knowledge_base_endpoint,
-        header_provider=lambda _: {
-            "Authorization": f"Bearer {credential.get_token(SEARCH_SCOPE).token}"
-        },
-        allowed_tools=["knowledge_base_retrieve"],
-        load_prompts=False,
-    )
+    async with httpx.AsyncClient(
+        auth=AzureTokenCredentialAuth(credential, SEARCH_SCOPE),
+        timeout=120.0,
+    ) as knowledge_base_http_client:
+        knowledge_base_mcp_tool = MCPStreamableHTTPTool(
+            name="knowledge-base",
+            url=knowledge_base_endpoint,
+            http_client=knowledge_base_http_client,
+            allowed_tools=["knowledge_base_retrieve"],
+            load_prompts=False,
+        )
 
-    client = FoundryChatClient(
-        project_endpoint=PROJECT_ENDPOINT,
-        model=MODEL_DEPLOYMENT_NAME,
-        credential=credential,
-        middleware=[content_filter_middleware],
-    )
+        client = FoundryChatClient(
+            project_endpoint=PROJECT_ENDPOINT,
+            model=MODEL_DEPLOYMENT_NAME,
+            credential=credential,
+            middleware=[content_filter_middleware],
+        )
 
-    agent = Agent(
-        client=client,
-        name="InternalHRHelper",
-        instructions="""You are an internal HR helper focused on employee benefits and company information.
-        Use the knowledge base tool to answer questions and ground all answers in provided context.
-        Use these tools if the user needs information on benefits deadlines:
-        get_enrollment_deadline_info, get_current_date.
-        If you cannot answer a question, explain that you do not have available information
-        to fully answer the question.""",
-        tools=[
-            get_enrollment_deadline_info,
-            get_current_date,
-            knowledge_base_mcp_tool,
-        ],
-        default_options={"store": False},
-    )
+        agent = Agent(
+            client=client,
+            name="InternalHRHelper",
+            instructions="""You are an internal HR helper focused on employee benefits and company information.
+            Use the knowledge base tool to answer questions and ground all answers in provided context.
+            Use these tools if the user needs information on benefits deadlines:
+            get_enrollment_deadline_info, get_current_date.
+            If you cannot answer a question, explain that you do not have available information
+            to fully answer the question.""",
+            tools=[
+                get_enrollment_deadline_info,
+                get_current_date,
+                knowledge_base_mcp_tool,
+            ],
+            default_options={"store": False},
+        )
 
-    server = ResponsesHostServer(agent)
-    server.run()
+        server = ResponsesHostServer(agent)
+        await server.run_async()
 
 
 if __name__ == "__main__":
@@ -124,4 +145,4 @@ if __name__ == "__main__":
 
     enable_instrumentation(enable_sensitive_data=True)
 
-    main()
+    asyncio.run(main())
