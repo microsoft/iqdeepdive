@@ -1,34 +1,6 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
 
-requiredVersions:
-    extensions:
-        azure.ai.agents: '>=0.1.0-preview'
-name: iqdeepdive-foundryiq
-services:
-    hr-agent:
-        project: src/hr-agent
-        host: azure.ai.agent
-        language: "python"
-        config:
-            container:
-                resources:
-                    cpu: "0.5"
-                    memory: 1Gi
-        codeConfiguration:
-            dependencyResolution: remote_build
-            entryPoint:
-                - python
-                - main.py
-            runtime: python_3_13
-        description: An internal HR helper grounded through a direct Foundry IQ MCP endpoint.
-        kind: hosted
-        name: hr-agent
-        protocols:
-            - protocol: responses
-              version: 2.0.0
-infra:
-    provider: bicep
-    path: infra
+name: iqdeepdive-foundryiq-proj
 hooks:
     postprovision:
         windows:

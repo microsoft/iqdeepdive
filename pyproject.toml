@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "Provisioning helpers for Foundry IQ notebooks and an HR hosted agent"
 requires-python = ">=3.12"
 dependencies = [
+    "aiohttp>=3.13.5",
     "azure-identity>=1.25.2",
     "azure-search-documents==12.1.0b1",
     "azure-storage-file-datalake>=12.23.0",
