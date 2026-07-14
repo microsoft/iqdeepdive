@@ -7,13 +7,11 @@ from collections.abc import Awaitable, Callable, Generator
 from datetime import date
 
 import httpx
-from agent_framework import Agent, MCPStreamableHTTPTool, tool
-from agent_framework._middleware import ChatContext
-from agent_framework._types import ChatResponse, Message
+from agent_framework import Agent, ChatContext, ChatResponse, MCPStreamableHTTPTool, Message, tool
 from agent_framework.foundry import FoundryChatClient
 from agent_framework.observability import enable_instrumentation
 from agent_framework_foundry_hosting import ResponsesHostServer
-from agent_framework_openai._exceptions import OpenAIContentFilterException
+from agent_framework_openai import OpenAIContentFilterException
 from azure.core.credentials import TokenCredential
 from azure.identity import (
     AzureDeveloperCliCredential,

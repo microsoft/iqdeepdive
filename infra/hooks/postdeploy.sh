@@ -9,15 +9,21 @@ if [ -z "${AZURE_AI_SEARCH_SERVICE_NAME:-}" ] || [ -z "${AZURE_SUBSCRIPTION_ID:-
 fi
 
 SEARCH_SCOPE="/subscriptions/${AZURE_SUBSCRIPTION_ID}/resourceGroups/${AZURE_RESOURCE_GROUP}/providers/Microsoft.Search/searchServices/${AZURE_AI_SEARCH_SERVICE_NAME}"
-AGENT_PRINCIPAL_ID=$(azd ai agent show hr-agent --output json --no-prompt | python3 -c "import json, sys; print(json.load(sys.stdin)['instance_identity']['principal_id'])")
+for AGENT_NAME in hr-agent hr-agent-api; do
+    if ! AGENT_JSON=$(azd ai agent show "$AGENT_NAME" --output json --no-prompt 2>/dev/null); then
+        echo "${AGENT_NAME} is not deployed. Skipping role assignment."
+        continue
+    fi
 
-echo "Assigning Search Index Data Contributor to hr-agent (${AGENT_PRINCIPAL_ID})..."
-az role assignment create \
-    --assignee-object-id "$AGENT_PRINCIPAL_ID" \
-    --assignee-principal-type ServicePrincipal \
-    --role "8ebe5a00-799e-43f5-93ac-243d3dce84a7" \
-    --scope "$SEARCH_SCOPE" \
-    --only-show-errors \
-    --output none
+    AGENT_PRINCIPAL_ID=$(printf '%s' "$AGENT_JSON" | python3 -c "import json, sys; print(json.load(sys.stdin)['instance_identity']['principal_id'])")
+    echo "Assigning Search Index Data Contributor to ${AGENT_NAME} (${AGENT_PRINCIPAL_ID})..."
+    az role assignment create \
+        --assignee-object-id "$AGENT_PRINCIPAL_ID" \
+        --assignee-principal-type ServicePrincipal \
+        --role "8ebe5a00-799e-43f5-93ac-243d3dce84a7" \
+        --scope "$SEARCH_SCOPE" \
+        --only-show-errors \
+        --output none
+done
 
 echo "Postdeploy setup complete."
