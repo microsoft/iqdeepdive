@@ -25,7 +25,7 @@ jobs:
           inlineScript: az bicep install
       - run: uv sync --locked --all-groups
       - run: uv run ruff check .
-      - run: uv run python -m compileall -q infra scripts src/hr-agent
+      - run: uv run python -m compileall -q infra scripts src/agent-foundry-iq-mcp src/agent-foundry-iq-api
       - run: uv run python scripts/check_repo.py
       - run: az bicep build --file infra/main.bicep --stdout > /dev/null
       - run: azd show

@@ -9,13 +9,15 @@ This repository contains a five-part Microsoft Foundry IQ notebook lab and two P
 Microsoft Foundry hosted agents. A single Azure Developer CLI (`azd`) project provisions the shared Foundry project,
 model deployments, Azure AI Search, storage, monitoring, and optional Microsoft Fabric capacity.
 
-The notebooks and hosted agent share infrastructure but create separate knowledge bases. The hosted agent always
-uses `contoso-company-kb` through the Azure AI Search knowledge-base MCP endpoint.
+The notebooks and hosted agents share infrastructure but create separate knowledge bases. Both hosted agents use
+`contoso-company-kb`: `agent-foundry-iq-mcp` connects through the Azure AI Search knowledge-base MCP endpoint,
+while `agent-foundry-iq-api` calls the knowledge-base retrieval API with a custom Python tool.
 
 ## Repository map
 
-- `azure.yaml`: `azd` service manifest. It declares the existing Foundry project service, the `hr-agent` hosted
-  service, Python 3.13 remote build settings, runtime environment variables, and deployment hooks.
+- `azure.yaml`: `azd` service manifest. It declares the existing Foundry project service, the
+  `agent-foundry-iq-mcp` and `agent-foundry-iq-api` hosted services, Python 3.13 remote build settings, runtime
+  environment variables, and deployment hooks.
 - `pyproject.toml` and `uv.lock`: root Python environment for infrastructure helpers and notebook support. Use this
   environment for files under `infra/`.
 - `README.md`: user-facing setup, deployment, notebook, and local-agent instructions.
@@ -37,13 +39,14 @@ uses `contoso-company-kb` through the Azure AI Search knowledge-base MCP endpoin
   hosted-agent identity, and grant it `Search Index Data Contributor` on Azure AI Search.
 - `notebooks/`: the five ordered Foundry IQ lab notebooks. Their extra kernel dependencies are listed in
   `notebooks/requirements.txt`.
-- `src/hr-agent/main.py`: Agent Framework application. It exposes a Responses server, uses Foundry for chat, and
+- `src/agent-foundry-iq-mcp/main.py`: Agent Framework application. It exposes a Responses server, uses Foundry for chat, and
   connects to the Search knowledge base with an authenticated `MCPStreamableHTTPTool`.
-- `src/hr-agent-api/main.py`: sibling Agent Framework application whose custom Python tool calls the Azure AI Search
+- `src/agent-foundry-iq-api/main.py`: sibling Agent Framework application whose custom Python tool calls the Azure AI Search
   knowledge-base retrieval API with `KnowledgeBaseRetrievalClient`.
-- `src/hr-agent/pyproject.toml` and `src/hr-agent/uv.lock`: isolated hosted-agent dependency definition and
-  lockfile. Foundry remote build resolves this package independently of the root environment.
-- `src/hr-agent/uv.toml`: enables system TLS certificates for Foundry's remote `uv` build.
+- `src/agent-foundry-iq-mcp/pyproject.toml`, `src/agent-foundry-iq-mcp/uv.lock`, and `src/agent-foundry-iq-mcp/uv.toml`: isolated MCP agent dependency
+  definition, lockfile, and remote-build TLS configuration.
+- `src/agent-foundry-iq-api/pyproject.toml`, `src/agent-foundry-iq-api/uv.lock`, and `src/agent-foundry-iq-api/uv.toml`: isolated API agent
+  dependency definition, lockfile, and remote-build TLS configuration.
 
 ## Development guidance
 
@@ -70,7 +73,7 @@ Install and validate root tooling:
 ```bash
 uv sync --locked --all-groups
 uv run ruff check .
-uv run python -m compileall -q infra src/hr-agent
+uv run python -m compileall -q infra src/agent-foundry-iq-mcp src/agent-foundry-iq-api
 az bicep build --file infra/main.bicep --stdout > /dev/null
 azd show
 ```
@@ -78,10 +81,10 @@ azd show
 Validate the hosted-agent package separately:
 
 ```bash
-uv sync --project src/hr-agent --python 3.13 --frozen --dry-run
-uv run --project src/hr-agent --python 3.13 python -m py_compile src/hr-agent/main.py
-uv sync --project src/hr-agent-api --python 3.13 --frozen --dry-run
-uv run --project src/hr-agent-api --python 3.13 python -m py_compile src/hr-agent-api/main.py
+uv sync --project src/agent-foundry-iq-mcp --python 3.13 --frozen --dry-run
+uv run --project src/agent-foundry-iq-mcp --python 3.13 python -m py_compile src/agent-foundry-iq-mcp/main.py
+uv sync --project src/agent-foundry-iq-api --python 3.13 --frozen --dry-run
+uv run --project src/agent-foundry-iq-api --python 3.13 python -m py_compile src/agent-foundry-iq-api/main.py
 ```
 
 Validate deployment hooks after editing them:
@@ -91,10 +94,13 @@ sh -n infra/hooks/postdeploy.sh
 azd hooks run postdeploy
 ```
 
-Run the agent locally with the same service manifest:
+Run either agent locally with the same service manifest:
 
 ```bash
-azd ai agent run
+azd ai agent run agent-foundry-iq-mcp
+azd ai agent invoke --local "What benefits are available, and when do I need to enroll?"
+
+azd ai agent run agent-foundry-iq-api
 azd ai agent invoke --local "What benefits are available, and when do I need to enroll?"
 ```
 
@@ -110,8 +116,11 @@ azd up
 For agent-only code or dependency changes:
 
 ```bash
-azd deploy hr-agent
-azd ai agent invoke hr-agent "What benefits are available, and when do I need to enroll?"
+azd deploy agent-foundry-iq-mcp
+azd ai agent invoke agent-foundry-iq-mcp "What benefits are available, and when do I need to enroll?"
+
+azd deploy agent-foundry-iq-api
+azd ai agent invoke agent-foundry-iq-api "What benefits are available, and when do I need to enroll?"
 ```
 
 `azd up` performs these phases:
@@ -119,9 +128,8 @@ azd ai agent invoke hr-agent "What benefits are available, and when do I need to
 1. Bicep provisions shared Azure resources.
 2. `postprovision` writes `.env`, restores Search data, creates the agent knowledge base, and optionally configures
   Fabric.
-3. Foundry remotely builds and deploys `src/hr-agent`.
-4. `postdeploy` obtains `instance_identity.principal_id` from `azd ai agent show hr-agent` and grants Search data
-  access.
+3. Foundry remotely builds and deploys `src/agent-foundry-iq-mcp` and `src/agent-foundry-iq-api`.
+4. `postdeploy` obtains each agent's `instance_identity.principal_id` and grants Search data access.
 
 Do not move the hosted-agent role assignment into Bicep or `postprovision` unless the identity lifecycle changes.
 The instance identity does not exist until the agent has been deployed.
@@ -130,18 +138,21 @@ The instance identity does not exist until the agent has been deployed.
 
 ### Remote build or TLS failure
 
-Keep `src/hr-agent/uv.toml` with `system-certs = true`. Regenerate the agent lockfile with Python 3.13 after
-dependency changes:
+Keep each agent's `uv.toml` with `system-certs = true`. Regenerate the corresponding lockfile with Python 3.13
+after dependency changes:
 
 ```bash
-uv lock --project src/hr-agent --python 3.13
-uv sync --project src/hr-agent --python 3.13 --frozen --dry-run
+uv lock --project src/agent-foundry-iq-mcp --python 3.13
+uv sync --project src/agent-foundry-iq-mcp --python 3.13 --frozen --dry-run
+
+uv lock --project src/agent-foundry-iq-api --python 3.13
+uv sync --project src/agent-foundry-iq-api --python 3.13 --frozen --dry-run
 ```
 
 ### Missing runtime setting
 
-Every required hosted variable must be listed under `hr-agent.environmentVariables` in `azure.yaml`. Local `.env`
-values are not automatically available in the hosted container.
+Every required hosted variable must be listed under the corresponding agent's `environmentVariables` in
+`azure.yaml`. Local `.env` values are not automatically available in the hosted container.
 
 ### MCP cancellation error
 
@@ -149,7 +160,7 @@ A message such as `MCP server failed to initialize: Cancelled via cancel scope` 
 caused the MCP transport to close. Inspect the preceding `httpx` log line:
 
 - `401 Unauthorized`: the initialization request did not carry a valid bearer token. Check the authenticated
-  `httpx.AsyncClient` in `src/hr-agent/main.py`.
+  `httpx.AsyncClient` in `src/agent-foundry-iq-mcp/main.py`.
 - `403 Forbidden`: authentication succeeded, but the hosted agent's generated managed identity lacks Search RBAC
   or the role assignment has not propagated yet.
 
@@ -162,14 +173,14 @@ List sessions and monitor the exact failing session rather than mixing logs from
 
 ```bash
 azd ai agent sessions list --output json
-azd ai agent monitor hr-agent --session-id <session-id> --type console --tail 300 --utc
-azd ai agent monitor hr-agent --session-id <session-id> --type system --tail 300 --utc
+azd ai agent monitor agent-foundry-iq-mcp --session-id <session-id> --type console --tail 300 --utc
+azd ai agent monitor agent-foundry-iq-mcp --session-id <session-id> --type system --tail 300 --utc
 ```
 
 Confirm the active deployment and its generated identity with:
 
 ```bash
-azd ai agent show hr-agent --output json
+azd ai agent show agent-foundry-iq-mcp --output json
 ```
 
 A healthy knowledge-base request should show successful Search MCP responses followed by

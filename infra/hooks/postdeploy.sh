@@ -9,7 +9,7 @@ if [ -z "${AZURE_AI_SEARCH_SERVICE_NAME:-}" ] || [ -z "${AZURE_SUBSCRIPTION_ID:-
 fi
 
 SEARCH_SCOPE="/subscriptions/${AZURE_SUBSCRIPTION_ID}/resourceGroups/${AZURE_RESOURCE_GROUP}/providers/Microsoft.Search/searchServices/${AZURE_AI_SEARCH_SERVICE_NAME}"
-for AGENT_NAME in hr-agent hr-agent-api; do
+for AGENT_NAME in agent-foundry-iq-mcp agent-foundry-iq-api; do
     if ! AGENT_JSON=$(azd ai agent show "$AGENT_NAME" --output json --no-prompt 2>/dev/null); then
         echo "${AGENT_NAME} is not deployed. Skipping role assignment."
         continue

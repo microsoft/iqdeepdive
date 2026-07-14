@@ -70,8 +70,11 @@ def main() -> None:
         ),
         "APPLICATIONINSIGHTS_RESOURCE_ID": os.environ.get("APPLICATIONINSIGHTS_RESOURCE_ID", ""),
         "FABRIC_CAPACITY_ID": os.environ.get("FABRIC_CAPACITY_ID", ""),
-        "FABRIC_TENANT_ID": tenant_id,
     }
+    fabric_tenant_id = os.environ.get("FABRIC_TENANT_ID", "")
+    if fabric_tenant_id:
+        values["FABRIC_TENANT_ID"] = fabric_tenant_id
+
     for key, value in values.items():
         set_key(ENV_PATH, key, value, quote_mode="never")
 

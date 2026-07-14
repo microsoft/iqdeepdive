@@ -6,7 +6,7 @@
     "ghcr.io/azure/azure-dev/azd:1": {},
     "ghcr.io/devcontainers-extra/features/uv:1": {}
   },
-  "postCreateCommand": "uv sync --locked --all-groups && uv pip install --python .venv/bin/python -r notebooks/requirements.txt && uv sync --directory src/hr-agent --locked",
+  "postCreateCommand": "uv sync --locked --all-groups && uv pip install --python .venv/bin/python -r notebooks/requirements.txt && uv sync --directory src/agent-foundry-iq-mcp --locked && uv sync --directory src/agent-foundry-iq-api --locked",
   "customizations": {
     "vscode": {
       "settings": {

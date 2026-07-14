@@ -143,4 +143,5 @@ output APPLICATIONINSIGHTS_RESOURCE_ID string = aiProject.outputs.APPLICATIONINS
 
 output FABRIC_CAPACITY_NAME string = deployFabricCapacity ? fabricCapacity!.outputs.name : ''
 output FABRIC_CAPACITY_ID string = deployFabricCapacity ? fabricCapacity!.outputs.id : ''
+output FABRIC_TENANT_ID string = deployFabricCapacity ? tenant().tenantId : ''
 output AZURE_TENANT_ID string = tenant().tenantId

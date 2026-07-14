@@ -28,7 +28,7 @@ from dotenv import load_dotenv
 
 load_dotenv(dotenv_path=".env", override=True)
 
-logger = logging.getLogger("hr-agent-api")
+logger = logging.getLogger("agent-foundry-iq-api")
 
 
 PROJECT_ENDPOINT = os.environ["FOUNDRY_PROJECT_ENDPOINT"]

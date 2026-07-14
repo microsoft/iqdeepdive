@@ -45,7 +45,7 @@ azd up
 
 `azd up` provisions the resources, writes the generated local settings to `.env`, restores the
 sample HR and health indexes, creates the independent HR agent knowledge base, prepares Fabric when
-enabled, and deploys `hr-agent` and `hr-agent-api`. No Azure resources are included in this repository.
+enabled, and deploys `agent-foundry-iq-mcp` and `agent-foundry-iq-api`. No Azure resources are included in this repository.
 
 Set `DEPLOY_FABRIC_CAPACITY=false` before `azd up` to use an existing Fabric workspace or skip the
 Fabric portions. Set `FABRIC_WORKSPACE_ID` and `FABRIC_ONTOLOGY_ID` in `.env` before running parts 3
@@ -74,21 +74,21 @@ select `.venv/bin/python`, and run these in order:
 Start either hosted-agent source locally:
 
 ```bash
-azd ai agent run hr-agent
+azd ai agent run agent-foundry-iq-mcp
 azd ai agent invoke --local "What benefits are available, and when do I need to enroll?"
 
-azd ai agent run hr-agent-api
+azd ai agent run agent-foundry-iq-api
 azd ai agent invoke --local "What benefits are available, and when do I need to enroll?"
 ```
 
 Redeploy an individual agent after code changes and invoke the deployed version:
 
 ```bash
-azd deploy hr-agent
-azd ai agent invoke hr-agent "What benefits are available, and when do I need to enroll?"
+azd deploy agent-foundry-iq-mcp
+azd ai agent invoke agent-foundry-iq-mcp "What benefits are available, and when do I need to enroll?"
 
-azd deploy hr-agent-api
-azd ai agent invoke hr-agent-api "What benefits are available, and when do I need to enroll?"
+azd deploy agent-foundry-iq-api
+azd ai agent invoke agent-foundry-iq-api "What benefits are available, and when do I need to enroll?"
 ```
 
 Direct source deployment is used because the final agent requires no custom OS packages. Foundry's
@@ -100,7 +100,7 @@ container registry and image-build path.
 ```bash
 uv sync --locked --all-groups
 uv run ruff check .
-uv run python -m compileall -q infra scripts src/hr-agent src/hr-agent-api
+uv run python -m compileall -q infra scripts src/agent-foundry-iq-mcp src/agent-foundry-iq-api
 uv run python scripts/check_repo.py
 az bicep build --file infra/main.bicep --stdout > /dev/null
 azd show

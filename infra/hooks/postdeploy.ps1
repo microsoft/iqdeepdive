@@ -8,7 +8,7 @@ if (-not $env:AZURE_AI_SEARCH_SERVICE_NAME -or -not $env:AZURE_SUBSCRIPTION_ID -
 }
 
 $searchScope = "/subscriptions/$($env:AZURE_SUBSCRIPTION_ID)/resourceGroups/$($env:AZURE_RESOURCE_GROUP)/providers/Microsoft.Search/searchServices/$($env:AZURE_AI_SEARCH_SERVICE_NAME)"
-foreach ($agentName in @("hr-agent", "hr-agent-api")) {
+foreach ($agentName in @("agent-foundry-iq-mcp", "agent-foundry-iq-api")) {
     $agentJson = azd ai agent show $agentName --output json --no-prompt 2>$null
     if ($LASTEXITCODE -ne 0) {
         Write-Host "$agentName is not deployed. Skipping role assignment."

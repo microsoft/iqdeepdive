@@ -22,7 +22,7 @@ from dotenv import load_dotenv
 
 load_dotenv(dotenv_path=".env", override=True)
 
-logger = logging.getLogger("hr-agent")
+logger = logging.getLogger("agent-foundry-iq-mcp")
 
 
 # Configure these for your Foundry project via environment variables (see .env.sample)

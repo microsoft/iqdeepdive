@@ -2,59 +2,59 @@
 
 name: iqdeepdive-foundryiq-proj
 services:
+    agent-foundry-iq-api:
+        project: src/agent-foundry-iq-api
+        host: azure.ai.agent
+        language: python
+        uses:
+            - ai-project-hr-agent-dev
+        codeConfiguration:
+            dependencyResolution: remote_build
+            entryPoint: main.py
+            runtime: python_3_13
+        container:
+            resources:
+                cpu: "0.5"
+                memory: 1Gi
+        environmentVariables:
+            - name: AZURE_AI_MODEL_DEPLOYMENT_NAME
+              value: ${AZURE_AI_MODEL_DEPLOYMENT_NAME}
+            - name: AZURE_AI_SEARCH_SERVICE_ENDPOINT
+              value: ${AZURE_AI_SEARCH_SERVICE_ENDPOINT}
+        kind: hosted
+        name: agent-foundry-iq-api
+        protocols:
+            - protocol: responses
+              version: 2.0.0
+    agent-foundry-iq-mcp:
+        project: src/agent-foundry-iq-mcp
+        host: azure.ai.agent
+        language: python
+        uses:
+            - ai-project-hr-agent-dev
+        codeConfiguration:
+            dependencyResolution: remote_build
+            entryPoint: main.py
+            runtime: python_3_13
+        container:
+            resources:
+                cpu: "0.5"
+                memory: 1Gi
+        environmentVariables:
+            - name: AZURE_AI_MODEL_DEPLOYMENT_NAME
+              value: ${AZURE_AI_MODEL_DEPLOYMENT_NAME}
+            - name: AZURE_AI_SEARCH_SERVICE_ENDPOINT
+              value: ${AZURE_AI_SEARCH_SERVICE_ENDPOINT}
+        kind: hosted
+        name: agent-foundry-iq-mcp
+        protocols:
+            - protocol: responses
+              version: 2.0.0
     ai-project-hr-agent-dev:
         project: ""
         host: azure.ai.project
         language: ""
         endpoint: https://ai-account-ozfwepskkverc.services.ai.azure.com/api/projects/ai-project-hr-agent-dev
-    hr-agent:
-        project: src/hr-agent
-        host: azure.ai.agent
-        language: python
-        uses:
-            - ai-project-hr-agent-dev
-        codeConfiguration:
-            dependencyResolution: remote_build
-            entryPoint: main.py
-            runtime: python_3_13
-        container:
-            resources:
-                cpu: "0.5"
-                memory: 1Gi
-        environmentVariables:
-            - name: AZURE_AI_MODEL_DEPLOYMENT_NAME
-              value: ${AZURE_AI_MODEL_DEPLOYMENT_NAME}
-            - name: AZURE_AI_SEARCH_SERVICE_ENDPOINT
-              value: ${AZURE_AI_SEARCH_SERVICE_ENDPOINT}
-        kind: hosted
-        name: hr-agent
-        protocols:
-            - protocol: responses
-              version: 2.0.0
-    hr-agent-api:
-        project: src/hr-agent-api
-        host: azure.ai.agent
-        language: python
-        uses:
-            - ai-project-hr-agent-dev
-        codeConfiguration:
-            dependencyResolution: remote_build
-            entryPoint: main.py
-            runtime: python_3_13
-        container:
-            resources:
-                cpu: "0.5"
-                memory: 1Gi
-        environmentVariables:
-            - name: AZURE_AI_MODEL_DEPLOYMENT_NAME
-              value: ${AZURE_AI_MODEL_DEPLOYMENT_NAME}
-            - name: AZURE_AI_SEARCH_SERVICE_ENDPOINT
-              value: ${AZURE_AI_SEARCH_SERVICE_ENDPOINT}
-        kind: hosted
-        name: hr-agent-api
-        protocols:
-            - protocol: responses
-              version: 2.0.0
 hooks:
     postdeploy:
         windows:
