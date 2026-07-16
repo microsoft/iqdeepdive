@@ -33,7 +33,7 @@ import uuid
 from datetime import datetime
 
 import requests
-from azure.identity import DefaultAzureCredential
+from azure.identity import AzureDeveloperCliCredential
 from azure.storage.filedatalake import DataLakeServiceClient
 from dotenv import load_dotenv, set_key
 
@@ -89,23 +89,23 @@ def get_credential():
     """Get the credential used for Fabric API and OneLake calls."""
     global _CREDENTIAL
     if _CREDENTIAL is None:
-        # Always use DefaultAzureCredential — it picks up AZURE_CLIENT_ID,
-        # AZURE_CLIENT_SECRET, AZURE_TENANT_ID env vars (EnvironmentCredential)
-        # which work in headless/subprocess environments like Skillable VMs.
-        _CREDENTIAL = DefaultAzureCredential()
+        _CREDENTIAL = AzureDeveloperCliCredential(tenant_id=FABRIC_TENANT_ID)
     return _CREDENTIAL
+
+
+def get_token(scope: str) -> str:
+    """Get a token from the configured credential and Fabric tenant."""
+    return get_credential().get_token(scope).token
 
 
 def get_fabric_token() -> str:
     """Get an access token for Fabric API."""
-    token = get_credential().get_token(FABRIC_SCOPE)
-    return token.token
+    return get_token(FABRIC_SCOPE)
 
 
 def get_storage_token() -> str:
     """Get an access token for OneLake (Azure Storage)."""
-    token = get_credential().get_token(STORAGE_SCOPE)
-    return token.token
+    return get_token(STORAGE_SCOPE)
 
 
 def fabric_headers() -> dict:
@@ -264,6 +264,12 @@ def create_lakehouse(workspace_id: str, name: str) -> dict:
         return get_existing_lakehouse(workspace_id, name)
     else:
         log_message(f"ERROR: Failed to create lakehouse: {resp.status_code} - {resp.text}")
+        if resp.status_code == 401 and "UserNotLicensed" in resp.text:
+            log_message(
+                "Your signed-in Microsoft Entra account is not licensed for Fabric. "
+                "Assign it a Fabric/Power BI license or activate a Fabric trial, "
+                "then retry after confirming the account has access to this workspace."
+            )
         sys.exit(1)
 
 

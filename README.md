@@ -32,7 +32,8 @@ Neither depends on a knowledge base created by a notebook.
   with the `azure.ai.agents` extension available
 - [uv](https://docs.astral.sh/uv/getting-started/installation/) and Python 3.12+
 - Quota in one region for Foundry hosted agents, `gpt-5.4`, and `text-embedding-3-large`
-- For notebook parts 3 and 5, a Fabric-capable tenant; the default deployment creates an F2 capacity
+- For notebook parts 3 and 5, a Fabric-capable tenant and a Fabric/Power BI license (or active Fabric
+  trial) assigned to the account used by `az login`; the default deployment creates an F2 capacity
 - For part 2, a `WEB_IQ_KEY` supplied by the Build lab organizer
 - For parts 4 and 5, access to Microsoft 365 Work IQ data
 
