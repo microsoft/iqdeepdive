@@ -6,8 +6,6 @@ services:
         project: src/agent-foundry-iq-api
         host: azure.ai.agent
         language: python
-        uses:
-            - ai-project-hr-agent-dev
         codeConfiguration:
             dependencyResolution: remote_build
             entryPoint: main.py
@@ -30,8 +28,6 @@ services:
         project: src/agent-foundry-iq-mcp
         host: azure.ai.agent
         language: python
-        uses:
-            - ai-project-hr-agent-dev
         codeConfiguration:
             dependencyResolution: remote_build
             entryPoint: main.py
@@ -50,11 +46,6 @@ services:
         protocols:
             - protocol: responses
               version: 2.0.0
-    ai-project-hr-agent-dev:
-        project: ""
-        host: azure.ai.project
-        language: ""
-        endpoint: https://ai-account-ozfwepskkverc.services.ai.azure.com/api/projects/ai-project-hr-agent-dev
 hooks:
     postdeploy:
         windows:
