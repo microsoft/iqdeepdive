@@ -19,10 +19,9 @@ from azure.identity.aio import ChainedTokenCredential as AsyncChainedTokenCreden
 from azure.identity.aio import ManagedIdentityCredential as AsyncManagedIdentityCredential
 from azure.search.documents.knowledgebases.aio import KnowledgeBaseRetrievalClient
 from azure.search.documents.knowledgebases.models import (
-    KnowledgeBaseMessage,
-    KnowledgeBaseMessageTextContent,
     KnowledgeBaseRetrievalRequest,
     KnowledgeRetrievalMinimalReasoningEffort,
+    KnowledgeRetrievalSemanticIntent,
 )
 from dotenv import load_dotenv
 
@@ -101,23 +100,7 @@ async def main() -> None:
         """Retrieve grounded company and HR information from the Foundry IQ knowledge base."""
         logger.info("Retrieving company knowledge through the Azure AI Search API")
         request = KnowledgeBaseRetrievalRequest(
-            messages=[
-                KnowledgeBaseMessage(
-                    role="assistant",
-                    content=[
-                        KnowledgeBaseMessageTextContent(
-                            text=(
-                                "Answer questions about Contoso employee benefits and company information. "
-                                "Use only the retrieved sources and preserve their reference IDs."
-                            )
-                        )
-                    ],
-                ),
-                KnowledgeBaseMessage(
-                    role="user",
-                    content=[KnowledgeBaseMessageTextContent(text=question)],
-                ),
-            ],
+            intents=[KnowledgeRetrievalSemanticIntent(search=question)],
             retrieval_reasoning_effort=KnowledgeRetrievalMinimalReasoningEffort(),
             include_activity=True,
         )
