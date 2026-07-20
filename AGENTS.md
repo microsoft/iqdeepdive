@@ -5,18 +5,19 @@ agents, read the `microsoft-foundry` skill first.
 
 ## Project overview
 
-This repository contains a five-part Microsoft Foundry IQ notebook lab and two Python HR agents deployed as
+This repository contains a five-part Microsoft Foundry IQ notebook lab and three Python HR agents deployed as
 Microsoft Foundry hosted agents. A single Azure Developer CLI (`azd`) project provisions the shared Foundry project,
 model deployments, Azure AI Search, storage, monitoring, and optional Microsoft Fabric capacity.
 
-The notebooks and hosted agents share infrastructure but create separate knowledge bases. Both hosted agents use
+The notebooks and hosted agents share infrastructure but create separate knowledge bases. All hosted agents use
 `contoso-company-kb`: `agent-foundry-iq-mcp` connects through the Azure AI Search knowledge-base MCP endpoint,
-while `agent-foundry-iq-api` calls the knowledge-base retrieval API with a custom Python tool.
+`agent-foundry-iq-api` calls the knowledge-base retrieval API with a custom Python tool, and
+`agent-foundry-iq-toolbox` connects through a Foundry toolbox.
 
 ## Repository map
 
 - `azure.yaml`: `azd` service manifest. It declares the existing Foundry project service, the
-  `agent-foundry-iq-mcp` and `agent-foundry-iq-api` hosted services, Python 3.13 remote build settings, runtime
+  three hosted services, Python 3.13 remote build settings, runtime
   environment variables, and deployment hooks.
 - `pyproject.toml` and `uv.lock`: root Python environment for infrastructure helpers and notebook support. Use this
   environment for files under `infra/`.
@@ -31,6 +32,8 @@ while `agent-foundry-iq-api` calls the knowledge-base retrieval API with a custo
 - `infra/core/`: reusable Bicep modules for Foundry, Search, storage, monitoring, and Fabric resources.
 - `infra/create-search-indexes.py`: restores sample indexes and creates the hosted agent's
   `contoso-company-kb`.
+- `infra/create-toolbox.py`: creates and promotes the toolbox version after the knowledge base exists. It uses the
+  dedicated `kb-mcp-connection` remote-tool project connection by default.
 - `infra/create-lakehouse.py`: creates optional Fabric lakehouse and ontology resources.
 - `infra/setup-env.py`: writes generated Azure outputs to the local `.env` used by notebooks and local agent runs.
 - `infra/hooks/postprovision.sh` and `infra/hooks/postprovision.ps1`: run after infrastructure provisioning to
@@ -43,10 +46,15 @@ while `agent-foundry-iq-api` calls the knowledge-base retrieval API with a custo
   connects to the Search knowledge base with an authenticated `MCPStreamableHTTPTool`.
 - `src/agent-foundry-iq-api/main.py`: sibling Agent Framework application whose custom Python tool calls the Azure AI Search
   knowledge-base retrieval API with `KnowledgeBaseRetrievalClient`.
+- `src/agent-foundry-iq-toolbox/main.py`: sibling Agent Framework application that accesses the knowledge base,
+  web search, and code interpreter through `FoundryToolbox`.
 - `src/agent-foundry-iq-mcp/pyproject.toml`, `src/agent-foundry-iq-mcp/uv.lock`, and `src/agent-foundry-iq-mcp/uv.toml`: isolated MCP agent dependency
   definition, lockfile, and remote-build TLS configuration.
 - `src/agent-foundry-iq-api/pyproject.toml`, `src/agent-foundry-iq-api/uv.lock`, and `src/agent-foundry-iq-api/uv.toml`: isolated API agent
   dependency definition, lockfile, and remote-build TLS configuration.
+- `src/agent-foundry-iq-toolbox/pyproject.toml`, `src/agent-foundry-iq-toolbox/uv.lock`, and
+  `src/agent-foundry-iq-toolbox/uv.toml`: isolated toolbox agent dependency definition, lockfile, and remote-build
+  TLS configuration.
 
 ## Development guidance
 
@@ -73,7 +81,7 @@ Install and validate root tooling:
 ```bash
 uv sync --locked --all-groups
 uv run ruff check .
-uv run python -m compileall -q infra src/agent-foundry-iq-mcp src/agent-foundry-iq-api
+uv run python -m compileall -q infra src/agent-foundry-iq-mcp src/agent-foundry-iq-api src/agent-foundry-iq-toolbox
 az bicep build --file infra/main.bicep --stdout > /dev/null
 azd show
 ```
@@ -85,6 +93,8 @@ uv sync --project src/agent-foundry-iq-mcp --python 3.13 --frozen --dry-run
 uv run --project src/agent-foundry-iq-mcp --python 3.13 python -m py_compile src/agent-foundry-iq-mcp/main.py
 uv sync --project src/agent-foundry-iq-api --python 3.13 --frozen --dry-run
 uv run --project src/agent-foundry-iq-api --python 3.13 python -m py_compile src/agent-foundry-iq-api/main.py
+uv sync --project src/agent-foundry-iq-toolbox --python 3.13 --frozen --dry-run
+uv run --project src/agent-foundry-iq-toolbox --python 3.13 python -m py_compile src/agent-foundry-iq-toolbox/main.py
 ```
 
 Validate deployment hooks after editing them:
@@ -96,13 +106,16 @@ azd hooks run postdeploy
 
 Use `azd hooks run postdeploy` to retry the postdeploy role-assignment step without rerunning provisioning or agent deployment. The hook uses `AzureDeveloperCliCredential` and requires the active azd environment to provide `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, `AZURE_RESOURCE_GROUP`, and `AZURE_AI_SEARCH_SERVICE_NAME`. Confirm those values with `azd env get-value` before running the hook.
 
-Run either agent locally with the same service manifest:
+Run any agent locally with the same service manifest:
 
 ```bash
 azd ai agent run agent-foundry-iq-mcp
 azd ai agent invoke --local "What benefits are available, and when do I need to enroll?"
 
 azd ai agent run agent-foundry-iq-api
+azd ai agent invoke --local "What benefits are available, and when do I need to enroll?"
+
+azd ai agent run agent-foundry-iq-toolbox
 azd ai agent invoke --local "What benefits are available, and when do I need to enroll?"
 ```
 
@@ -123,14 +136,17 @@ azd ai agent invoke agent-foundry-iq-mcp "What benefits are available, and when 
 
 azd deploy agent-foundry-iq-api
 azd ai agent invoke agent-foundry-iq-api "What benefits are available, and when do I need to enroll?"
+
+azd deploy agent-foundry-iq-toolbox
+azd ai agent invoke agent-foundry-iq-toolbox "What benefits are available, and when do I need to enroll?"
 ```
 
 `azd up` performs these phases:
 
 1. Bicep provisions shared Azure resources.
-2. `postprovision` writes `.env`, restores Search data, creates the agent knowledge base, and optionally configures
-  Fabric.
-3. Foundry remotely builds and deploys `src/agent-foundry-iq-mcp` and `src/agent-foundry-iq-api`.
+2. `postprovision` writes `.env`, restores Search data, creates the agent knowledge base and toolbox, and optionally
+  configures Fabric.
+3. Foundry remotely builds and deploys all three agent packages under `src/`.
 4. `postdeploy` obtains each agent's `instance_identity.principal_id` and grants Search data access.
 
 Do not move the hosted-agent role assignment into Bicep or `postprovision` unless the identity lifecycle changes.
@@ -149,6 +165,9 @@ uv sync --project src/agent-foundry-iq-mcp --python 3.13 --frozen --dry-run
 
 uv lock --project src/agent-foundry-iq-api --python 3.13
 uv sync --project src/agent-foundry-iq-api --python 3.13 --frozen --dry-run
+
+uv lock --project src/agent-foundry-iq-toolbox --python 3.13
+uv sync --project src/agent-foundry-iq-toolbox --python 3.13 --frozen --dry-run
 ```
 
 ### Missing runtime setting

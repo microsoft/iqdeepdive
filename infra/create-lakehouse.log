@@ -1,0 +1,192 @@
+[2026-07-17 15:48:26] ============================================================
+[2026-07-17 15:48:26] Fabric Lakehouse Creator - Contoso DIY Dataset
+[2026-07-17 15:48:26] ============================================================
+[2026-07-17 15:48:26] Updated repo root .env with FABRIC_WORKSPACE_ID
+[2026-07-17 15:48:26] Workspace ID: f200c1bc-e2ec-43b9-9308-be868f68753e
+[2026-07-17 15:48:26] Lakehouse Name: ContosoDIYLakehouse
+[2026-07-17 15:48:26] Ontology Name: ContosoDIYOntology
+[2026-07-17 15:48:26] Tenant ID: 72f988bf-86f1-41af-91ab-2d7cd011db47
+[2026-07-17 15:48:26] Include Embeddings: False
+[2026-07-17 15:48:26] 
+[1/6] Creating Lakehouse
+[2026-07-17 15:48:26] Creating lakehouse 'ContosoDIYLakehouse'...
+[2026-07-17 15:48:27] ERROR: CredentialUnavailableError: Please run 'azd auth login' from a command prompt to authenticate before using this credential.
+[2026-07-17 15:48:27] Traceback:
+Traceback (most recent call last):
+  File "/Users/pamelafox/iqdeepdive-foundryiq-1/.venv/lib/python3.14/site-packages/azure/identity/_credentials/azd_cli.py", line 327, in _run_command
+    return subprocess.check_output(args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "/Users/pamelafox/.local/share/uv/python/cpython-3.14.4-macos-aarch64-none/lib/python3.14/subprocess.py", line 473, in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+           ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+               **kwargs).stdout
+               ^^^^^^^^^
+  File "/Users/pamelafox/.local/share/uv/python/cpython-3.14.4-macos-aarch64-none/lib/python3.14/subprocess.py", line 578, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['/usr/local/bin/azd', 'auth', 'token', '--output', 'json', '--no-prompt', '--scope', 'https://api.fabric.microsoft.com/.default', '--tenant-id', '72f988bf-86f1-41af-91ab-2d7cd011db47']' returned non-zero exit status 1.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/pamelafox/iqdeepdive-foundryiq-1/infra/create-lakehouse.py", line 1094, in main
+    lakehouse = create_lakehouse(workspace_id, LAKEHOUSE_NAME)
+  File "/Users/pamelafox/iqdeepdive-foundryiq-1/infra/create-lakehouse.py", line 259, in create_lakehouse
+    lakehouse = get_fabric_client().lakehouse.items.begin_create_lakehouse(
+                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        workspace_id, CreateLakehouseRequest(display_name=name)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ).result()
+    ^
+  File "/Users/pamelafox/iqdeepdive-foundryiq-1/.venv/lib/python3.14/site-packages/microsoft_fabric_api/extensions/lakehouse/operations/_operations.py", line 409, in begin_create_lakehouse
+    poller = super().begin_create_lakehouse(
+        workspace_id=workspace_id,
+    ...<2 lines>...
+        polling=LROBasePolling(lro_algorithms=[OperationResourcePolling(operation_location_header="location"), StatusCheckPolling()]),
+    )
+  File "/Users/pamelafox/iqdeepdive-foundryiq-1/.venv/lib/python3.14/site-packages/azure/core/tracing/decorator.py", line 119, in wrapper_use_tracer
+    return func(*args, **kwargs)
+  File "/Users/pamelafox/iqdeepdive-foundryiq-1/.venv/lib/python3.14/site-packages/microsoft_fabric_api/generated/lakehouse/operations/_operations.py", line 1087, in begin_create_lakehouse
+    raw_result = self._create_lakehouse_initial(
+        workspace_id=workspace_id,
+    ...<5 lines>...
+        **kwargs
+    )
+  File "/Users/pamelafox/iqdeepdive-foundryiq-1/.venv/lib/python3.14/site-packages/microsoft_fabric_api/generated/lakehouse/operations/_operations.py", line 861, in _create_lakehouse_initial
+    pipeline_response: PipelineResponse = self._client._pipeline.run(  # pylint: disable=protected-access
+                                          ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        _request, stream=_stream, **kwargs
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/pamelafox/iqdeepdive-foundryiq-1/.venv/lib/python3.14/site-packages/azure/core/pipeline/_base.py", line 242, in run
+    return first_node.send(pipeline_request)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "/Users/pamelafox/iqdeepdive-foundryiq-1/.venv/lib/python3.14/site-packages/azure/core/pipeline/_base.py", line 98, in send
+    response = self.next.send(request)
+  File "/Users/pamelafox/iqdeepdive-foundryiq-1/.venv/lib/python3.14/site-packages/azure/core/pipeline/_base.py", line 98, in send
+    response = self.next.send(request)
+  File "/Users/pamelafox/iqdeepdive-foundryiq-1/.venv/lib/python3.14/site-packages/azure/core/pipeline/_base.py", line 98, in send
+    response = self.next.send(request)
+  [Previous line repeated 2 more times]
+  File "/Users/pamelafox/iqdeepdive-foundryiq-1/.venv/lib/python3.14/site-packages/azure/core/pipeline/policies/_redirect.py", line 205, in send
+    response = self.next.send(request)
+  File "/Users/pamelafox/iqdeepdive-foundryiq-1/.venv/lib/python3.14/site-packages/azure/core/pipeline/policies/_retry.py", line 545, in send
+    response = self.next.send(request)
+  File "/Users/pamelafox/iqdeepdive-foundryiq-1/.venv/lib/python3.14/site-packages/azure/core/pipeline/policies/_authentication.py", line 192, in send
+    self.on_request(request)
+    ~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/Users/pamelafox/iqdeepdive-foundryiq-1/.venv/lib/python3.14/site-packages/azure/core/pipeline/policies/_authentication.py", line 167, in on_request
+    self._request_token(*self._scopes)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Users/pamelafox/iqdeepdive-foundryiq-1/.venv/lib/python3.14/site-packages/azure/core/pipeline/policies/_authentication.py", line 142, in _request_token
+    self._token = self._get_token(*scopes, **kwargs)
+                  ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "/Users/pamelafox/iqdeepdive-foundryiq-1/.venv/lib/python3.14/site-packages/azure/core/pipeline/policies/_authentication.py", line 132, in _get_token
+    return cast(SupportsTokenInfo, self._credential).get_token_info(*scopes, options=options)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pamelafox/iqdeepdive-foundryiq-1/.venv/lib/python3.14/site-packages/azure/identity/_internal/decorators.py", line 23, in wrapper
+    token = fn(*args, **kwargs)
+  File "/Users/pamelafox/iqdeepdive-foundryiq-1/.venv/lib/python3.14/site-packages/azure/identity/_credentials/azd_cli.py", line 160, in get_token_info
+    return self._get_token_base(*scopes, options=options)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pamelafox/iqdeepdive-foundryiq-1/.venv/lib/python3.14/site-packages/azure/identity/_credentials/azd_cli.py", line 188, in _get_token_base
+    output = _run_command(command_args, self._process_timeout)
+  File "/Users/pamelafox/iqdeepdive-foundryiq-1/.venv/lib/python3.14/site-packages/azure/identity/_credentials/azd_cli.py", line 335, in _run_command
+    raise CredentialUnavailableError(message=NOT_LOGGED_IN) from ex
+azure.identity._exceptions.CredentialUnavailableError: Please run 'azd auth login' from a command prompt to authenticate before using this credential.
+
+[2026-07-17 15:49:17] ============================================================
+[2026-07-17 15:49:17] Fabric Lakehouse Creator - Contoso DIY Dataset
+[2026-07-17 15:49:17] ============================================================
+[2026-07-17 15:49:17] Updated repo root .env with FABRIC_WORKSPACE_ID
+[2026-07-17 15:49:17] Workspace ID: f200c1bc-e2ec-43b9-9308-be868f68753e
+[2026-07-17 15:49:17] Lakehouse Name: ContosoDIYLakehouse
+[2026-07-17 15:49:17] Ontology Name: ContosoDIYOntology
+[2026-07-17 15:49:17] Tenant ID: 72f988bf-86f1-41af-91ab-2d7cd011db47
+[2026-07-17 15:49:17] Include Embeddings: False
+[2026-07-17 15:49:17] 
+[1/6] Creating Lakehouse
+[2026-07-17 15:49:17] Creating lakehouse 'ContosoDIYLakehouse'...
+[2026-07-17 15:49:18] Lakehouse 'ContosoDIYLakehouse' already exists. Fetching existing...
+[2026-07-17 15:49:18] Found existing lakehouse: d9dfc2cf-f0fe-4fe5-a356-150b07a042d7
+[2026-07-17 15:49:18] 
+[2/6] Getting Lakehouse Properties
+[2026-07-17 15:49:19] OneLake Files Path: https://msit-onelake.dfs.fabric.microsoft.com/f200c1bc-e2ec-43b9-9308-be868f68753e/d9dfc2cf-f0fe-4fe5-a356-150b07a042d7/Files
+[2026-07-17 15:49:19] 
+[3/6] Downloading and Processing Dataset
+[2026-07-17 15:49:19] Downloading product_data.json...
+[2026-07-17 15:49:21] Downloading reference_data.json...
+[2026-07-17 15:49:21]   products: 424 rows
+[2026-07-17 15:49:21]   categories: 9 rows
+[2026-07-17 15:49:21]   stores: 8 rows
+[2026-07-17 15:49:21]   inventory: 2294 rows
+[2026-07-17 15:49:21]   suppliers: 24 rows
+[2026-07-17 15:49:21]   product_suppliers: 618 rows
+[2026-07-17 15:49:21]   year_weights: 7 rows
+[2026-07-17 15:49:21] 
+[4/6] Uploading CSVs to OneLake
+[2026-07-17 15:49:21] Uploading products.csv (110,829 bytes)...
+[2026-07-17 15:49:23] Uploaded products.csv
+[2026-07-17 15:49:23] Uploading categories.csv (773 bytes)...
+[2026-07-17 15:49:24] Uploaded categories.csv
+[2026-07-17 15:49:24] Uploading stores.csv (1,014 bytes)...
+[2026-07-17 15:49:26] Uploaded stores.csv
+[2026-07-17 15:49:26] Uploading inventory.csv (186,083 bytes)...
+[2026-07-17 15:49:27] Uploaded inventory.csv
+[2026-07-17 15:49:27] Uploading suppliers.csv (1,882 bytes)...
+[2026-07-17 15:49:28] Uploaded suppliers.csv
+[2026-07-17 15:49:28] Uploading product_suppliers.csv (29,788 bytes)...
+[2026-07-17 15:49:29] Uploaded product_suppliers.csv
+[2026-07-17 15:49:29] Uploading year_weights.csv (91 bytes)...
+[2026-07-17 15:49:31] Uploaded year_weights.csv
+[2026-07-17 15:49:31] 
+[5/6] Loading Delta Tables
+[2026-07-17 15:49:31] Loading table 'products' from products.csv...
+[2026-07-17 15:50:02] Load completed for 'products'
+[2026-07-17 15:50:02] Loading table 'categories' from categories.csv...
+[2026-07-17 15:50:18] Load completed for 'categories'
+[2026-07-17 15:50:18] Loading table 'stores' from stores.csv...
+[2026-07-17 15:50:34] Load completed for 'stores'
+[2026-07-17 15:50:34] Loading table 'inventory' from inventory.csv...
+[2026-07-17 15:50:50] Load completed for 'inventory'
+[2026-07-17 15:50:50] Loading table 'suppliers' from suppliers.csv...
+[2026-07-17 15:51:06] Load completed for 'suppliers'
+[2026-07-17 15:51:06] Loading table 'product_suppliers' from product_suppliers.csv...
+[2026-07-17 15:51:21] Load completed for 'product_suppliers'
+[2026-07-17 15:51:21] Loading table 'year_weights' from year_weights.csv...
+[2026-07-17 15:51:37] Load completed for 'year_weights'
+[2026-07-17 15:51:37] 
+============================================================
+[2026-07-17 15:51:37] SUMMARY
+[2026-07-17 15:51:37] ============================================================
+[2026-07-17 15:51:37] Lakehouse: ContosoDIYLakehouse (d9dfc2cf-f0fe-4fe5-a356-150b07a042d7)
+[2026-07-17 15:51:37] Workspace: f200c1bc-e2ec-43b9-9308-be868f68753e
+[2026-07-17 15:51:37] Tables loaded:
+[2026-07-17 15:51:37]   SUCCESS: products
+[2026-07-17 15:51:37]   SUCCESS: categories
+[2026-07-17 15:51:37]   SUCCESS: stores
+[2026-07-17 15:51:37]   SUCCESS: inventory
+[2026-07-17 15:51:37]   SUCCESS: suppliers
+[2026-07-17 15:51:37]   SUCCESS: product_suppliers
+[2026-07-17 15:51:37]   SUCCESS: year_weights
+[2026-07-17 15:51:37] 
+[6/6] Creating Fabric IQ Ontology
+[2026-07-17 15:51:38] Using existing ontology ID from FABRIC_ONTOLOGY_ID: dc900177-5ed8-4bb0-b4c4-85ef346c23c0
+[2026-07-17 15:51:38] Updating ontology definition with Contoso DIY entity bindings...
+[2026-07-17 15:51:40] ERROR: Failed to update ontology definition: (None) Property 'ValueType' cannot be updated for property 'imagePath' (ID: 100107). ValueType is immutable.
+Code: None
+Message: Property 'ValueType' cannot be updated for property 'imagePath' (ID: 100107). ValueType is immutable.
+[2026-07-17 15:51:40]   FAILED: ContosoDIYOntology (dc900177-5ed8-4bb0-b4c4-85ef346c23c0)
+[2026-07-17 15:51:40] ============================================================
+[2026-07-17 15:51:40] 
+WARNING: Some tables or ontology setup failed.
+[2026-07-17 15:52:23] Creating lakehouse 'ContosoDIYLakehouse'...
+[2026-07-17 15:52:24] Lakehouse 'ContosoDIYLakehouse' already exists. Fetching existing...
+[2026-07-17 15:52:24] Found existing lakehouse: d9dfc2cf-f0fe-4fe5-a356-150b07a042d7
+[2026-07-17 15:52:25] Using existing ontology ID from FABRIC_ONTOLOGY_ID: dc900177-5ed8-4bb0-b4c4-85ef346c23c0
+[2026-07-17 15:52:35] Creating lakehouse 'ContosoDIYLakehouse'...
+[2026-07-17 15:52:36] Lakehouse 'ContosoDIYLakehouse' already exists. Fetching existing...
+[2026-07-17 15:52:36] Found existing lakehouse: d9dfc2cf-f0fe-4fe5-a356-150b07a042d7
+[2026-07-17 15:52:37] Using existing ontology ID from FABRIC_ONTOLOGY_ID: dc900177-5ed8-4bb0-b4c4-85ef346c23c0
+[2026-07-17 15:52:37] Updating ontology definition with Contoso DIY entity bindings...

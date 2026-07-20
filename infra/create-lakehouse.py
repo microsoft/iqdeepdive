@@ -2,9 +2,9 @@
 Create a Fabric Lakehouse and load the Contoso DIY dataset as Delta tables.
 
 This script:
-1. Creates a lakehouse in Microsoft Fabric using the REST API
+1. Creates a lakehouse in Microsoft Fabric using the Microsoft Fabric API SDK
 2. Downloads the Contoso DIY sample data (product_data.json, reference_data.json) from GitHub
-3. Flattens JSON data into CSV files
+3. Flattens and enriches the data with inventory and supplier relationships
 4. Uploads CSVs to OneLake (lakehouse Files section)
 5. Loads CSVs as Delta tables using the Load Table API
 6. Creates or updates a Fabric IQ ontology bound to the lakehouse tables
@@ -12,40 +12,62 @@ This script:
 Environment variables (from .env):
   FABRIC_WORKSPACE_ID  - Existing Fabric workspace GUID
   FABRIC_CAPACITY_ID   - Fabric capacity GUID or ARM resource ID for workspace creation
-  FABRIC_TENANT_ID     - Microsoft Entra tenant ID for Fabric auth
+    FABRIC_TENANT_ID     - Required Microsoft Entra tenant ID for Fabric auth
+    FABRIC_PORTAL_BASE_URL - Fabric UI host (default: https://msit.powerbi.com)
     LAKEHOUSE_NAME       - Name for the lakehouse (default: ContosoDIYLakehouse)
   FABRIC_ONTOLOGY_ID   - Existing ontology GUID to update, if known
     FABRIC_ONTOLOGY_NAME - Name for the ontology (default: ContosoDIYOntology)
+        FABRIC_ONTOLOGY_UI_URL - Generated direct link to the ontology in Fabric
+    FABRIC_ONTOLOGY_MCP_URL - Generated ontology MCP server endpoint
   CREATE_ONTOLOGY      - Create/update ontology after table load (default: true)
   INCLUDE_EMBEDDINGS   - Include vector embeddings in products table (default: false)
 """
 
 import base64
 import csv
+import hashlib
 import io
 import json
 import os
-import random
 import sys
-import time
 import traceback
 import uuid
-from datetime import datetime
+import warnings
+from datetime import datetime, timedelta
 
 import requests
+from azure.core.exceptions import HttpResponseError
 from azure.identity import AzureDeveloperCliCredential
 from azure.storage.filedatalake import DataLakeServiceClient
 from dotenv import load_dotenv, set_key
 
+warnings.filterwarnings(
+    "ignore", category=SyntaxWarning, module=r"microsoft_fabric_api\..*"
+)
+
+from microsoft_fabric_api import FabricClient  # noqa: E402
+from microsoft_fabric_api.generated.core.models import (  # noqa: E402
+    AddWorkspaceRoleAssignmentRequest,
+    CreateWorkspaceRequest,
+    Principal,
+)
+from microsoft_fabric_api.generated.lakehouse.models import (  # noqa: E402
+    CreateLakehouseRequest,
+    Csv,
+    LoadTableRequest,
+)
+from microsoft_fabric_api.generated.ontology.models import (  # noqa: E402
+    CreateOntologyRequest,
+    OntologyDefinition,
+    OntologyDefinitionPart,
+    UpdateOntologyDefinitionRequest,
+    UpdateOntologyRequest,
+)
+
 load_dotenv(override=True)
 
 # Configuration
-FABRIC_API_BASE = "https://api.fabric.microsoft.com/v1"
 ONELAKE_DFS_URL = "https://onelake.dfs.fabric.microsoft.com"
-FABRIC_SCOPE = "https://api.fabric.microsoft.com/.default"
-STORAGE_SCOPE = "https://storage.azure.com/.default"
-FABRIC_RETRY_ATTEMPTS = 6
-FABRIC_RETRYABLE_STATUS_CODES = (429, 500, 502, 503, 504)
 
 GITHUB_CONTENTS_BASE = "https://api.github.com/repositories/1021950905/contents/data/database"
 
@@ -53,7 +75,10 @@ WORKSPACE_ID = os.getenv("FABRIC_WORKSPACE_ID", "")
 LAKEHOUSE_NAME = os.getenv("LAKEHOUSE_NAME", "ContosoDIYLakehouse")
 WORKSPACE_NAME = os.getenv("FABRIC_WORKSPACE_NAME", "ContosoDIYWorkspace")
 FABRIC_CAPACITY_ID = os.getenv("FABRIC_CAPACITY_ID", "")
-FABRIC_TENANT_ID = os.getenv("FABRIC_TENANT_ID") or os.getenv("AZURE_TENANT_ID", "")
+FABRIC_TENANT_ID = os.getenv("FABRIC_TENANT_ID", "").strip()
+FABRIC_PORTAL_BASE_URL = os.getenv(
+    "FABRIC_PORTAL_BASE_URL", "https://msit.powerbi.com"
+).rstrip("/")
 FABRIC_ONTOLOGY_ID = os.getenv("FABRIC_ONTOLOGY_ID", "")
 FABRIC_ONTOLOGY_NAME = os.getenv("FABRIC_ONTOLOGY_NAME", "ContosoDIYOntology")
 FABRIC_LAB_USER_UPN = os.getenv("FABRIC_LAB_USER_UPN", "")
@@ -61,6 +86,45 @@ FABRIC_LAB_USER_OID = os.getenv("FABRIC_LAB_USER_OID", "")
 CREATE_ONTOLOGY = os.getenv("CREATE_ONTOLOGY", "true").lower() == "true"
 INCLUDE_EMBEDDINGS = os.getenv("INCLUDE_EMBEDDINGS", "false").lower() == "true"
 _CREDENTIAL = None
+_FABRIC_CLIENT = None
+
+STORE_DETAILS = {
+    "Seattle": ("STORE-SEA", "Seattle", "WA", "Puget Sound", "Retail"),
+    "Bellevue": ("STORE-BEL", "Bellevue", "WA", "Puget Sound", "Retail"),
+    "Tacoma": ("STORE-TAC", "Tacoma", "WA", "Puget Sound", "Retail"),
+    "Spokane": ("STORE-SPO", "Spokane", "WA", "Eastern Washington", "Retail"),
+    "Everett": ("STORE-EVE", "Everett", "WA", "Puget Sound", "Retail"),
+    "Redmond": ("STORE-RED", "Redmond", "WA", "Puget Sound", "Retail"),
+    "Kirkland": ("STORE-KIR", "Kirkland", "WA", "Puget Sound", "Retail"),
+    "Online": ("STORE-ONL", "Online", "WA", "Digital", "Online"),
+}
+
+SUPPLIER_NAMES = (
+    "Cascadia Toolworks",
+    "Rainier Building Supply",
+    "Puget Hardware Partners",
+    "Evergreen Electrical",
+    "Olympic Outdoor Goods",
+    "Northwest Paint and Finish",
+    "Columbia Plumbing Supply",
+    "Sound Safety Equipment",
+    "Summit Fastener Group",
+    "Harbor Home Products",
+    "Cascade Garden Supply",
+    "Pacific Lighting Works",
+    "Redwood Storage Systems",
+    "Blue Mountain Lumber",
+    "Orca Power Tools",
+    "Pioneer Flooring Supply",
+    "Atlas Workshop Equipment",
+    "Cedar Ridge Millworks",
+    "Frontier Climate Solutions",
+    "Northstar Appliance Parts",
+    "Granite Peak Industrial",
+    "Salish Home Improvement",
+    "Copper River Fixtures",
+    "Metro DIY Distribution",
+)
 
 # Logging
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -85,92 +149,43 @@ def log_message(message: str):
         f.write(line + "\n")
 
 
+def get_ontology_ui_url(workspace_id: str, ontology_id: str) -> str:
+    """Build a direct link to an ontology in the Fabric UI."""
+    return (
+        f"{FABRIC_PORTAL_BASE_URL}/groups/{workspace_id}/ontologies/{ontology_id}"
+        "?experience=fabric-developer"
+    )
+
+
+def get_ontology_mcp_url(workspace_id: str, ontology_id: str) -> str:
+    """Build the Fabric Ontology MCP server endpoint."""
+    return (
+        "https://api.fabric.microsoft.com/v1/mcp/dataPlane/"
+        f"workspaces/{workspace_id}/items/{ontology_id}/ontologyEndpoint"
+    )
+
+
 def get_credential():
     """Get the credential used for Fabric API and OneLake calls."""
     global _CREDENTIAL
+    if not FABRIC_TENANT_ID:
+        raise RuntimeError("FABRIC_TENANT_ID is required for Fabric authentication.")
     if _CREDENTIAL is None:
         _CREDENTIAL = AzureDeveloperCliCredential(tenant_id=FABRIC_TENANT_ID)
     return _CREDENTIAL
 
 
-def get_token(scope: str) -> str:
-    """Get a token from the configured credential and Fabric tenant."""
-    return get_credential().get_token(scope).token
+def get_fabric_client() -> FabricClient:
+    """Get the Fabric SDK client using the configured tenant credential."""
+    global _FABRIC_CLIENT
+    if _FABRIC_CLIENT is None:
+        _FABRIC_CLIENT = FabricClient(get_credential())
+    return _FABRIC_CLIENT
 
 
-def get_fabric_token() -> str:
-    """Get an access token for Fabric API."""
-    return get_token(FABRIC_SCOPE)
-
-
-def get_storage_token() -> str:
-    """Get an access token for OneLake (Azure Storage)."""
-    return get_token(STORAGE_SCOPE)
-
-
-def fabric_headers() -> dict:
-    """Return headers for Fabric API calls."""
-    return {
-        "Authorization": f"Bearer {get_fabric_token()}",
-        "Content-Type": "application/json",
-    }
-
-
-def parse_retry_after(value: str | None) -> float | None:
-    """Parse Retry-After from a Fabric throttling response."""
-    if value is None:
-        return None
-    try:
-        return max(float(value), 0)
-    except (TypeError, ValueError):
-        return None
-
-
-def sleep_for_retry(status_code: int, response: requests.Response, attempt: int) -> float:
-    """Return the delay to wait before retrying a throttled or transient request."""
-    retry_after = parse_retry_after(response.headers.get("Retry-After"))
-    if status_code == 429 and retry_after is not None:
-        return retry_after
-    return min(2**attempt, 30) + random.uniform(0, 1)
-
-
-def fabric_request(method: str, url: str, **kwargs) -> requests.Response:
-    """Make a Fabric REST call with retry support for throttling and transient failures."""
-    request_kwargs = dict(kwargs)
-    headers = request_kwargs.pop("headers", None) or fabric_headers()
-    timeout = request_kwargs.pop("timeout", 120)
-
-    for attempt in range(1, FABRIC_RETRY_ATTEMPTS + 1):
-        response = requests.request(
-            method=method,
-            url=url,
-            headers=headers,
-            timeout=timeout,
-            **request_kwargs,
-        )
-
-        if response.status_code not in FABRIC_RETRYABLE_STATUS_CODES or attempt == FABRIC_RETRY_ATTEMPTS:
-            return response
-
-        delay = sleep_for_retry(response.status_code, response, attempt)
-        log_message(
-            "Throttled or transient Fabric API failure "
-            f"({method} {url} -> HTTP {response.status_code}). "
-            f"Retrying in {delay:.1f}s (attempt {attempt + 1}/{FABRIC_RETRY_ATTEMPTS})."
-        )
-        time.sleep(delay)
-
-    raise RuntimeError("Fabric request retry loop exhausted without returning a response")
-
-
-def fabric_get(url: str) -> requests.Response:
-    """GET helper for Fabric REST APIs with throttling-aware retries."""
-    return fabric_request("GET", url)
-
-
-def fabric_post(url: str, payload: dict | None = None) -> requests.Response:
-    """POST helper for Fabric REST APIs with throttling-aware retries."""
-    return fabric_request("POST", url, json=payload)
+def is_http_status(error: HttpResponseError, status_code: int) -> bool:
+    """Return whether an SDK error has the specified HTTP status."""
+    return error.status_code == status_code
 
 
 def resolve_capacity_id(capacity_id_or_arm: str) -> str:
@@ -181,16 +196,12 @@ def resolve_capacity_id(capacity_id_or_arm: str) -> str:
 
     # It's an ARM resource ID — look up the Fabric GUID via the capacities API
     log_message("Resolving ARM capacity ID to Fabric GUID...")
-    url = f"{FABRIC_API_BASE}/capacities"
-    resp = fabric_get(url)
-    resp.raise_for_status()
-
     # Extract capacity name from ARM ID (last segment)
     arm_name = capacity_id_or_arm.rstrip("/").split("/")[-1]
-    for cap in resp.json().get("value", []):
-        if cap["displayName"] == arm_name:
-            log_message(f"Resolved capacity: {cap['id']} ({cap['displayName']})")
-            return cap["id"]
+    for capacity in get_fabric_client().core.capacities.list_capacities():
+        if capacity.display_name == arm_name:
+            log_message(f"Resolved capacity: {capacity.id} ({capacity.display_name})")
+            return capacity.id
 
     log_message(f"ERROR: Could not find Fabric capacity matching '{arm_name}'")
     sys.exit(1)
@@ -198,100 +209,85 @@ def resolve_capacity_id(capacity_id_or_arm: str) -> str:
 
 def create_workspace(name: str, capacity_id: str) -> dict:
     """Create a Fabric workspace assigned to the given capacity."""
-    url = f"{FABRIC_API_BASE}/workspaces"
-    payload = {"displayName": name, "capacityId": capacity_id}
     log_message(f"Creating workspace '{name}' on capacity {capacity_id[:12]}...")
-    resp = fabric_post(url, payload)
-
-    if resp.status_code == 201:
-        data = resp.json()
-        log_message(f"Workspace created: {data['id']}")
-        return data
-    elif resp.status_code == 409:
-        log_message(f"Workspace '{name}' already exists. Fetching existing...")
-        return get_existing_workspace(name)
-    else:
-        log_message(f"ERROR: Failed to create workspace: {resp.status_code} - {resp.text}")
-        sys.exit(1)
+    try:
+        workspace = get_fabric_client().core.workspaces.create_workspace(
+            CreateWorkspaceRequest(display_name=name, capacity_id=capacity_id)
+        )
+        log_message(f"Workspace created: {workspace.id}")
+        return {"id": workspace.id, "displayName": workspace.display_name}
+    except HttpResponseError as error:
+        if is_http_status(error, 409):
+            log_message(f"Workspace '{name}' already exists. Fetching existing...")
+            return get_existing_workspace(name)
+        raise
 
 
 def get_existing_workspace(name: str) -> dict:
     """Find an existing workspace by name."""
-    url = f"{FABRIC_API_BASE}/workspaces"
-    resp = fabric_get(url)
-    resp.raise_for_status()
-    for ws in resp.json().get("value", []):
-        if ws["displayName"] == name:
-            log_message(f"Found existing workspace: {ws['id']}")
-            return ws
+    for workspace in get_fabric_client().core.workspaces.list_workspaces():
+        if workspace.display_name == name:
+            log_message(f"Found existing workspace: {workspace.id}")
+            return {"id": workspace.id, "displayName": workspace.display_name}
     log_message(f"ERROR: Workspace '{name}' not found.")
     sys.exit(1)
 
 
 def add_workspace_member(workspace_id: str, user_oid: str, user_email: str, role: str = "Admin"):
     """Add a user to the workspace with the given role (Admin, Member, Contributor, Viewer)."""
-    url = f"{FABRIC_API_BASE}/workspaces/{workspace_id}/roleAssignments"
-    payload = {
-        "principal": {
-            "id": user_oid,
-            "type": "User",
-        },
-        "role": role,
-    }
     log_message(f"Adding '{user_email}' (OID: {user_oid}) as {role} to workspace {workspace_id[:12]}...")
-    resp = fabric_post(url, payload)
-    if resp.status_code in (200, 201):
+    try:
+        get_fabric_client().core.workspaces.add_workspace_role_assignment(
+            workspace_id,
+            AddWorkspaceRoleAssignmentRequest(
+                principal=Principal(id=user_oid),
+                role=role,
+            ),
+        )
         log_message(f"User added as {role} successfully.")
-    elif resp.status_code == 409:
-        log_message("User already has a role assignment on this workspace.")
-    else:
-        log_message(f"WARNING: Failed to add user to workspace: {resp.status_code} - {resp.text}")
+    except HttpResponseError as error:
+        if is_http_status(error, 409):
+            log_message("User already has a role assignment on this workspace.")
+        else:
+            log_message(f"WARNING: Failed to add user to workspace: {error}")
 
 
 def create_lakehouse(workspace_id: str, name: str) -> dict:
     """Create a lakehouse in the specified workspace."""
-    url = f"{FABRIC_API_BASE}/workspaces/{workspace_id}/lakehouses"
-    payload = {"displayName": name}
     log_message(f"Creating lakehouse '{name}'...")
-    resp = fabric_post(url, payload)
-
-    if resp.status_code == 201:
-        data = resp.json()
-        log_message(f"Lakehouse created: {data['id']}")
-        return data
-    elif resp.status_code == 409:
-        log_message(f"Lakehouse '{name}' already exists. Fetching existing...")
-        return get_existing_lakehouse(workspace_id, name)
-    else:
-        log_message(f"ERROR: Failed to create lakehouse: {resp.status_code} - {resp.text}")
-        if resp.status_code == 401 and "UserNotLicensed" in resp.text:
+    try:
+        lakehouse = get_fabric_client().lakehouse.items.begin_create_lakehouse(
+            workspace_id, CreateLakehouseRequest(display_name=name)
+        ).result()
+        log_message(f"Lakehouse created: {lakehouse.id}")
+        return {"id": lakehouse.id, "displayName": lakehouse.display_name}
+    except HttpResponseError as error:
+        if is_http_status(error, 409):
+            log_message(f"Lakehouse '{name}' already exists. Fetching existing...")
+            return get_existing_lakehouse(workspace_id, name)
+        if is_http_status(error, 401) and "UserNotLicensed" in str(error):
             log_message(
                 "Your signed-in Microsoft Entra account is not licensed for Fabric. "
                 "Assign it a Fabric/Power BI license or activate a Fabric trial, "
                 "then retry after confirming the account has access to this workspace."
             )
-        sys.exit(1)
+        raise
 
 
 def get_existing_lakehouse(workspace_id: str, name: str) -> dict:
     """Find an existing lakehouse by name."""
-    url = f"{FABRIC_API_BASE}/workspaces/{workspace_id}/lakehouses"
-    resp = fabric_get(url)
-    resp.raise_for_status()
-    for lh in resp.json().get("value", []):
-        if lh["displayName"] == name:
-            log_message(f"Found existing lakehouse: {lh['id']}")
-            return lh
+    for lakehouse in get_fabric_client().lakehouse.items.list_lakehouses(workspace_id):
+        if lakehouse.display_name == name:
+            log_message(f"Found existing lakehouse: {lakehouse.id}")
+            return {"id": lakehouse.id, "displayName": lakehouse.display_name}
     log_message(f"ERROR: Lakehouse '{name}' not found in workspace.")
     sys.exit(1)
 
 
 def get_lakehouse_properties(workspace_id: str, lakehouse_id: str) -> dict:
     """Get lakehouse properties including OneLake paths."""
-    url = f"{FABRIC_API_BASE}/workspaces/{workspace_id}/lakehouses/{lakehouse_id}"
-    resp = fabric_get(url)
-    resp.raise_for_status()
-    return resp.json()
+    lakehouse = get_fabric_client().lakehouse.items.get_lakehouse(workspace_id, lakehouse_id)
+    return lakehouse.as_dict()
 
 
 def download_json(filename: str) -> dict:
@@ -341,7 +337,6 @@ def flatten_products(product_data: dict) -> list[dict]:
                     "sku": product.get("sku", ""),
                     "price": product.get("price", 0),
                     "description": product.get("description", ""),
-                    "stock_level": product.get("stock_level", 0),
                     "image_path": product.get("image_path", ""),
                     "seasonal_multipliers": seasonal_str,
                 }
@@ -360,9 +355,16 @@ def flatten_stores(reference_data: dict) -> list[dict]:
     """Flatten stores from reference_data.json."""
     rows = []
     for store_name, config in reference_data.get("stores", {}).items():
+        location_name = store_name.rsplit(" ", 1)[-1]
+        store_id, city, state, region, store_type = STORE_DETAILS[location_name]
         rows.append(
             {
+                "store_id": store_id,
                 "store_name": store_name,
+                "city": city,
+                "state": state,
+                "region": region,
+                "store_type": store_type,
                 "rls_user_id": config.get("rls_user_id", ""),
                 "customer_distribution_weight": config.get(
                     "customer_distribution_weight", 0
@@ -374,6 +376,154 @@ def flatten_stores(reference_data: dict) -> list[dict]:
             }
         )
     return rows
+
+
+def stable_int(*values: object, modulo: int) -> int:
+    """Return a deterministic integer derived from the supplied values."""
+    text = "|".join(str(value) for value in values)
+    digest = hashlib.sha256(text.encode("utf-8")).digest()
+    return int.from_bytes(digest[:8], "big") % modulo
+
+
+def generate_inventory(products: list[dict], stores: list[dict]) -> list[dict]:
+    """Generate deterministic store-level product inventory."""
+    rows = []
+    reference_date = datetime(2026, 6, 30)
+
+    for store in stores:
+        is_online = store["store_type"] == "Online"
+        assortment_percent = min(
+            80, 50 + int(store["customer_distribution_weight"])
+        )
+        for product in products:
+            sku = product["sku"]
+            if not is_online and stable_int(
+                store["store_id"], sku, "assortment", modulo=100
+            ) >= assortment_percent:
+                continue
+
+            quantity_on_hand = stable_int(
+                store["store_id"], sku, "on-hand", modulo=121
+            )
+            if is_online:
+                quantity_on_hand += 30
+            quantity_reserved = stable_int(
+                store["store_id"], sku, "reserved", modulo=13
+            )
+            quantity_reserved = min(quantity_reserved, quantity_on_hand)
+            reorder_point = 10 + stable_int(
+                store["store_id"], sku, "reorder-point", modulo=21
+            )
+            last_restocked = reference_date - timedelta(
+                days=stable_int(store["store_id"], sku, "restocked", modulo=91)
+            )
+            rows.append(
+                {
+                    "inventory_id": f"INV-{store['store_id']}-{sku}",
+                    "store_id": store["store_id"],
+                    "sku": sku,
+                    "quantity_on_hand": quantity_on_hand,
+                    "quantity_reserved": quantity_reserved,
+                    "available_quantity": quantity_on_hand - quantity_reserved,
+                    "reorder_point": reorder_point,
+                    "reorder_quantity": 24
+                    + stable_int(
+                        store["store_id"], sku, "reorder-quantity", modulo=73
+                    ),
+                    "last_restocked_at": last_restocked.strftime(
+                        "%Y-%m-%dT00:00:00Z"
+                    ),
+                }
+            )
+    return rows
+
+
+def generate_suppliers() -> list[dict]:
+    """Generate deterministic supplier reference data."""
+    rows = []
+    for index, supplier_name in enumerate(SUPPLIER_NAMES, start=1):
+        supplier_id = f"SUP-{index:03d}"
+        rows.append(
+            {
+                "supplier_id": supplier_id,
+                "supplier_name": supplier_name,
+                "contact_email": f"orders@{supplier_name.lower().replace(' ', '')}.example",
+                "lead_time_days": 2
+                + stable_int(supplier_id, "lead-time", modulo=13),
+                "reliability_rating": round(
+                    3.5 + stable_int(supplier_id, "rating", modulo=151) / 100,
+                    2,
+                ),
+            }
+        )
+    return rows
+
+
+def generate_product_suppliers(
+    products: list[dict], suppliers: list[dict]
+) -> list[dict]:
+    """Assign every product a primary and optional secondary supplier."""
+    rows = []
+    for product_index, product in enumerate(
+        sorted(products, key=lambda row: row["sku"])
+    ):
+        primary_index = product_index % len(suppliers)
+        supplier_indexes = [primary_index]
+        if stable_int(product["sku"], "secondary-supplier", modulo=100) < 45:
+            offset = 1 + stable_int(
+                product["sku"], "supplier-offset", modulo=len(suppliers) - 1
+            )
+            supplier_indexes.append((primary_index + offset) % len(suppliers))
+
+        for position, supplier_index in enumerate(supplier_indexes):
+            supplier = suppliers[supplier_index]
+            cost_ratio = 0.45 + stable_int(
+                product["sku"], supplier["supplier_id"], "cost", modulo=28
+            ) / 100
+            rows.append(
+                {
+                    "supplier_id": supplier["supplier_id"],
+                    "sku": product["sku"],
+                    "supplier_sku": f"{supplier['supplier_id']}-{product['sku']}",
+                    "unit_cost": round(float(product["price"]) * cost_ratio, 2),
+                    "is_primary": position == 0,
+                }
+            )
+    return rows
+
+
+def validate_retail_graph(
+    products: list[dict],
+    stores: list[dict],
+    inventory: list[dict],
+    suppliers: list[dict],
+    product_suppliers: list[dict],
+) -> None:
+    """Validate keys and relationship endpoints before uploading generated data."""
+    product_ids = {row["sku"] for row in products}
+    store_ids = {row["store_id"] for row in stores}
+    supplier_ids = {row["supplier_id"] for row in suppliers}
+
+    if len(product_ids) != len(products):
+        raise ValueError("Product SKUs must be unique.")
+    if len(store_ids) != len(stores):
+        raise ValueError("Store IDs must be unique.")
+    if len(supplier_ids) != len(suppliers):
+        raise ValueError("Supplier IDs must be unique.")
+    if not all(
+        row["store_id"] in store_ids and row["sku"] in product_ids
+        for row in inventory
+    ):
+        raise ValueError("Inventory contains an unknown store or product key.")
+    if {row["sku"] for row in inventory} != product_ids:
+        raise ValueError("Every product must have at least one inventory record.")
+    if not all(
+        row["supplier_id"] in supplier_ids and row["sku"] in product_ids
+        for row in product_suppliers
+    ):
+        raise ValueError("Product suppliers contain an unknown endpoint key.")
+    if {row["sku"] for row in product_suppliers} != product_ids:
+        raise ValueError("Every product must have at least one supplier.")
 
 
 def flatten_year_weights(reference_data: dict) -> list[dict]:
@@ -433,97 +583,35 @@ def upload_to_onelake(
 
 def load_table(
     workspace_id: str, lakehouse_id: str, table_name: str, filename: str
-) -> str:
-    """Submit a Load Table request and return the full polling URL."""
-    url = (
-        f"{FABRIC_API_BASE}/workspaces/{workspace_id}"
-        f"/lakehouses/{lakehouse_id}/tables/{table_name}/load"
-    )
-    payload = {
-        "relativePath": f"Files/{filename}",
-        "pathType": "File",
-        "mode": "Overwrite",
-        "formatOptions": {"header": True, "delimiter": ",", "format": "Csv"},
-    }
-    log_message(f"Loading table '{table_name}' from {filename}...")
-    resp = fabric_post(url, payload)
-
-    if resp.status_code == 202:
-        location = resp.headers.get("Location", "")
-        log_message(f"Load initiated for '{table_name}'")
-        return location
-    else:
-        log_message(f"ERROR: Load failed for '{table_name}': {resp.status_code} - {resp.text}")
-        return ""
-
-
-def poll_operation(
-    workspace_id: str, lakehouse_id: str, poll_url: str, timeout: int = 300
 ) -> bool:
-    """Poll a load operation using the Location URL until complete or timeout."""
-    if not poll_url:
+    """Load a CSV file into a Delta table and wait for completion."""
+    log_message(f"Loading table '{table_name}' from {filename}...")
+    try:
+        get_fabric_client().lakehouse.tables.begin_load_table(
+            workspace_id,
+            lakehouse_id,
+            table_name,
+            LoadTableRequest(
+                relative_path=f"Files/{filename}",
+                path_type="File",
+                mode="Overwrite",
+                format_options=Csv(header=True, delimiter=","),
+            ),
+        ).result()
+        log_message(f"Load completed for '{table_name}'")
+        return True
+    except HttpResponseError as error:
+        log_message(f"ERROR: Load failed for '{table_name}': {error}")
         return False
 
-    start = time.time()
-    while time.time() - start < timeout:
-        resp = fabric_get(poll_url)
-        if resp.status_code == 200:
-            data = resp.json()
-            status = data.get("status", data.get("Status", ""))
-            if status in ("Succeeded", "succeeded", 3):
-                log_message("  Operation complete (100%)")
-                return True
-            elif status in ("Failed", "failed", 4):
-                error = data.get("error", data.get("Error", "Unknown error"))
-                log_message(f"  Operation FAILED: {error}")
-                return False
-            else:
-                time.sleep(10)
-        elif resp.status_code == 202:
-            # Still in progress
-            time.sleep(10)
-        else:
-            log_message(f"  Poll response: {resp.status_code}")
-            time.sleep(10)
 
-    log_message(f"  Operation TIMEOUT after {timeout}s")
-    return False
-
-
-def poll_fabric_operation(operation_url: str, timeout: int = 300) -> bool:
-    """Poll a Fabric long-running operation URL until it completes."""
-    if not operation_url:
-        return True
-
-    start = time.time()
-    while time.time() - start < timeout:
-        resp = fabric_get(operation_url)
-        if resp.status_code not in (200, 202):
-            log_message(f"  Operation poll failed: {resp.status_code} - {resp.text}")
-            return False
-
-        data = resp.json() if resp.text else {}
-        status = data.get("status", "")
-        if status == "Succeeded":
-            log_message("  Operation complete (100%)")
-            return True
-        if status == "Failed":
-            log_message(f"  Operation FAILED: {json.dumps(data.get('error', data))}")
-            return False
-
-        retry_after = resp.headers.get("Retry-After")
-        delay = int(retry_after) if retry_after and retry_after.isdigit() else 5
-        time.sleep(delay)
-
-    log_message(f"  Operation TIMEOUT after {timeout}s")
-    return False
-
-
-def create_definition_part(path: str, payload: dict) -> dict:
+def create_definition_part(path: str, payload: dict) -> OntologyDefinitionPart:
     """Create a Fabric item definition part with an inline base64 JSON payload."""
     json_payload = json.dumps(payload, separators=(",", ":"))
     encoded = base64.b64encode(json_payload.encode("utf-8")).decode("ascii")
-    return {"path": path, "payload": encoded, "payloadType": "InlineBase64"}
+    return OntologyDefinitionPart(
+        path=path, payload=encoded, payload_type="InlineBase64"
+    )
 
 
 def make_entity_parts(
@@ -535,12 +623,12 @@ def make_entity_parts(
     display_property: str,
     workspace_id: str,
     lakehouse_id: str,
-) -> list[dict]:
+) -> list[OntologyDefinitionPart]:
     """Build ontology entity and lakehouse table binding definition parts."""
     properties = []
     property_bindings = []
     for offset, column in enumerate(columns, start=1):
-        property_id = str((entity_id * 100) + offset)
+        property_id = str(column.get("id", (entity_id * 100) + offset))
         properties.append(
             {
                 "id": property_id,
@@ -591,7 +679,65 @@ def make_entity_parts(
     ]
 
 
-def build_contoso_ontology_definition(workspace_id: str, lakehouse_id: str) -> dict:
+def make_relationship_parts(
+    relationship_id: int,
+    relationship_name: str,
+    source_entity_id: int,
+    source_column: str,
+    source_property_id: str,
+    target_entity_id: int,
+    target_column: str,
+    target_property_id: str,
+    table_name: str,
+    workspace_id: str,
+    lakehouse_id: str,
+) -> list[OntologyDefinitionPart]:
+    """Build an ontology relationship type and its lakehouse contextualization."""
+    definition = {
+        "namespace": "usertypes",
+        "id": str(relationship_id),
+        "name": relationship_name,
+        "namespaceType": "Custom",
+        "source": {"entityTypeId": str(source_entity_id)},
+        "target": {"entityTypeId": str(target_entity_id)},
+    }
+    contextualization_id = str(uuid.uuid4())
+    contextualization = {
+        "id": contextualization_id,
+        "dataBindingTable": {
+            "workspaceId": workspace_id,
+            "itemId": lakehouse_id,
+            "sourceTableName": table_name,
+            "sourceType": "LakehouseTable",
+        },
+        "sourceKeyRefBindings": [
+            {
+                "sourceColumnName": source_column,
+                "targetPropertyId": source_property_id,
+            }
+        ],
+        "targetKeyRefBindings": [
+            {
+                "sourceColumnName": target_column,
+                "targetPropertyId": target_property_id,
+            }
+        ],
+    }
+    return [
+        create_definition_part(
+            f"RelationshipTypes/{relationship_id}/definition.json", definition
+        ),
+        create_definition_part(
+            f"RelationshipTypes/{relationship_id}/Contextualizations/"
+            f"{contextualization_id}.json",
+            contextualization,
+        ),
+    ]
+
+
+def build_contoso_ontology_definition(
+    workspace_id: str, lakehouse_id: str
+) -> OntologyDefinition:
     """Build a Fabric IQ ontology definition for the Contoso DIY lakehouse tables."""
     parts = [
         create_definition_part(
@@ -614,9 +760,14 @@ def build_contoso_ontology_definition(workspace_id: str, lakehouse_id: str) -> d
                 {"name": "productType", "source": "product_type", "type": "String"},
                 {"name": "price", "source": "price", "type": "Double"},
                 {"name": "description", "source": "description", "type": "String"},
-                {"name": "stockLevel", "source": "stock_level", "type": "BigInt"},
-                {"name": "imagePath", "source": "image_path", "type": "String"},
                 {
+                    "id": 100108,
+                    "name": "imagePath",
+                    "source": "image_path",
+                    "type": "String",
+                },
+                {
+                    "id": 100109,
                     "name": "seasonalMultipliers",
                     "source": "seasonal_multipliers",
                     "type": "String",
@@ -669,100 +820,231 @@ def build_contoso_ontology_definition(workspace_id: str, lakehouse_id: str) -> d
                     "source": "order_value_multiplier",
                     "type": "Double",
                 },
+                {"name": "storeId", "source": "store_id", "type": "String"},
+                {"name": "city", "source": "city", "type": "String"},
+                {"name": "state", "source": "state", "type": "String"},
+                {"name": "region", "source": "region", "type": "String"},
+                {"name": "storeType", "source": "store_type", "type": "String"},
             ],
-            "storeName",
+            "storeId",
             "storeName",
         ),
         (
-            1004,
-            "YearWeight",
-            "year_weights",
+            1005,
+            "Inventory",
+            "inventory",
             [
-                {"name": "year", "source": "year", "type": "BigInt"},
-                {"name": "weight", "source": "weight", "type": "Double"},
+                {
+                    "name": "inventoryId",
+                    "source": "inventory_id",
+                    "type": "String",
+                },
+                {"name": "storeId", "source": "store_id", "type": "String"},
+                {"name": "sku", "source": "sku", "type": "String"},
+                {
+                    "name": "quantityOnHand",
+                    "source": "quantity_on_hand",
+                    "type": "BigInt",
+                },
+                {
+                    "name": "quantityReserved",
+                    "source": "quantity_reserved",
+                    "type": "BigInt",
+                },
+                {
+                    "name": "availableQuantity",
+                    "source": "available_quantity",
+                    "type": "BigInt",
+                },
+                {
+                    "name": "reorderPoint",
+                    "source": "reorder_point",
+                    "type": "BigInt",
+                },
+                {
+                    "name": "reorderQuantity",
+                    "source": "reorder_quantity",
+                    "type": "BigInt",
+                },
+                {
+                    "name": "lastRestockedAt",
+                    "source": "last_restocked_at",
+                    "type": "DateTime",
+                },
             ],
-            "year",
-            "year",
+            "inventoryId",
+            "inventoryId",
+        ),
+        (
+            1006,
+            "Supplier",
+            "suppliers",
+            [
+                {
+                    "name": "supplierId",
+                    "source": "supplier_id",
+                    "type": "String",
+                },
+                {
+                    "name": "supplierName",
+                    "source": "supplier_name",
+                    "type": "String",
+                },
+                {
+                    "name": "contactEmail",
+                    "source": "contact_email",
+                    "type": "String",
+                },
+                {
+                    "name": "leadTimeDays",
+                    "source": "lead_time_days",
+                    "type": "BigInt",
+                },
+                {
+                    "name": "reliabilityRating",
+                    "source": "reliability_rating",
+                    "type": "Double",
+                },
+            ],
+            "supplierId",
+            "supplierName",
         ),
     ]
 
     for spec in entity_specs:
         parts.extend(make_entity_parts(*spec, workspace_id, lakehouse_id))
 
-    return {"definition": {"parts": parts}}
+    parts.extend(
+        make_relationship_parts(
+            relationship_id=2001,
+            relationship_name="contains",
+            source_entity_id=1002,
+            source_column="category",
+            source_property_id="100201",
+            target_entity_id=1001,
+            target_column="sku",
+            target_property_id="100101",
+            table_name="products",
+            workspace_id=workspace_id,
+            lakehouse_id=lakehouse_id,
+        )
+    )
+    parts.extend(
+        make_relationship_parts(
+            relationship_id=2002,
+            relationship_name="holds",
+            source_entity_id=1003,
+            source_column="store_id",
+            source_property_id="100306",
+            target_entity_id=1005,
+            target_column="inventory_id",
+            target_property_id="100501",
+            table_name="inventory",
+            workspace_id=workspace_id,
+            lakehouse_id=lakehouse_id,
+        )
+    )
+    parts.extend(
+        make_relationship_parts(
+            relationship_id=2003,
+            relationship_name="recordsStockFor",
+            source_entity_id=1005,
+            source_column="inventory_id",
+            source_property_id="100501",
+            target_entity_id=1001,
+            target_column="sku",
+            target_property_id="100101",
+            table_name="inventory",
+            workspace_id=workspace_id,
+            lakehouse_id=lakehouse_id,
+        )
+    )
+    parts.extend(
+        make_relationship_parts(
+            relationship_id=2004,
+            relationship_name="supplies",
+            source_entity_id=1006,
+            source_column="supplier_id",
+            source_property_id="100601",
+            target_entity_id=1001,
+            target_column="sku",
+            target_property_id="100101",
+            table_name="product_suppliers",
+            workspace_id=workspace_id,
+            lakehouse_id=lakehouse_id,
+        )
+    )
+
+    return OntologyDefinition(parts=parts)
 
 
 def get_existing_ontology(workspace_id: str, name: str) -> dict | None:
     """Find an existing ontology in the specified workspace by display name."""
-    url = f"{FABRIC_API_BASE}/workspaces/{workspace_id}/ontologies"
-    resp = fabric_get(url)
-    resp.raise_for_status()
-    for ontology in resp.json().get("value", []):
-        if ontology.get("displayName") == name:
-            return ontology
+    for ontology in get_fabric_client().ontology.items.list_ontologies(workspace_id):
+        if ontology.display_name == name:
+            return {"id": ontology.id, "displayName": ontology.display_name}
     return None
 
 
 def create_or_get_ontology(workspace_id: str, name: str) -> dict:
     """Create a Fabric IQ ontology item, or reuse an existing one with the same name."""
     if FABRIC_ONTOLOGY_ID:
-        log_message(f"Using existing ontology ID from FABRIC_ONTOLOGY_ID: {FABRIC_ONTOLOGY_ID}")
-        return {"id": FABRIC_ONTOLOGY_ID, "displayName": name}
+        ontology = get_fabric_client().ontology.items.get_ontology(
+            workspace_id, FABRIC_ONTOLOGY_ID
+        )
+        if ontology.display_name != name:
+            log_message(
+                f"Renaming ontology '{ontology.display_name}' to '{name}'..."
+            )
+            ontology = get_fabric_client().ontology.items.update_ontology(
+                workspace_id,
+                FABRIC_ONTOLOGY_ID,
+                UpdateOntologyRequest(display_name=name),
+            )
+        log_message(
+            f"Using existing ontology ID from FABRIC_ONTOLOGY_ID: {ontology.id}"
+        )
+        return {"id": ontology.id, "displayName": ontology.display_name}
 
     existing = get_existing_ontology(workspace_id, name)
     if existing:
         log_message(f"Found existing ontology: {existing['id']}")
         return existing
 
-    url = f"{FABRIC_API_BASE}/workspaces/{workspace_id}/ontologies"
-    payload = {
-        "displayName": name,
-        "description": "Ontology for the Contoso DIY lakehouse data.",
-    }
     log_message(f"Creating ontology '{name}'...")
-    resp = fabric_post(url, payload)
-    if resp.status_code not in (200, 201, 202):
-        log_message(f"ERROR: Failed to create ontology: {resp.status_code} - {resp.text}")
-        sys.exit(1)
-
-    operation_url = resp.headers.get("Location", "")
-    if operation_url and not poll_fabric_operation(operation_url):
-        sys.exit(1)
-
-    # Fabric ontology create can complete asynchronously with an empty response body.
-    for _ in range(12):
-        existing = get_existing_ontology(workspace_id, name)
-        if existing:
-            log_message(f"Ontology created: {existing['id']}")
-            return existing
-        time.sleep(5)
-
-    log_message(f"ERROR: Ontology '{name}' was not found after create completed.")
-    sys.exit(1)
+    ontology = get_fabric_client().ontology.items.begin_create_ontology(
+        workspace_id,
+        CreateOntologyRequest(
+            display_name=name,
+            description="Ontology for the Contoso DIY lakehouse data.",
+        ),
+    ).result()
+    log_message(f"Ontology created: {ontology.id}")
+    return {"id": ontology.id, "displayName": ontology.display_name}
 
 
 def update_ontology_definition(
     workspace_id: str, ontology_id: str, lakehouse_id: str
 ) -> bool:
     """Replace the ontology definition with Contoso DIY lakehouse entity bindings."""
-    url = (
-        f"{FABRIC_API_BASE}/workspaces/{workspace_id}"
-        f"/ontologies/{ontology_id}/updateDefinition"
-    )
-    payload = build_contoso_ontology_definition(workspace_id, lakehouse_id)
     log_message("Updating ontology definition with Contoso DIY entity bindings...")
-    resp = fabric_post(url, payload)
-    if resp.status_code not in (200, 202):
+    try:
+        get_fabric_client().ontology.items.begin_update_ontology_definition(
+            workspace_id,
+            ontology_id,
+            UpdateOntologyDefinitionRequest(
+                definition=build_contoso_ontology_definition(
+                    workspace_id, lakehouse_id
+                )
+            ),
+            update_metadata=False,
+        ).result()
+        return True
+    except HttpResponseError as error:
         log_message(
-            f"ERROR: Failed to start ontology definition update: "
-            f"{resp.status_code} - {resp.text}"
+            f"ERROR: Failed to update ontology definition: {error}"
         )
         return False
-
-    operation_url = resp.headers.get("Location", "")
-    if operation_url:
-        return poll_fabric_operation(operation_url)
-    return True
 
 
 def main():
@@ -821,7 +1103,7 @@ def main():
         # Step 2: Get lakehouse properties
         log_message(f"\n[2/{total_steps}] Getting Lakehouse Properties")
         props = get_lakehouse_properties(workspace_id, lakehouse_id)
-        onelake_files = props.get("properties", {}).get("oneLakeFilesPath", "")
+        onelake_files = props.get("properties", {}).get("one_lake_files_path", "")
         log_message(f"OneLake Files Path: {onelake_files}")
 
         # Step 3: Download and process data
@@ -829,10 +1111,25 @@ def main():
         product_data = download_json("product_data.json")
         reference_data = download_json("reference_data.json")
 
+        products = flatten_products(product_data)
+        stores = flatten_stores(reference_data)
+        inventory = generate_inventory(products, stores)
+        suppliers = generate_suppliers()
+        product_suppliers = generate_product_suppliers(products, suppliers)
+        validate_retail_graph(
+            products, stores, inventory, suppliers, product_suppliers
+        )
+
         tables = {
-            "products": (flatten_products(product_data), "products.csv"),
+            "products": (products, "products.csv"),
             "categories": (flatten_categories(product_data), "categories.csv"),
-            "stores": (flatten_stores(reference_data), "stores.csv"),
+            "stores": (stores, "stores.csv"),
+            "inventory": (inventory, "inventory.csv"),
+            "suppliers": (suppliers, "suppliers.csv"),
+            "product_suppliers": (
+                product_suppliers,
+                "product_suppliers.csv",
+            ),
             "year_weights": (flatten_year_weights(reference_data), "year_weights.csv"),
         }
 
@@ -847,18 +1144,11 @@ def main():
 
         # Step 5: Load tables
         log_message(f"\n[5/{total_steps}] Loading Delta Tables")
-        operations = {}
-        for table_name, (_, filename) in tables.items():
-            poll_url = load_table(workspace_id, lakehouse_id, table_name, filename)
-            if poll_url:
-                operations[table_name] = poll_url
-
-        # Poll all operations
-        log_message("\nWaiting for table loads to complete...")
         results = {}
-        for table_name, poll_url in operations.items():
-            log_message(f"Polling '{table_name}'...")
-            results[table_name] = poll_operation(workspace_id, lakehouse_id, poll_url)
+        for table_name, (_, filename) in tables.items():
+            results[table_name] = load_table(
+                workspace_id, lakehouse_id, table_name, filename
+            )
 
         # Summary
         log_message("\n" + "=" * 60)
@@ -893,8 +1183,23 @@ def main():
             log_message("\nAll tables and ontology setup completed successfully!")
             if ontology:
                 log_message(f"Ontology: {FABRIC_ONTOLOGY_NAME} ({ontology['id']})")
-                update_root_env({"FABRIC_ONTOLOGY_ID": ontology["id"]})
-                log_message("Updated repo root .env with FABRIC_ONTOLOGY_ID")
+                ontology_ui_url = get_ontology_ui_url(workspace_id, ontology["id"])
+                log_message(f"Fabric UI: {ontology_ui_url}")
+                ontology_mcp_url = get_ontology_mcp_url(
+                    workspace_id, ontology["id"]
+                )
+                log_message(f"Ontology MCP: {ontology_mcp_url}")
+                update_root_env(
+                    {
+                        "FABRIC_ONTOLOGY_ID": ontology["id"],
+                        "FABRIC_ONTOLOGY_UI_URL": ontology_ui_url,
+                        "FABRIC_ONTOLOGY_MCP_URL": ontology_mcp_url,
+                    }
+                )
+                log_message(
+                    "Updated repo root .env with FABRIC_ONTOLOGY_ID, "
+                    "FABRIC_ONTOLOGY_UI_URL, and FABRIC_ONTOLOGY_MCP_URL"
+                )
             return True
         else:
             log_message("\nWARNING: Some tables or ontology setup failed.")

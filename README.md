@@ -1,6 +1,6 @@
 # Foundry IQ deep dive
 
-This repository combines a five-part Microsoft Foundry IQ notebook lab with two deployable
+This repository combines a five-part Microsoft Foundry IQ notebook lab with three deployable
 [Microsoft Agent Framework](https://learn.microsoft.com/agent-framework/) HR agents. One `azd`
 project provisions the shared Foundry project, `gpt-5.4` and `text-embedding-3-large` deployments,
 Azure AI Search, storage, monitoring, and an optional F2 Fabric capacity. It then prepares Search
@@ -16,14 +16,17 @@ flowchart LR
   search --> agentkb[contoso-company-kb]
   agentkb -->|Direct MCP endpoint| mcpagent[Hosted MCP HR agent]
   agentkb -->|Python retrieval API tool| apiagent[Hosted API HR agent]
+  agentkb --> toolbox[Foundry toolbox]
+  toolbox --> toolboxagent[Hosted toolbox HR agent]
   search --> notebooks[Five notebook-created KBs]
   fabric --> notebooks
 ```
 
 The examples intentionally remain independent. The notebooks create learning-path knowledge bases.
-Both hosted agents use their own `contoso-company-kb`; one connects through its direct Foundry IQ
-MCP endpoint, while the other calls the `2026-05-01-preview` retrieval API from a custom Python tool.
-Neither depends on a knowledge base created by a notebook.
+All three hosted agents use their own `contoso-company-kb`: one connects through its direct Foundry IQ
+MCP endpoint, one calls the `2026-05-01-preview` retrieval API from a custom Python tool, and one uses
+a Foundry toolbox containing the knowledge base, web search, and code interpreter tools. None depends
+on a knowledge base created by a notebook.
 
 ## Prerequisites
 
@@ -45,8 +48,9 @@ azd up
 ```
 
 `azd up` provisions the resources, writes the generated local settings to `.env`, restores the
-sample HR and health indexes, creates the independent HR agent knowledge base, prepares Fabric when
-enabled, and deploys `agent-foundry-iq-mcp` and `agent-foundry-iq-api`. No Azure resources are included in this repository.
+sample HR and health indexes, creates the independent HR agent knowledge base and Foundry toolbox,
+prepares Fabric when enabled, and deploys all three agents. Toolbox creation reuses the provisioned
+`kb-mcp-connection` remote-tool project connection. No Azure resources are included in this repository.
 
 Set `DEPLOY_FABRIC_CAPACITY=false` before `azd up` to use an existing Fabric workspace or skip the
 Fabric portions. Set `FABRIC_WORKSPACE_ID` and `FABRIC_ONTOLOGY_ID` in `.env` before running parts 3
@@ -80,6 +84,9 @@ azd ai agent invoke --local "What benefits are available, and when do I need to 
 
 azd ai agent run agent-foundry-iq-api
 azd ai agent invoke --local "What benefits are available, and when do I need to enroll?"
+
+azd ai agent run agent-foundry-iq-toolbox
+azd ai agent invoke --local "What benefits are available, and when do I need to enroll?"
 ```
 
 Redeploy an individual agent after code changes and invoke the deployed version:
@@ -90,6 +97,9 @@ azd ai agent invoke agent-foundry-iq-mcp "What benefits are available, and when 
 
 azd deploy agent-foundry-iq-api
 azd ai agent invoke agent-foundry-iq-api "What benefits are available, and when do I need to enroll?"
+
+azd deploy agent-foundry-iq-toolbox
+azd ai agent invoke agent-foundry-iq-toolbox "What benefits are available, and when do I need to enroll?"
 ```
 
 Direct source deployment is used because the final agent requires no custom OS packages. Foundry's
@@ -101,7 +111,7 @@ container registry and image-build path.
 ```bash
 uv sync --locked --all-groups
 uv run ruff check .
-uv run python -m compileall -q infra scripts src/agent-foundry-iq-mcp src/agent-foundry-iq-api
+uv run python -m compileall -q infra src/agent-foundry-iq-mcp src/agent-foundry-iq-api src/agent-foundry-iq-toolbox
 uv run python scripts/check_repo.py
 az bicep build --file infra/main.bicep --stdout > /dev/null
 azd show

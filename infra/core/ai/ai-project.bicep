@@ -164,6 +164,22 @@ module azureAiSearch '../search/azure_ai_search.bicep' = {
   }
 }
 
+module knowledgeBaseMcpConnection 'connection.bicep' = {
+  name: 'knowledge-base-mcp-connection'
+  params: {
+    aiServicesAccountName: aiAccount.name
+    aiProjectName: aiAccount::project.name
+    connectionConfig: {
+      name: 'kb-mcp-connection'
+      category: 'RemoteTool'
+      target: 'https://${azureAiSearch.outputs.searchServiceName}.search.windows.net/knowledgebases/contoso-company-kb/mcp?api-version=2026-05-01-preview'
+      authType: 'ProjectManagedIdentity'
+      audience: 'https://search.azure.com/'
+      isSharedToAll: true
+    }
+  }
+}
+
 output AZURE_AI_PROJECT_ENDPOINT string = aiAccount::project.properties.endpoints['AI Foundry API']
 output AZURE_OPENAI_ENDPOINT string = aiAccount.properties.endpoints['OpenAI Language Model Instance API']
 output accountId string = aiAccount.id

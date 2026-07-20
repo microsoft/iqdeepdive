@@ -65,6 +65,8 @@ def main() -> None:
         "AZURE_SEARCH_SERVICE_NAME": search_name,
         "AZURE_SEARCH_ADMIN_KEY": search_key,
         "AZURE_AI_SEARCH_KNOWLEDGE_BASE_NAME": "contoso-company-kb",
+        "AZURE_AI_SEARCH_KB_MCP_CONNECTION_NAME": "kb-mcp-connection",
+        "CUSTOM_FOUNDRY_AGENT_TOOLBOX_NAME": "hr-agent-tools",
         "APPLICATIONINSIGHTS_CONNECTION_STRING": os.environ.get(
             "APPLICATIONINSIGHTS_CONNECTION_STRING", ""
         ),

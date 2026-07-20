@@ -12,7 +12,11 @@ from azure.mgmt.authorization import AuthorizationManagementClient
 from azure.mgmt.authorization.models import RoleAssignmentCreateParameters
 
 SEARCH_DATA_CONTRIBUTOR_ROLE_ID = "8ebe5a00-799e-43f5-93ac-243d3dce84a7"
-AGENT_NAMES = ("agent-foundry-iq-mcp", "agent-foundry-iq-api")
+AGENT_NAMES = (
+    "agent-foundry-iq-mcp",
+    "agent-foundry-iq-api",
+    "agent-foundry-iq-toolbox",
+)
 
 
 def get_agent_principal_id(agent_name: str) -> str | None:

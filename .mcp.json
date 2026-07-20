@@ -1,0 +1,8 @@
+{
+    "mcpServers": {
+        "fabric-iq-ontology": {
+            "type": "http",
+            "url": "https://api.fabric.microsoft.com/v1/mcp/dataPlane/workspaces/f200c1bc-e2ec-43b9-9308-be868f68753e/items/dc900177-5ed8-4bb0-b4c4-85ef346c23c0/ontologyEndpoint"
+        }
+    }
+}

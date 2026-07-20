@@ -18,7 +18,10 @@ type ConnectionConfig = {
   target: string
 
   @description('Authentication type')
-  authType: 'AAD' | 'AccessKey' | 'AccountKey' | 'ApiKey' | 'CustomKeys' | 'ManagedIdentity' | 'None' | 'OAuth2' | 'PAT' | 'SAS' | 'ServicePrincipal' | 'UsernamePassword'
+  authType: 'AAD' | 'AccessKey' | 'AccountKey' | 'ApiKey' | 'CustomKeys' | 'ManagedIdentity' | 'None' | 'OAuth2' | 'PAT' | 'ProjectManagedIdentity' | 'SAS' | 'ServicePrincipal' | 'UsernamePassword'
+
+  @description('Token audience for identity-based authentication')
+  audience: string?
 
   @description('Whether the connection is shared to all users (optional, defaults to true)')
   isSharedToAll: bool?
@@ -54,8 +57,9 @@ resource connection 'Microsoft.CognitiveServices/accounts/projects/connections@2
   properties: {
     category: connectionConfig.category
     target: connectionConfig.target
-    #disable-next-line BCP225
+    #disable-next-line BCP036
     authType: connectionConfig.authType
+    audience: connectionConfig.?audience
     isSharedToAll: connectionConfig.?isSharedToAll ?? true
     credentials: connectionConfig.authType == 'ApiKey' ? {
       key: apiKey

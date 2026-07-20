@@ -46,6 +46,28 @@ services:
         protocols:
             - protocol: responses
               version: 2.0.0
+    agent-foundry-iq-toolbox:
+        project: src/agent-foundry-iq-toolbox
+        host: azure.ai.agent
+        language: python
+        codeConfiguration:
+            dependencyResolution: remote_build
+            entryPoint: main.py
+            runtime: python_3_13
+        container:
+            resources:
+                cpu: "0.5"
+                memory: 1Gi
+        environmentVariables:
+            - name: AZURE_AI_MODEL_DEPLOYMENT_NAME
+              value: ${AZURE_AI_MODEL_DEPLOYMENT_NAME}
+            - name: CUSTOM_FOUNDRY_AGENT_TOOLBOX_NAME
+              value: ${CUSTOM_FOUNDRY_AGENT_TOOLBOX_NAME=hr-agent-tools}
+        kind: hosted
+        name: agent-foundry-iq-toolbox
+        protocols:
+            - protocol: responses
+              version: 2.0.0
 hooks:
     postdeploy:
         windows:
