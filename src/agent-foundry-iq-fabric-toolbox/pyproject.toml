@@ -1,0 +1,16 @@
+[project]
+name = "foundry-iq-fabric-toolbox-agent"
+version = "0.1.0"
+description = "Agent Framework inventory analyst using a Fabric IQ Foundry toolbox"
+requires-python = ">=3.12"
+dependencies = [
+    "agent-framework-core>=1.10.0",
+    "agent-framework-foundry>=1.10.0",
+    "agent-framework-foundry-hosting>=1.0.0a260630",
+    "azure-identity>=1.25.3",
+    "azure-monitor-opentelemetry>=1.8.7",
+    "python-dotenv>=1.2.2",
+]
+
+[tool.uv]
+package = false

@@ -24,6 +24,28 @@ services:
         protocols:
             - protocol: responses
               version: 2.0.0
+    agent-foundry-iq-fabric-toolbox:
+        project: src/agent-foundry-iq-fabric-toolbox
+        host: azure.ai.agent
+        language: python
+        codeConfiguration:
+            dependencyResolution: remote_build
+            entryPoint: main.py
+            runtime: python_3_13
+        container:
+            resources:
+                cpu: "0.5"
+                memory: 1Gi
+        environmentVariables:
+            - name: AZURE_AI_MODEL_DEPLOYMENT_NAME
+              value: ${AZURE_AI_MODEL_DEPLOYMENT_NAME}
+            - name: CUSTOM_FOUNDRY_FABRIC_TOOLBOX_NAME
+              value: ${CUSTOM_FOUNDRY_FABRIC_TOOLBOX_NAME=fabric-ontology-tools}
+        kind: hosted
+        name: agent-foundry-iq-fabric-toolbox
+        protocols:
+            - protocol: responses
+              version: 2.0.0
     agent-foundry-iq-mcp:
         project: src/agent-foundry-iq-mcp
         host: azure.ai.agent
@@ -65,6 +87,28 @@ services:
               value: ${CUSTOM_FOUNDRY_AGENT_TOOLBOX_NAME=hr-agent-tools}
         kind: hosted
         name: agent-foundry-iq-toolbox
+        protocols:
+            - protocol: responses
+              version: 2.0.0
+    agent-foundry-iq-workiq-toolbox:
+        project: src/agent-foundry-iq-workiq-toolbox
+        host: azure.ai.agent
+        language: python
+        codeConfiguration:
+            dependencyResolution: remote_build
+            entryPoint: main.py
+            runtime: python_3_13
+        container:
+            resources:
+                cpu: "0.5"
+                memory: 1Gi
+        environmentVariables:
+            - name: AZURE_AI_MODEL_DEPLOYMENT_NAME
+              value: ${AZURE_AI_MODEL_DEPLOYMENT_NAME}
+            - name: CUSTOM_FOUNDRY_WORKIQ_TOOLBOX_NAME
+              value: ${CUSTOM_FOUNDRY_WORKIQ_TOOLBOX_NAME=work-iq-tools}
+        kind: hosted
+        name: agent-foundry-iq-workiq-toolbox
         protocols:
             - protocol: responses
               version: 2.0.0

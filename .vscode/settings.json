@@ -4,5 +4,6 @@
     "python.analysis.extraPaths": [
         "${workspaceFolder}/src/agent-foundry-iq-mcp",
         "${workspaceFolder}/src/agent-foundry-iq-api"
-    ]
+    ],
+    "python-envs.defaultEnvManager": "ms-python.python:system"
 }

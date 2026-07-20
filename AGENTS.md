@@ -5,19 +5,23 @@ agents, read the `microsoft-foundry` skill first.
 
 ## Project overview
 
-This repository contains a five-part Microsoft Foundry IQ notebook lab and three Python HR agents deployed as
+This repository contains a five-part Microsoft Foundry IQ notebook lab and five Python agents deployed as
 Microsoft Foundry hosted agents. A single Azure Developer CLI (`azd`) project provisions the shared Foundry project,
 model deployments, Azure AI Search, storage, monitoring, and optional Microsoft Fabric capacity.
 
-The notebooks and hosted agents share infrastructure but create separate knowledge bases. All hosted agents use
+The notebooks and hosted agents share infrastructure but create separate knowledge bases. Three hosted agents use
 `contoso-company-kb`: `agent-foundry-iq-mcp` connects through the Azure AI Search knowledge-base MCP endpoint,
 `agent-foundry-iq-api` calls the knowledge-base retrieval API with a custom Python tool, and
 `agent-foundry-iq-toolbox` connects through a Foundry toolbox.
+`agent-foundry-iq-fabric-toolbox` uses a separate toolbox and a delegated-user connection to the Fabric IQ ontology
+created by `infra/create-lakehouse.py`.
+`agent-foundry-iq-workiq-toolbox` uses a separate OAuth2 `RemoteA2A` connection and toolbox to access the signed-in
+user's Microsoft 365 work context through Work IQ.
 
 ## Repository map
 
 - `azure.yaml`: `azd` service manifest. It declares the existing Foundry project service, the
-  three hosted services, Python 3.13 remote build settings, runtime
+  five hosted services, Python 3.13 remote build settings, runtime
   environment variables, and deployment hooks.
 - `pyproject.toml` and `uv.lock`: root Python environment for infrastructure helpers and notebook support. Use this
   environment for files under `infra/`.
@@ -34,6 +38,10 @@ The notebooks and hosted agents share infrastructure but create separate knowled
   `contoso-company-kb`.
 - `infra/create-toolbox.py`: creates and promotes the toolbox version after the knowledge base exists. It uses the
   dedicated `kb-mcp-connection` remote-tool project connection by default.
+- `infra/create-fabric-toolbox.py`: creates the `user-entra-token` Fabric ontology connection after the ontology
+  exists, then creates and promotes the separate Fabric IQ toolbox.
+- `infra/create-workiq-toolbox.py`: opt-in Graph SDK setup for the Work IQ service principal, single-tenant Entra
+  app, delegated consent, OAuth2 `RemoteA2A` connection, callback URI, and separate Work IQ toolbox.
 - `infra/create-lakehouse.py`: creates optional Fabric lakehouse and ontology resources.
 - `infra/setup-env.py`: writes generated Azure outputs to the local `.env` used by notebooks and local agent runs.
 - `infra/hooks/postprovision.sh` and `infra/hooks/postprovision.ps1`: run after infrastructure provisioning to
@@ -48,6 +56,10 @@ The notebooks and hosted agents share infrastructure but create separate knowled
   knowledge-base retrieval API with `KnowledgeBaseRetrievalClient`.
 - `src/agent-foundry-iq-toolbox/main.py`: sibling Agent Framework application that accesses the knowledge base,
   web search, and code interpreter through `FoundryToolbox`.
+- `src/agent-foundry-iq-fabric-toolbox/main.py`: sibling Agent Framework application that accesses product and
+  inventory data through the Fabric IQ ontology toolbox.
+- `src/agent-foundry-iq-workiq-toolbox/main.py`: sibling Agent Framework application that accesses the signed-in
+  user's Microsoft 365 work context through the Work IQ toolbox.
 - `src/agent-foundry-iq-mcp/pyproject.toml`, `src/agent-foundry-iq-mcp/uv.lock`, and `src/agent-foundry-iq-mcp/uv.toml`: isolated MCP agent dependency
   definition, lockfile, and remote-build TLS configuration.
 - `src/agent-foundry-iq-api/pyproject.toml`, `src/agent-foundry-iq-api/uv.lock`, and `src/agent-foundry-iq-api/uv.toml`: isolated API agent
@@ -55,6 +67,12 @@ The notebooks and hosted agents share infrastructure but create separate knowled
 - `src/agent-foundry-iq-toolbox/pyproject.toml`, `src/agent-foundry-iq-toolbox/uv.lock`, and
   `src/agent-foundry-iq-toolbox/uv.toml`: isolated toolbox agent dependency definition, lockfile, and remote-build
   TLS configuration.
+- `src/agent-foundry-iq-fabric-toolbox/pyproject.toml`, `src/agent-foundry-iq-fabric-toolbox/uv.lock`, and
+  `src/agent-foundry-iq-fabric-toolbox/uv.toml`: isolated Fabric toolbox agent dependency definition, lockfile, and
+  remote-build TLS configuration.
+- `src/agent-foundry-iq-workiq-toolbox/pyproject.toml`, `src/agent-foundry-iq-workiq-toolbox/uv.lock`, and
+  `src/agent-foundry-iq-workiq-toolbox/uv.toml`: isolated Work IQ agent dependency definition, lockfile, and
+  remote-build TLS configuration.
 
 ## Development guidance
 
@@ -74,6 +92,21 @@ The MCP server requires authentication during `session.initialize()`. Attach Azu
 supplied `httpx.AsyncClient`; do not replace it with only `header_provider`, which applies runtime tool-call headers
 too late for initialization.
 
+## Upstream Agent Framework issues
+
+Keep these open Python hosting issues in mind when changing the Work IQ consent flow:
+
+- [microsoft/agent-framework#5594](https://github.com/microsoft/agent-framework/issues/5594):
+  `ResponsesHostServer` cannot automatically resume an interrupted turn after OAuth consent. The user must resend
+  the original request.
+- [microsoft/agent-framework#7227](https://github.com/microsoft/agent-framework/issues/7227):
+  the Python consent parser recognizes MCP sources but not Work IQ's `a2a_preview` source, so the unmodified host
+  does not surface Work IQ `CONSENT_REQUIRED` errors as `oauth_consent_request` output.
+- [microsoft/agent-framework#7166](https://github.com/microsoft/agent-framework/issues/7166):
+  after consent, reconnecting the same `FoundryToolbox` instance loses its authenticated HTTP client. Resending in
+  the same hosted session returns `401 Unauthorized` during MCP initialization, while a fresh agent session and
+  conversation succeeds. This issue includes a reproduced root cause and Work IQ validation.
+
 ## Local validation
 
 Install and validate root tooling:
@@ -81,7 +114,7 @@ Install and validate root tooling:
 ```bash
 uv sync --locked --all-groups
 uv run ruff check .
-uv run python -m compileall -q infra src/agent-foundry-iq-mcp src/agent-foundry-iq-api src/agent-foundry-iq-toolbox
+uv run python -m compileall -q infra src/agent-foundry-iq-mcp src/agent-foundry-iq-api src/agent-foundry-iq-toolbox src/agent-foundry-iq-fabric-toolbox src/agent-foundry-iq-workiq-toolbox
 az bicep build --file infra/main.bicep --stdout > /dev/null
 azd show
 ```
@@ -95,6 +128,10 @@ uv sync --project src/agent-foundry-iq-api --python 3.13 --frozen --dry-run
 uv run --project src/agent-foundry-iq-api --python 3.13 python -m py_compile src/agent-foundry-iq-api/main.py
 uv sync --project src/agent-foundry-iq-toolbox --python 3.13 --frozen --dry-run
 uv run --project src/agent-foundry-iq-toolbox --python 3.13 python -m py_compile src/agent-foundry-iq-toolbox/main.py
+uv sync --project src/agent-foundry-iq-fabric-toolbox --python 3.13 --frozen --dry-run
+uv run --project src/agent-foundry-iq-fabric-toolbox --python 3.13 python -m py_compile src/agent-foundry-iq-fabric-toolbox/main.py
+uv sync --project src/agent-foundry-iq-workiq-toolbox --python 3.13 --frozen --dry-run
+uv run --project src/agent-foundry-iq-workiq-toolbox --python 3.13 python -m py_compile src/agent-foundry-iq-workiq-toolbox/main.py
 ```
 
 Validate deployment hooks after editing them:
@@ -117,6 +154,13 @@ azd ai agent invoke --local "What benefits are available, and when do I need to 
 
 azd ai agent run agent-foundry-iq-toolbox
 azd ai agent invoke --local "What benefits are available, and when do I need to enroll?"
+
+azd ai agent run agent-foundry-iq-fabric-toolbox
+azd ai agent invoke --local "Which product categories have the lowest stock levels right now?"
+
+azd ai agent run agent-foundry-iq-workiq-toolbox
+azd ai agent invoke --local \
+  "Check my recent Teams chats for messages about the Professional Claw Hammer. Summarize what colleagues are saying and what actions have been requested."
 ```
 
 ## Deployment workflow
@@ -139,6 +183,14 @@ azd ai agent invoke agent-foundry-iq-api "What benefits are available, and when 
 
 azd deploy agent-foundry-iq-toolbox
 azd ai agent invoke agent-foundry-iq-toolbox "What benefits are available, and when do I need to enroll?"
+
+azd deploy agent-foundry-iq-fabric-toolbox
+azd ai agent invoke agent-foundry-iq-fabric-toolbox --new-session --new-conversation \
+  "Which product categories have the lowest stock levels right now?"
+
+azd deploy agent-foundry-iq-workiq-toolbox
+azd ai agent invoke agent-foundry-iq-workiq-toolbox --new-session --new-conversation \
+  "Check my recent Teams chats for messages about the Professional Claw Hammer. Summarize what colleagues are saying and what actions have been requested."
 ```
 
 `azd up` performs these phases:
@@ -146,8 +198,11 @@ azd ai agent invoke agent-foundry-iq-toolbox "What benefits are available, and w
 1. Bicep provisions shared Azure resources.
 2. `postprovision` writes `.env`, restores Search data, creates the agent knowledge base and toolbox, and optionally
   configures Fabric.
-3. Foundry remotely builds and deploys all three agent packages under `src/`.
-4. `postdeploy` obtains each agent's `instance_identity.principal_id` and grants Search data access.
+3. Foundry remotely builds and deploys all five agent packages under `src/`.
+4. `postdeploy` grants Search data access to the three Search-backed agents. The Fabric toolbox agent instead uses
+  the invoking user's delegated Fabric permissions.
+    The Work IQ agent additionally receives Foundry User at account and project scopes and uses the caller's
+    delegated Microsoft 365 identity.
 
 Do not move the hosted-agent role assignment into Bicep or `postprovision` unless the identity lifecycle changes.
 The instance identity does not exist until the agent has been deployed.
@@ -168,6 +223,12 @@ uv sync --project src/agent-foundry-iq-api --python 3.13 --frozen --dry-run
 
 uv lock --project src/agent-foundry-iq-toolbox --python 3.13
 uv sync --project src/agent-foundry-iq-toolbox --python 3.13 --frozen --dry-run
+
+uv lock --project src/agent-foundry-iq-fabric-toolbox --python 3.13
+uv sync --project src/agent-foundry-iq-fabric-toolbox --python 3.13 --frozen --dry-run
+
+uv lock --project src/agent-foundry-iq-workiq-toolbox --python 3.13
+uv sync --project src/agent-foundry-iq-workiq-toolbox --python 3.13 --frozen --dry-run
 ```
 
 ### Missing runtime setting

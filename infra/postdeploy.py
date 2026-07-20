@@ -12,11 +12,13 @@ from azure.mgmt.authorization import AuthorizationManagementClient
 from azure.mgmt.authorization.models import RoleAssignmentCreateParameters
 
 SEARCH_DATA_CONTRIBUTOR_ROLE_ID = "8ebe5a00-799e-43f5-93ac-243d3dce84a7"
+FOUNDRY_USER_ROLE_ID = "53ca6127-db72-4b80-b1b0-d745d6d5456d"
 AGENT_NAMES = (
     "agent-foundry-iq-mcp",
     "agent-foundry-iq-api",
     "agent-foundry-iq-toolbox",
 )
+WORK_IQ_AGENT_NAME = "agent-foundry-iq-workiq-toolbox"
 
 
 def get_agent_principal_id(agent_name: str) -> str | None:
@@ -57,6 +59,38 @@ def assign_search_access(client: AuthorizationManagementClient, scope: str, agen
         print(f"Search access already assigned to {agent_name}.")
 
 
+def assign_foundry_user(
+    client: AuthorizationManagementClient,
+    subscription_id: str,
+    scope: str,
+    principal_id: str,
+) -> None:
+    """Assign Foundry User at one scope, or reuse the existing assignment."""
+    role_definition_id = (
+        f"/subscriptions/{subscription_id}/providers/Microsoft.Authorization/"
+        f"roleDefinitions/{FOUNDRY_USER_ROLE_ID}"
+    )
+    assignment_name = str(
+        uuid.uuid5(
+            uuid.NAMESPACE_URL,
+            f"{scope}:{principal_id}:{FOUNDRY_USER_ROLE_ID}",
+        )
+    )
+    parameters = RoleAssignmentCreateParameters(
+        principal_id=principal_id,
+        principal_type="ServicePrincipal",
+        role_definition_id=role_definition_id,
+    )
+
+    print(f"Assigning Foundry User to {WORK_IQ_AGENT_NAME} at {scope}...")
+    try:
+        client.role_assignments.create(scope, assignment_name, parameters)
+    except HttpResponseError as error:
+        if error.status_code != 409:
+            raise
+        print(f"Foundry User already assigned at {scope}.")
+
+
 def main() -> int:
     """Grant Search access to each deployed hosted agent."""
     print("Assigning Search access to the hosted agent identity...")
@@ -79,6 +113,18 @@ def main() -> int:
         principal_id = get_agent_principal_id(agent_name)
         if principal_id:
             assign_search_access(client, scope, agent_name, principal_id)
+
+    project_id = os.getenv("AZURE_AI_PROJECT_ID")
+    work_iq_principal_id = get_agent_principal_id(WORK_IQ_AGENT_NAME)
+    if project_id and work_iq_principal_id:
+        account_scope = project_id.rsplit("/projects/", 1)[0]
+        for foundry_scope in (account_scope, project_id):
+            assign_foundry_user(
+                client,
+                subscription_id,
+                foundry_scope,
+                work_iq_principal_id,
+            )
 
     print("Postdeploy setup complete.")
     return 0

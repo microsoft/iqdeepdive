@@ -13,6 +13,7 @@ dependencies = [
     "httpx>=0.28.1",
     "ipykernel==7.2.0",
     "microsoft-fabric-api==0.1.0b20",
+    "msgraph-sdk>=1.49.0",
     "python-dotenv>=1.2.2",
     "requests>=2.33.0",
 ]
