@@ -18,7 +18,7 @@ from dotenv import load_dotenv
 
 load_dotenv(dotenv_path=".env", override=True)
 
-logger = logging.getLogger("agent-foundry-iq-mcp")
+logger = logging.getLogger("agent-foundryiq-mcp")
 
 
 # Configure these for your Foundry project via environment variables (see .env.sample)

@@ -2,8 +2,8 @@
 
 name: iqdeepdive-foundryiq-proj
 services:
-    agent-foundry-iq-api:
-        project: src/agent-foundry-iq-api
+    agent-foundryiq-api:
+        project: src/agent-foundryiq-api
         host: azure.ai.agent
         language: python
         codeConfiguration:
@@ -20,12 +20,12 @@ services:
             - name: AZURE_AI_SEARCH_SERVICE_ENDPOINT
               value: ${AZURE_AI_SEARCH_SERVICE_ENDPOINT}
         kind: hosted
-        name: agent-foundry-iq-api
+        name: agent-foundryiq-api
         protocols:
             - protocol: responses
               version: 2.0.0
-    agent-foundry-iq-fabric-toolbox:
-        project: src/agent-foundry-iq-fabric-toolbox
+    agent-toolbox-fabriciq:
+        project: src/agent-toolbox-fabriciq
         host: azure.ai.agent
         language: python
         codeConfiguration:
@@ -42,12 +42,12 @@ services:
             - name: CUSTOM_FOUNDRY_FABRIC_TOOLBOX_NAME
               value: ${CUSTOM_FOUNDRY_FABRIC_TOOLBOX_NAME=fabric-ontology-tools}
         kind: hosted
-        name: agent-foundry-iq-fabric-toolbox
+        name: agent-toolbox-fabriciq
         protocols:
             - protocol: responses
               version: 2.0.0
-    agent-foundry-iq-mcp:
-        project: src/agent-foundry-iq-mcp
+    agent-foundryiq-mcp:
+        project: src/agent-foundryiq-mcp
         host: azure.ai.agent
         language: python
         codeConfiguration:
@@ -64,12 +64,12 @@ services:
             - name: AZURE_AI_SEARCH_SERVICE_ENDPOINT
               value: ${AZURE_AI_SEARCH_SERVICE_ENDPOINT}
         kind: hosted
-        name: agent-foundry-iq-mcp
+        name: agent-foundryiq-mcp
         protocols:
             - protocol: responses
               version: 2.0.0
-    agent-foundry-iq-toolbox:
-        project: src/agent-foundry-iq-toolbox
+    agent-toolbox-foundryiq:
+        project: src/agent-toolbox-foundryiq
         host: azure.ai.agent
         language: python
         codeConfiguration:
@@ -86,12 +86,12 @@ services:
             - name: CUSTOM_FOUNDRY_AGENT_TOOLBOX_NAME
               value: ${CUSTOM_FOUNDRY_AGENT_TOOLBOX_NAME=hr-agent-tools}
         kind: hosted
-        name: agent-foundry-iq-toolbox
+        name: agent-toolbox-foundryiq
         protocols:
             - protocol: responses
               version: 2.0.0
-    agent-foundryiq-workiq-toolbox:
-        project: src/agent-foundryiq-workiq-toolbox
+    agent-toolbox-foundryiq-workiq:
+        project: src/agent-toolbox-foundryiq-workiq
         host: azure.ai.agent
         language: python
         codeConfiguration:
@@ -108,12 +108,12 @@ services:
             - name: CUSTOM_FOUNDRY_AGENT_TOOLBOX_NAME
               value: ${CUSTOM_FOUNDRY_WORKIQ_KB_TOOLBOX_NAME=workiq-knowledge-tools}
         kind: hosted
-        name: agent-foundryiq-workiq-toolbox
+        name: agent-toolbox-foundryiq-workiq
         protocols:
             - protocol: responses
               version: 2.0.0
-    agent-workiq-toolbox:
-        project: src/agent-workiq-toolbox
+    agent-toolbox-workiq:
+        project: src/agent-toolbox-workiq
         host: azure.ai.agent
         language: python
         codeConfiguration:
@@ -130,7 +130,7 @@ services:
             - name: CUSTOM_FOUNDRY_WORKIQ_TOOLBOX_NAME
               value: ${CUSTOM_FOUNDRY_WORKIQ_TOOLBOX_NAME=work-iq-tools}
         kind: hosted
-        name: agent-workiq-toolbox
+        name: agent-toolbox-workiq
         protocols:
             - protocol: responses
               version: 2.0.0

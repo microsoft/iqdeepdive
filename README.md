@@ -37,7 +37,7 @@ Three hosted agents use their own `contoso-company-kb`: one connects through its
 MCP endpoint, one calls the `2026-05-01-preview` retrieval API from a custom Python tool, and one uses
 a Foundry toolbox containing the knowledge base, web search, and code interpreter tools. The fourth
 agent uses a separate toolbox connected directly to the Fabric IQ ontology used by
-`foundryiq-fabriciq.ipynb`. It passes through the invoking user's Entra identity and does not use a
+`foundryiq-fabriciq-ontology.ipynb`. It passes through the invoking user's Entra identity and does not use a
 notebook-created knowledge base.
 The fifth agent uses a separate OAuth2 `RemoteA2A` connection and toolbox to query the signed-in user's
 Microsoft 365 work context through Work IQ.
@@ -122,8 +122,8 @@ Enable the Work IQ knowledge-base and Toolbox creation hook, then rerun provisio
 ```bash
 azd env set ENABLE_WORK_IQ_KB_TOOLBOX true
 azd provision
-azd deploy agent-foundryiq-workiq-toolbox
-azd ai agent invoke agent-foundryiq-workiq-toolbox \
+azd deploy agent-toolbox-foundryiq-workiq
+azd ai agent invoke agent-toolbox-foundryiq-workiq \
   --new-session --new-conversation \
   "Search my recent emails for Professional Claw Hammer and summarize requested actions. Use the knowledge base and its Work IQ source."
 ```
@@ -197,10 +197,9 @@ select `.venv/bin/python`, and run these in order:
 
 1. `foundryiq-basic.ipynb`
 2. `foundryiq-webiq.ipynb`
-3. `foundryiq-fabriciq.ipynb`
+3. `foundryiq-fabriciq-ontology.ipynb`
 4. `foundryiq-workiq.ipynb`
-5. `foundryiq-workiq-fabriciq.ipynb`
-6. `foundryiq-fabricdataagent.ipynb`
+5. `foundryiq-fabriciq-dataagent.ipynb`
 
 Part 6 combines the HR and health indexes with the published Fabric Data Agent in a multi-source
 knowledge base. It uses the signed-in user's delegated identity to query the protected Fabric source.
@@ -210,19 +209,19 @@ knowledge base. It uses the signed-in user's delegated identity to query the pro
 Start either hosted-agent source locally:
 
 ```bash
-azd ai agent run agent-foundry-iq-mcp
+azd ai agent run agent-foundryiq-mcp
 azd ai agent invoke --local "What benefits are available, and when do I need to enroll?"
 
-azd ai agent run agent-foundry-iq-api
+azd ai agent run agent-foundryiq-api
 azd ai agent invoke --local "What benefits are available, and when do I need to enroll?"
 
-azd ai agent run agent-foundry-iq-toolbox
+azd ai agent run agent-toolbox-foundryiq
 azd ai agent invoke --local "What benefits are available, and when do I need to enroll?"
 
-azd ai agent run agent-foundry-iq-fabric-toolbox
+azd ai agent run agent-toolbox-fabriciq
 azd ai agent invoke --local "Which product categories have the lowest stock levels right now?"
 
-azd ai agent run agent-workiq-toolbox
+azd ai agent run agent-toolbox-workiq
 azd ai agent invoke --local \
   "Check my recent Teams chats for messages about the Professional Claw Hammer. Summarize what colleagues are saying and what actions have been requested."
 ```
@@ -230,27 +229,27 @@ azd ai agent invoke --local \
 Redeploy an individual agent after code changes and invoke the deployed version:
 
 ```bash
-azd deploy agent-foundry-iq-mcp
-azd ai agent invoke agent-foundry-iq-mcp "What benefits are available, and when do I need to enroll?"
+azd deploy agent-foundryiq-mcp
+azd ai agent invoke agent-foundryiq-mcp "What benefits are available, and when do I need to enroll?"
 
-azd deploy agent-foundry-iq-api
-azd ai agent invoke agent-foundry-iq-api "What benefits are available, and when do I need to enroll?"
+azd deploy agent-foundryiq-api
+azd ai agent invoke agent-foundryiq-api "What benefits are available, and when do I need to enroll?"
 
-azd deploy agent-foundry-iq-toolbox
-azd ai agent invoke agent-foundry-iq-toolbox "What benefits are available, and when do I need to enroll?"
+azd deploy agent-toolbox-foundryiq
+azd ai agent invoke agent-toolbox-foundryiq "What benefits are available, and when do I need to enroll?"
 
-azd deploy agent-foundryiq-workiq-toolbox
-azd ai agent invoke agent-foundryiq-workiq-toolbox \
+azd deploy agent-toolbox-foundryiq-workiq
+azd ai agent invoke agent-toolbox-foundryiq-workiq \
   --new-session --new-conversation \
   "Search my recent emails for Professional Claw Hammer and summarize requested actions. Use the knowledge base and its Work IQ source."
 
-azd deploy agent-foundry-iq-fabric-toolbox
-azd ai agent invoke agent-foundry-iq-fabric-toolbox \
+azd deploy agent-toolbox-fabriciq
+azd ai agent invoke agent-toolbox-fabriciq \
   --new-session --new-conversation \
   "Which product categories have the lowest stock levels right now?"
 
-azd deploy agent-workiq-toolbox
-azd ai agent invoke agent-workiq-toolbox \
+azd deploy agent-toolbox-workiq
+azd ai agent invoke agent-toolbox-workiq \
   --new-session --new-conversation \
   "Check my recent Teams chats for messages about the Professional Claw Hammer. Summarize what colleagues are saying and what actions have been requested."
 ```
@@ -264,7 +263,7 @@ container registry and image-build path.
 ```bash
 uv sync --locked --all-groups
 uv run ruff check .
-uv run python -m compileall -q infra src/agent-foundry-iq-mcp src/agent-foundry-iq-api src/agent-foundry-iq-toolbox src/agent-foundryiq-workiq-toolbox src/agent-foundry-iq-fabric-toolbox src/agent-workiq-toolbox
+uv run python -m compileall -q infra src/agent-foundryiq-mcp src/agent-foundryiq-api src/agent-toolbox-foundryiq src/agent-toolbox-foundryiq-workiq src/agent-toolbox-fabriciq src/agent-toolbox-workiq
 uv run python scripts/check_repo.py
 az bicep build --file infra/main.bicep --stdout > /dev/null
 azd show

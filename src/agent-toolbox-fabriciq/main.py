@@ -1,4 +1,4 @@
-"""Workplace assistant that accesses Microsoft 365 context through Work IQ."""
+"""Inventory analyst that accesses a Fabric ontology through a Foundry toolbox."""
 
 import logging
 import os
@@ -9,22 +9,20 @@ from agent_framework.observability import enable_instrumentation
 from agent_framework_foundry_hosting import FoundryToolbox, ResponsesHostServer
 from azure.identity import AzureDeveloperCliCredential, ManagedIdentityCredential
 from dotenv import load_dotenv
-from workiq_consent import enable_work_iq_consent_handling
 
 load_dotenv(dotenv_path=".env", override=True)
 
-logger = logging.getLogger("agent-workiq-toolbox")
+logger = logging.getLogger("agent-toolbox-fabriciq")
 
 PROJECT_ENDPOINT = os.environ["FOUNDRY_PROJECT_ENDPOINT"]
 MODEL_DEPLOYMENT_NAME = os.environ["AZURE_AI_MODEL_DEPLOYMENT_NAME"]
 TOOLBOX_NAME = os.environ.get(
-    "CUSTOM_FOUNDRY_WORKIQ_TOOLBOX_NAME", "work-iq-tools"
+    "CUSTOM_FOUNDRY_FABRIC_TOOLBOX_NAME", "fabric-ontology-tools"
 )
 
 
 def main() -> None:
-    """Run the Work IQ toolbox-backed agent as a Responses server."""
-    enable_work_iq_consent_handling()
+    """Run the Fabric IQ toolbox-backed agent as a Responses server."""
     credential = (
         ManagedIdentityCredential()
         if "FOUNDRY_HOSTING_ENVIRONMENT" in os.environ
@@ -40,7 +38,7 @@ def main() -> None:
     toolbox = FoundryToolbox(
         credential=credential,
         url=toolbox_endpoint,
-        name="work_iq_toolbox",
+        name="fabric_iq_toolbox",
         load_prompts=False,
     )
     client = FoundryChatClient(
@@ -50,12 +48,12 @@ def main() -> None:
     )
     agent = Agent(
         client=client,
-        name="Microsoft365WorkplaceAssistant",
-        instructions="""You are a workplace assistant grounded in the signed-in user's Microsoft 365 context.
-        Use Work IQ for every question about the user's email, chats, meetings, colleagues, or documents.
-        Respect the returned permissions and sensitivity boundaries. Distinguish sourced facts from inference,
-        mention relevant dates and participants, and say when Work IQ does not provide enough information.
-        Never claim access to content that the signed-in user cannot access.""",
+        name="ContosoFabricInventoryAnalyst",
+        instructions="""You are a Contoso inventory and product analyst.
+        Use the Fabric IQ ontology tool for every question about products, categories, inventory,
+        stock levels, suppliers, or related business data. Base answers only on data returned by
+        the ontology. Clearly state when the ontology does not contain enough information.
+        Summarize results concisely and include relevant product names, categories, and quantities.""",
         tools=[toolbox],
         default_options={"store": False},
     )

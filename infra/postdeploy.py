@@ -14,13 +14,13 @@ from azure.mgmt.authorization.models import RoleAssignmentCreateParameters
 SEARCH_DATA_CONTRIBUTOR_ROLE_ID = "8ebe5a00-799e-43f5-93ac-243d3dce84a7"
 FOUNDRY_USER_ROLE_ID = "53ca6127-db72-4b80-b1b0-d745d6d5456d"
 AGENT_NAMES = (
-    "agent-foundry-iq-mcp",
-    "agent-foundry-iq-api",
-    "agent-foundry-iq-toolbox",
+    "agent-foundryiq-mcp",
+    "agent-foundryiq-api",
+    "agent-toolbox-foundryiq",
 )
 FOUNDRY_USER_AGENT_NAMES = (
-    "agent-foundryiq-workiq-toolbox",
-    "agent-workiq-toolbox",
+    "agent-toolbox-foundryiq-workiq",
+    "agent-toolbox-workiq",
 )
 
 

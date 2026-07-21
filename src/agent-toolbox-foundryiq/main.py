@@ -1,10 +1,11 @@
-"""Workplace assistant that accesses Work IQ through a Foundry IQ toolbox."""
+"""Internal HR helper that accesses Foundry IQ through a Foundry toolbox."""
 
 import logging
 import os
 from collections.abc import Awaitable, Callable
+from datetime import date
 
-from agent_framework import Agent, ChatContext, ChatResponse, Message
+from agent_framework import Agent, ChatContext, ChatResponse, Message, tool
 from agent_framework.foundry import FoundryChatClient
 from agent_framework.observability import enable_instrumentation
 from agent_framework_foundry_hosting import FoundryToolbox, ResponsesHostServer
@@ -14,17 +15,32 @@ from dotenv import load_dotenv
 
 load_dotenv(dotenv_path=".env", override=True)
 
-logger = logging.getLogger("agent-foundryiq-workiq-toolbox")
+logger = logging.getLogger("agent-toolbox-foundryiq")
 
 PROJECT_ENDPOINT = os.environ["FOUNDRY_PROJECT_ENDPOINT"]
 MODEL_DEPLOYMENT_NAME = os.environ["AZURE_AI_MODEL_DEPLOYMENT_NAME"]
-TOOLBOX_NAME = os.environ.get(
-    "CUSTOM_FOUNDRY_AGENT_TOOLBOX_NAME", "workiq-knowledge-tools"
-)
+TOOLBOX_NAME = os.environ.get("CUSTOM_FOUNDRY_AGENT_TOOLBOX_NAME", "hr-agent-tools")
 CONTENT_FILTER_MESSAGE = (
     "I can't help with that request because it violates content safety policies. "
     "If you have a safer or policy-compliant version of the question, I can help with that instead."
 )
+
+
+@tool
+def get_current_date() -> str:
+    """Return the current date in ISO format."""
+    logger.info("Fetching current date")
+    return date.today().isoformat()
+
+
+@tool
+def get_enrollment_deadline_info() -> dict[str, str]:
+    """Return enrollment timeline details for health insurance plans."""
+    logger.info("Fetching enrollment deadline information")
+    return {
+        "enrollment_opens": "2026-11-11",
+        "enrollment_closes": "2026-11-30",
+    }
 
 
 async def content_filter_middleware(
@@ -42,7 +58,7 @@ async def content_filter_middleware(
 
 
 def main() -> None:
-    """Run the Work IQ knowledge-base agent as a Responses server."""
+    """Run the toolbox-backed agent as a Responses server."""
     credential = (
         ManagedIdentityCredential()
         if "FOUNDRY_HOSTING_ENVIRONMENT" in os.environ
@@ -69,13 +85,18 @@ def main() -> None:
     )
     agent = Agent(
         client=client,
-        name="WorkIQKnowledgeBaseHelper",
-        instructions="""You are a workplace assistant grounded in the signed-in user's Microsoft 365 work context.
-        Always use the knowledge base tool before answering questions about email, chats, meetings, or documents.
-        Preserve citations returned by the knowledge base so the user can verify the sources.
-        Use web search only when the user explicitly asks for public information.
+        name="InternalHRToolboxHelper",
+        instructions="""You are an internal HR helper focused on employee benefits and company information.
+        Use the knowledge base tool to answer company questions and ground answers in provided context.
+        Use web search only when the knowledge base does not contain the needed current information.
+        Use code interpreter when calculations or structured data analysis would improve the answer.
+        Use get_enrollment_deadline_info and get_current_date for benefits enrollment timing.
         If the tools do not provide enough information, say that you cannot fully answer the question.""",
-        tools=[toolbox],
+        tools=[
+            get_enrollment_deadline_info,
+            get_current_date,
+            toolbox,
+        ],
         default_options={"store": False},
     )
 
