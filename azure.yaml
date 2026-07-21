@@ -24,28 +24,6 @@ services:
         protocols:
             - protocol: responses
               version: 2.0.0
-    agent-toolbox-fabriciq:
-        project: src/agent-toolbox-fabriciq
-        host: azure.ai.agent
-        language: python
-        codeConfiguration:
-            dependencyResolution: remote_build
-            entryPoint: main.py
-            runtime: python_3_13
-        container:
-            resources:
-                cpu: "0.5"
-                memory: 1Gi
-        environmentVariables:
-            - name: AZURE_AI_MODEL_DEPLOYMENT_NAME
-              value: ${AZURE_AI_MODEL_DEPLOYMENT_NAME}
-            - name: CUSTOM_FOUNDRY_FABRIC_TOOLBOX_NAME
-              value: ${CUSTOM_FOUNDRY_FABRIC_TOOLBOX_NAME=fabric-ontology-tools}
-        kind: hosted
-        name: agent-toolbox-fabriciq
-        protocols:
-            - protocol: responses
-              version: 2.0.0
     agent-foundryiq-mcp:
         project: src/agent-foundryiq-mcp
         host: azure.ai.agent
@@ -65,6 +43,28 @@ services:
               value: ${AZURE_AI_SEARCH_SERVICE_ENDPOINT}
         kind: hosted
         name: agent-foundryiq-mcp
+        protocols:
+            - protocol: responses
+              version: 2.0.0
+    agent-toolbox-fabriciq:
+        project: src/agent-toolbox-fabriciq
+        host: azure.ai.agent
+        language: python
+        codeConfiguration:
+            dependencyResolution: remote_build
+            entryPoint: main.py
+            runtime: python_3_13
+        container:
+            resources:
+                cpu: "0.5"
+                memory: 1Gi
+        environmentVariables:
+            - name: AZURE_AI_MODEL_DEPLOYMENT_NAME
+              value: ${AZURE_AI_MODEL_DEPLOYMENT_NAME}
+            - name: CUSTOM_FOUNDRY_FABRIC_TOOLBOX_NAME
+              value: ${CUSTOM_FOUNDRY_FABRIC_TOOLBOX_NAME=fabric-ontology-tools}
+        kind: hosted
+        name: agent-toolbox-fabriciq
         protocols:
             - protocol: responses
               version: 2.0.0

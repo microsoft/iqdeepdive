@@ -82,15 +82,9 @@ Set `DEPLOY_FABRIC_CAPACITY=false` before `azd up` to use an existing Fabric wor
 Fabric portions. Set `FABRIC_WORKSPACE_ID` and `FABRIC_ONTOLOGY_ID` in `.env` before running parts 3,
 5, and 6 when you manage Fabric separately.
 
-Query the published Fabric Data Agent through its MCP endpoint after Fabric setup completes:
-
-```bash
-uv run --locked python scripts/query-fabric-data-agent.py \
-  "Which products currently have the lowest inventory quantities?"
-```
-
-The script reads `FABRIC_TENANT_ID` and `FABRIC_DATA_AGENT_MCP_URL` from `.env`. Use `--mcp-url` to target a
-different Fabric Data Agent endpoint.
+After Fabric setup completes, open `notebooks/query-fabric-data-agent.ipynb` to inspect the tools exposed by the
+published Fabric Data Agent MCP endpoint and make a tool call. The notebook reads `FABRIC_TENANT_ID` and
+`FABRIC_DATA_AGENT_MCP_URL` from `.env`.
 
 ### Enable Work IQ retrieval for Azure AI Search
 

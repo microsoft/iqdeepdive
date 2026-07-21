@@ -19,6 +19,7 @@ from azure.identity.aio import ManagedIdentityCredential as AsyncManagedIdentity
 from azure.search.documents.knowledgebases.aio import KnowledgeBaseRetrievalClient
 from azure.search.documents.knowledgebases.models import (
     KnowledgeBaseRetrievalRequest,
+    KnowledgeRetrievalIntent,
     KnowledgeRetrievalMinimalReasoningEffort,
     KnowledgeRetrievalSemanticIntent,
 )
@@ -93,11 +94,12 @@ async def main() -> None:
     )
 
     @tool
-    async def retrieve_company_knowledge(question: str) -> dict[str, Any]:
+    async def retrieve_company_knowledge(queries: list[str]) -> dict[str, Any]:
         """Retrieve grounded company and HR information from the Foundry IQ knowledge base."""
         logger.info("Retrieving company knowledge through the Azure AI Search API")
+        intents: list[KnowledgeRetrievalIntent] = [KnowledgeRetrievalSemanticIntent(search=query) for query in queries]
         request = KnowledgeBaseRetrievalRequest(
-            intents=[KnowledgeRetrievalSemanticIntent(search=question)],
+            intents=intents,
             retrieval_reasoning_effort=KnowledgeRetrievalMinimalReasoningEffort(),
             include_activity=True,
         )

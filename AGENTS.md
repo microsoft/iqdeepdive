@@ -54,8 +54,8 @@ knowledge-base MCP URL so Toolbox emits the user's Search-scoped query-source au
   write local settings, seed Search, and optionally prepare Fabric.
 - `infra/hooks/postdeploy.sh` and `infra/hooks/postdeploy.ps1`: run after agent deployment, resolve the generated
   hosted-agent identity, and grant it `Search Index Data Contributor` on Azure AI Search.
-- `scripts/query-fabric-data-agent.py`: authenticates to the published Fabric Data Agent MCP endpoint, discovers
-  its tool, and submits a question from the command line.
+- `notebooks/query-fabric-data-agent.ipynb`: authenticates to the published Fabric Data Agent MCP endpoint, lists
+  its tools, and submits a question through the selected tool.
 - `notebooks/`: the six ordered Foundry IQ lab notebooks. Their extra kernel dependencies are listed in
   `notebooks/requirements.txt`.
 - `src/agent-foundryiq-mcp/main.py`: Agent Framework application. It exposes a Responses server, uses Foundry for chat, and
