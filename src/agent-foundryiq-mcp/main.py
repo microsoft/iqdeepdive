@@ -25,7 +25,7 @@ logger = logging.getLogger("agent-foundryiq-mcp")
 PROJECT_ENDPOINT = os.environ["FOUNDRY_PROJECT_ENDPOINT"]
 MODEL_DEPLOYMENT_NAME = os.environ["AZURE_AI_MODEL_DEPLOYMENT_NAME"]
 SEARCH_ENDPOINT = os.environ["AZURE_AI_SEARCH_SERVICE_ENDPOINT"]
-KNOWLEDGE_BASE_NAME = os.environ.get("AZURE_AI_SEARCH_KNOWLEDGE_BASE_NAME", "contoso-company-kb")
+KNOWLEDGE_BASE_NAME = os.environ.get("AZURE_AI_SEARCH_KNOWLEDGE_BASE_NAME", "contoso-company-kb-minimal")
 SEARCH_SCOPE = "https://search.azure.com/.default"
 CONTENT_FILTER_MESSAGE = (
     "I can't help with that request because it violates content safety policies. "

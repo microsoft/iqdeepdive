@@ -25,11 +25,16 @@ from azure.search.documents.indexes.models import (
 )
 from azure.search.documents.knowledgebases.models import (
     KnowledgeRetrievalLowReasoningEffort,
+    KnowledgeRetrievalMinimalReasoningEffort,
     KnowledgeRetrievalOutputMode,
+    KnowledgeRetrievalReasoningEffort,
 )
 from dotenv import load_dotenv
 
 load_dotenv(dotenv_path=".env", override=True)
+
+LOW_REASONING_KB_NAME = "contoso-company-kb-low"
+MINIMAL_REASONING_KB_NAME = "contoso-company-kb-minimal"
 
 
 async def create_index_and_upload(
@@ -113,6 +118,7 @@ async def create_knowledge_base(
     kb_name: str,
     kb_description: str,
     knowledge_source_configs: list[tuple[str, str]],
+    reasoning_effort: KnowledgeRetrievalReasoningEffort,
     openai_endpoint: str = "",
     openai_model_deployment: str = "",
 ) -> None:
@@ -140,6 +146,7 @@ async def create_knowledge_base(
             name=kb_name,
             description=kb_description,
             knowledge_sources=source_refs,
+            retrieval_reasoning_effort=reasoning_effort,
             output_mode=KnowledgeRetrievalOutputMode.EXTRACTIVE_DATA,
             **(dict(models=models) if models else {}),
         )
@@ -223,12 +230,27 @@ async def main_async(include_workiq: bool = False) -> int:
         return 1
 
     credential = AzureDeveloperCliCredential(tenant_id=os.environ["AZURE_TENANT_ID"])
+    knowledge_source_configs = [
+        (
+            "hrdocs",
+            "HR policy and company documents including the employee handbook, PerksPlus wellness "
+            "reimbursement program, company overview, vacation perks, employee recognition, "
+            "role library (job descriptions), workplace safety, and performance reviews.",
+        ),
+        (
+            "healthdocs",
+            "Health insurance plan documents including medical plan details (Northwind Health Plus "
+            "and Northwind Standard), coverage options (PPO, HMO, HDHP), copays, deductibles, "
+            "coinsurance, prescription drug coverage, dental, vision, mental health services, "
+            "workers compensation, and preventive care benefits.",
+        ),
+    ]
 
     create_shared_resources = True
     async with SearchIndexClient(endpoint=endpoint, credential=credential) as index_client:
         try:
-            await index_client.get_knowledge_base("contoso-company-kb")
-            print("Knowledge base 'contoso-company-kb' already exists. Skipping index creation.")
+            await index_client.get_knowledge_base(LOW_REASONING_KB_NAME)
+            print(f"Knowledge base '{LOW_REASONING_KB_NAME}' already exists. Skipping index creation.")
             create_shared_resources = False
         except ResourceNotFoundError:
             pass
@@ -256,32 +278,27 @@ async def main_async(include_workiq: bool = False) -> int:
             print(f"Uploaded {uploaded} docs to {index_name}")
             await asyncio.sleep(2)
 
-        print("\nCreating knowledge base...")
-        await create_knowledge_base(
-            endpoint=endpoint,
-            credential=credential,
-            kb_name="contoso-company-kb",
-            kb_description=(
-                "Contains internal HR documents about employee benefits and health/wellness programs."
-            ),
-            knowledge_source_configs=[
-                (
-                    "hrdocs",
-                    "HR policy and company documents including the employee handbook, PerksPlus wellness "
-                    "reimbursement program, company overview, vacation perks, employee recognition, "
-                    "role library (job descriptions), workplace safety, and performance reviews.",
-                ),
-                (
-                    "healthdocs",
-                    "Health insurance plan documents including medical plan details (Northwind Health Plus "
-                    "and Northwind Standard), coverage options (PPO, HMO, HDHP), copays, deductibles, "
-                    "coinsurance, prescription drug coverage, dental, vision, mental health services, "
-                    "workers compensation, and preventive care benefits.",
-                ),
-            ],
-            openai_endpoint=openai_endpoint,
-            openai_model_deployment=openai_model_deployment,
-        )
+    kb_description = "Contains internal HR documents about employee benefits and health/wellness programs."
+    print("\nCreating low-reasoning knowledge base...")
+    await create_knowledge_base(
+        endpoint=endpoint,
+        credential=credential,
+        kb_name=LOW_REASONING_KB_NAME,
+        kb_description=kb_description,
+        knowledge_source_configs=knowledge_source_configs,
+        reasoning_effort=KnowledgeRetrievalLowReasoningEffort(),
+        openai_endpoint=openai_endpoint,
+        openai_model_deployment=openai_model_deployment,
+    )
+    print("\nCreating minimal-reasoning knowledge base...")
+    await create_knowledge_base(
+        endpoint=endpoint,
+        credential=credential,
+        kb_name=MINIMAL_REASONING_KB_NAME,
+        kb_description=kb_description,
+        knowledge_source_configs=knowledge_source_configs,
+        reasoning_effort=KnowledgeRetrievalMinimalReasoningEffort(),
+    )
 
     if include_workiq:
         await create_workiq_knowledge_base(

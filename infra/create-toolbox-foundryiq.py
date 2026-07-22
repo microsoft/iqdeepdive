@@ -81,7 +81,7 @@ if __name__ == "__main__":
     project_endpoint = os.environ["FOUNDRY_PROJECT_ENDPOINT"]
     search_endpoint = os.environ["AZURE_AI_SEARCH_SERVICE_ENDPOINT"]
     knowledge_base_name = args.knowledge_base_name or os.environ.get(
-        "AZURE_AI_SEARCH_KNOWLEDGE_BASE_NAME", "contoso-company-kb"
+        "AZURE_AI_SEARCH_KNOWLEDGE_BASE_NAME", "contoso-company-kb-minimal"
     )
     toolbox_name = args.toolbox_name or os.environ.get(
         "CUSTOM_FOUNDRY_AGENT_TOOLBOX_NAME", "hr-agent-tools"

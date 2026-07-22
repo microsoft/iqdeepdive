@@ -20,7 +20,6 @@ from azure.search.documents.knowledgebases.aio import KnowledgeBaseRetrievalClie
 from azure.search.documents.knowledgebases.models import (
     KnowledgeBaseRetrievalRequest,
     KnowledgeRetrievalIntent,
-    KnowledgeRetrievalMinimalReasoningEffort,
     KnowledgeRetrievalSemanticIntent,
 )
 from dotenv import load_dotenv
@@ -33,7 +32,7 @@ logger = logging.getLogger("agent-foundryiq-api")
 PROJECT_ENDPOINT = os.environ["FOUNDRY_PROJECT_ENDPOINT"]
 MODEL_DEPLOYMENT_NAME = os.environ["AZURE_AI_MODEL_DEPLOYMENT_NAME"]
 SEARCH_ENDPOINT = os.environ["AZURE_AI_SEARCH_SERVICE_ENDPOINT"]
-KNOWLEDGE_BASE_NAME = os.environ.get("AZURE_AI_SEARCH_KNOWLEDGE_BASE_NAME", "contoso-company-kb")
+KNOWLEDGE_BASE_NAME = os.environ.get("AZURE_AI_SEARCH_KNOWLEDGE_BASE_NAME", "contoso-company-kb-minimal")
 CONTENT_FILTER_MESSAGE = (
     "I can't help with that request because it violates content safety policies. "
     "If you have a safer or policy-compliant version of the question, I can help with that instead."
@@ -100,7 +99,6 @@ async def main() -> None:
         intents: list[KnowledgeRetrievalIntent] = [KnowledgeRetrievalSemanticIntent(search=query) for query in queries]
         request = KnowledgeBaseRetrievalRequest(
             intents=intents,
-            retrieval_reasoning_effort=KnowledgeRetrievalMinimalReasoningEffort(),
             include_activity=True,
         )
         result = await knowledge_base_client.retrieve(request)

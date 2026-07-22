@@ -9,8 +9,11 @@ This repository contains a six-part Microsoft Foundry IQ notebook lab and six Py
 Microsoft Foundry hosted agents. A single Azure Developer CLI (`azd`) project provisions the shared Foundry project,
 model deployments, Azure AI Search, storage, monitoring, and optional Microsoft Fabric capacity.
 
-The notebooks and hosted agents share infrastructure but create separate knowledge bases. Three hosted agents use
-`contoso-company-kb`: `agent-foundryiq-mcp` connects through the Azure AI Search knowledge-base MCP endpoint,
+The notebooks and hosted agents share infrastructure but create separate knowledge bases. The hosted-agent setup
+creates `contoso-company-kb-low` with low reasoning effort and `contoso-company-kb-minimal` with minimal reasoning
+effort over the same Search sources. The low KB configures the Azure OpenAI model; the extractive minimal KB does
+not configure a model. Three hosted agents use `contoso-company-kb-minimal`:
+`agent-foundryiq-mcp` connects through the Azure AI Search knowledge-base MCP endpoint,
 `agent-foundryiq-api` calls the knowledge-base retrieval API with a custom Python tool, and
 `agent-toolbox-foundryiq` connects through a Foundry toolbox.
 `agent-toolbox-fabriciq` uses a separate toolbox and a delegated-user connection to the Fabric IQ ontology
@@ -37,8 +40,8 @@ knowledge-base MCP URL so Toolbox emits the user's Search-scoped query-source au
   storage, monitoring, and optional Fabric modules.
 - `infra/main.parameters.json`: maps `azd` environment values into the Bicep deployment.
 - `infra/core/`: reusable Bicep modules for Foundry, Search, storage, monitoring, and Fabric resources.
-- `infra/create-search-indexes.py`: restores sample indexes and creates the hosted agent's
-  `contoso-company-kb`.
+- `infra/create-search-indexes.py`: restores sample indexes and creates the low-reasoning
+  `contoso-company-kb-low` and minimal-reasoning `contoso-company-kb-minimal`.
 - `infra/create-toolbox-foundryiq.py`: creates and promotes the toolbox version after the knowledge base exists. It uses the
   dedicated `kb-mcp-connection` remote-tool project connection by default and accepts overrides for the Work IQ
   knowledge-base toolbox.

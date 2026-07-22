@@ -64,7 +64,7 @@ def main() -> None:
         "AZURE_SEARCH_SERVICE_ENDPOINT": os.environ["AZURE_AI_SEARCH_SERVICE_ENDPOINT"],
         "AZURE_SEARCH_SERVICE_NAME": search_name,
         "AZURE_SEARCH_ADMIN_KEY": search_key,
-        "AZURE_AI_SEARCH_KNOWLEDGE_BASE_NAME": "contoso-company-kb",
+        "AZURE_AI_SEARCH_KNOWLEDGE_BASE_NAME": "contoso-company-kb-minimal",
         "AZURE_AI_SEARCH_KB_MCP_CONNECTION_NAME": "kb-mcp-connection",
         "CUSTOM_FOUNDRY_AGENT_TOOLBOX_NAME": "hr-agent-tools",
         "AZURE_AI_SEARCH_WORKIQ_KNOWLEDGE_BASE_NAME": "multisource-workiq-knowledge-base",

@@ -4,7 +4,7 @@ This repository combines a six-part Microsoft Foundry IQ notebook lab with six d
 [Microsoft Agent Framework](https://learn.microsoft.com/agent-framework/) agents. One `azd`
 project provisions the shared Foundry project, `gpt-5.4` and `text-embedding-3-large` deployments,
 Azure AI Search, storage, monitoring, and an optional F2 Fabric capacity. It then prepares Search
-data, creates the agent's HR knowledge base, and deploys the agent directly from Python source.
+data, creates low- and minimal-reasoning HR knowledge bases, and deploys the agents directly from Python source.
 
 ## Architecture
 
@@ -13,7 +13,8 @@ flowchart LR
   azd[azd up] --> foundry[Foundry project and models]
   azd --> search[Azure AI Search]
   azd --> fabric[Optional Fabric F2 capacity]
-  search --> agentkb[contoso-company-kb]
+  search --> lowkb[contoso-company-kb-low: low reasoning]
+  search --> agentkb[contoso-company-kb-minimal: minimal reasoning]
   agentkb -->|Direct MCP endpoint| mcpagent[Hosted MCP HR agent]
   agentkb -->|Python retrieval API tool| apiagent[Hosted API HR agent]
   agentkb --> toolbox[Foundry toolbox]
@@ -32,8 +33,12 @@ flowchart LR
   workiqkbtoolbox --> workiqkbagent[Hosted Work IQ KB agent]
 ```
 
-The examples intentionally remain independent. The notebooks create learning-path knowledge bases.
-Three hosted agents use their own `contoso-company-kb`: one connects through its direct Foundry IQ
+The examples intentionally remain independent. The notebooks create learning-path knowledge bases with low
+reasoning effort. Provisioning also creates `contoso-company-kb-low` with low reasoning effort and
+`contoso-company-kb-minimal` with minimal reasoning effort over the same HR and health sources.
+The low-reasoning KB uses the configured Azure OpenAI model for query planning; the minimal-reasoning
+KB is extractive and does not configure a model.
+Three hosted agents use `contoso-company-kb-minimal`: one connects through its direct Foundry IQ
 MCP endpoint, one calls the `2026-05-01-preview` retrieval API from a custom Python tool, and one uses
 a Foundry toolbox containing the knowledge base, web search, and code interpreter tools. The fourth
 agent uses a separate toolbox connected directly to the Fabric IQ ontology used by
@@ -71,7 +76,7 @@ azd up
 ```
 
 `azd up` provisions the resources, writes the generated local settings to `.env`, restores the
-sample HR and health indexes, creates the independent HR agent knowledge base and Foundry toolbox,
+sample HR and health indexes, creates the low- and minimal-reasoning HR knowledge bases and Foundry toolbox,
 prepares Fabric when enabled, creates and publishes an ontology-backed Fabric Data Agent, creates a
 separate `fabric-ontology-tools` toolbox, and deploys all six agents. The Fabric Data Agent's ID and
 MCP endpoint are written to `FABRIC_DATA_AGENT_ID` and `FABRIC_DATA_AGENT_MCP_URL`. The Fabric toolbox
@@ -128,7 +133,7 @@ sources in `multisource-workiq-knowledge-base`, and publishes `workiq-knowledge-
 not required to deploy the agent.
 
 The dedicated `workiq-kb-mcp-connection` must target the same knowledge-base MCP URL used by the
-Toolbox tool. Do not reuse `kb-mcp-connection`, whose target is `contoso-company-kb`. Toolbox uses the
+Toolbox tool. Do not reuse `kb-mcp-connection`, whose target is `contoso-company-kb-minimal`. Toolbox uses the
 matching Foundry IQ connection to authenticate Search with the project managed identity and emit the
 signed-in user's Search-scoped token as `x-ms-query-source-authorization` for Work IQ retrieval.
 Invoke this agent through its deployed endpoint: local runs do not receive the hosted platform's

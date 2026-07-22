@@ -172,7 +172,7 @@ module knowledgeBaseMcpConnection 'connection.bicep' = {
     connectionConfig: {
       name: 'kb-mcp-connection'
       category: 'RemoteTool'
-      target: 'https://${azureAiSearch.outputs.searchServiceName}.search.windows.net/knowledgebases/contoso-company-kb/mcp?api-version=2026-05-01-preview'
+      target: 'https://${azureAiSearch.outputs.searchServiceName}.search.windows.net/knowledgebases/contoso-company-kb-minimal/mcp?api-version=2026-05-01-preview'
       authType: 'ProjectManagedIdentity'
       audience: 'https://search.azure.com/'
       isSharedToAll: true
