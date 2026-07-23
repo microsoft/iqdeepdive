@@ -99,7 +99,7 @@ Set `DEPLOY_FABRIC_CAPACITY=false` before `azd up` to use an existing Fabric wor
 Fabric portions. Set `FABRIC_WORKSPACE_ID`, `FABRIC_ONTOLOGY_ID`, and `FABRIC_GRAPH_ID` in `.env`
 before running parts 3, 5, and 6 when you manage Fabric separately.
 
-After Fabric setup completes, open `notebooks/query-fabric-data-agent.ipynb` to inspect the tools exposed by the
+After Fabric setup completes, open `notebooks/fabriciq-dataagent.ipynb` to inspect the tools exposed by the
 published Fabric Data Agent MCP endpoint and make a tool call. The notebook reads `FABRIC_TENANT_ID` and
 `FABRIC_DATA_AGENT_MCP_URL` from `.env`.
 

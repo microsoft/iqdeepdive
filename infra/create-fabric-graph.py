@@ -451,7 +451,7 @@ def main() -> None:
         credential.close()
 
     graph_ui_url = (
-        f"{FABRIC_PORTAL_BASE_URL}/groups/{workspace_id}/graphmodels/{graph.id}"
+        f"{FABRIC_PORTAL_BASE_URL}/groups/{workspace_id}/graph/{graph.id}"
         "?experience=fabric-developer"
     )
     for key, value in {
