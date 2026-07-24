@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 
 load_dotenv(dotenv_path=".env", override=True)
 
-FABRIC_AUDIENCE = "https://api.fabric.microsoft.com"
+FABRIC_AUDIENCE = "https://analysis.windows.net/powerbi/api"
 
 
 def create_or_update_connection(
@@ -76,12 +76,8 @@ def create_or_update_toolbox(
 if __name__ == "__main__":
     project_endpoint = os.environ["FOUNDRY_PROJECT_ENDPOINT"]
     ontology_mcp_url = os.environ["FABRIC_ONTOLOGY_MCP_URL"]
-    connection_name = os.environ.get(
-        "FABRIC_IQ_CONNECTION_NAME", "fabric-ontology-connection"
-    )
-    toolbox_name = os.environ.get(
-        "CUSTOM_FOUNDRY_FABRIC_TOOLBOX_NAME", "fabric-ontology-tools"
-    )
+    connection_name = "fabric-ontology-connection"
+    toolbox_name = "fabric-ontology-tools"
 
     create_or_update_connection(
         project_endpoint,

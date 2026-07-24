@@ -61,8 +61,6 @@ services:
         environmentVariables:
             - name: AZURE_AI_MODEL_DEPLOYMENT_NAME
               value: ${AZURE_AI_MODEL_DEPLOYMENT_NAME}
-            - name: CUSTOM_FOUNDRY_FABRIC_TOOLBOX_NAME
-              value: ${CUSTOM_FOUNDRY_FABRIC_TOOLBOX_NAME=fabric-ontology-tools}
         kind: hosted
         name: agent-toolbox-fabriciq
         protocols:
@@ -127,8 +125,6 @@ services:
         environmentVariables:
             - name: AZURE_AI_MODEL_DEPLOYMENT_NAME
               value: ${AZURE_AI_MODEL_DEPLOYMENT_NAME}
-            - name: CUSTOM_FOUNDRY_WORKIQ_TOOLBOX_NAME
-              value: ${CUSTOM_FOUNDRY_WORKIQ_TOOLBOX_NAME=work-iq-tools}
         kind: hosted
         name: agent-toolbox-workiq
         protocols:

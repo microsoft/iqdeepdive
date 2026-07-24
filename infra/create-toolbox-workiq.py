@@ -325,8 +325,8 @@ async def apply() -> None:
     tenant_id = os.environ["AZURE_TENANT_ID"]
     endpoint = os.environ["FOUNDRY_PROJECT_ENDPOINT"]
     project_id = os.environ["AZURE_AI_PROJECT_ID"]
-    connection_name = os.getenv("WORK_IQ_CONNECTION_NAME", "work-iq-connection")
-    toolbox_name = os.getenv("CUSTOM_FOUNDRY_WORKIQ_TOOLBOX_NAME", "work-iq-tools")
+    connection_name = "work-iq-connection"
+    toolbox_name = "work-iq-tools"
     url = connection_url(project_id, connection_name)
     headers = get_management_headers(tenant_id)
     existing_connection = get_connection(url, headers)

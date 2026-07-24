@@ -13,6 +13,44 @@ ENV_PATH = REPO_ROOT / ".env"
 FABRIC_API_URL = "https://api.fabric.microsoft.com"
 FABRIC_SCOPE = f"{FABRIC_API_URL}/.default"
 OPERATION_TIMEOUT_SECONDS = 300
+AI_INSTRUCTIONS = """Use the ontology for Contoso DIY product catalog, category, supplier,
+store, and current inventory facts. Use the review graph for reviewers, reviews, products,
+product features, feature-level sentiment, and relationship traversals. Join results across
+sources by product SKU when a question requires both operational and customer-review context.
+"""
+ONTOLOGY_DESCRIPTION = (
+    "Contoso DIY product catalog, categories, suppliers, stores, and current inventory."
+)
+ONTOLOGY_INSTRUCTIONS = """Generate Fabric Ontology GQL. Property names are case-sensitive.
+When sorting a projected expression, use its RETURN alias exactly; never invent a different
+capitalization. Inventory uses quantityOnHand and availableQuantity. Product uses sku and name.
+Store HOLDS Inventory, and Inventory RECORDS_STOCK_FOR Product."""
+GRAPH_DESCRIPTION = (
+    "Contoso DIY product reviews, reviewers, product features, feature-level sentiment, "
+    "and relationships between products, reviews, reviewers, and features."
+)
+GRAPH_INSTRUCTIONS = """Generate Fabric Graph GQL, not Cypher. Use FILTER after MATCH for
+predicates; never use WHERE. Support group by in GQL. The graph has Product, Reviewer, Review,
+and Feature nodes, with HAS_REVIEW, WROTE, and MENTIONS edges. MENTIONS has sentiment,
+confidence, and evidenceExcerpt properties. Product and Feature use sku and featureName,
+respectively. Review uses reviewId, rating, reviewText, and reviewDate."""
+GRAPH_FEWSHOTS = {
+    "Which product features are mentioned most often in reviews?": (
+        "MATCH (review:`Review`)-[mentions:`MENTIONS`]->(feature:`Feature`)\n"
+        "LET featureName = feature.`featureName`\n"
+        "RETURN featureName, COUNT(mentions) AS mentionCount\n"
+        "GROUP BY featureName\n"
+        "ORDER BY mentionCount DESC"
+    ),
+    "Which product features have the most negative mentions?": (
+        "MATCH (review:`Review`)-[mentions:`MENTIONS`]->(feature:`Feature`)\n"
+        "FILTER mentions.`sentiment` = 'negative'\n"
+        "LET featureName = feature.`featureName`\n"
+        "RETURN featureName, COUNT(mentions) AS negativeMentionCount\n"
+        "GROUP BY featureName\n"
+        "ORDER BY negativeMentionCount DESC"
+    ),
+}
 
 load_dotenv(ENV_PATH, override=True)
 
@@ -179,6 +217,79 @@ def add_fabric_item_datasource(
     wait_for_operation(client, response)
 
 
+def get_staging_datasource(
+    client: httpx.Client,
+    base_url: str,
+    item_id: str,
+) -> dict:
+    """Return the staging data source associated with a Fabric item."""
+    for source in list_staging_datasources(client, base_url):
+        if source.get("itemReference", {}).get("itemId") == item_id:
+            return source
+    raise RuntimeError(f"Fabric item {item_id} is not a staging data source.")
+
+
+def configure_datasource(
+    client: httpx.Client,
+    base_url: str,
+    item_id: str,
+    source_name: str,
+    description: str,
+    instructions: str,
+    fewshots: dict[str, str],
+) -> None:
+    """Configure source-specific generation guidance and few-shot examples."""
+    datasource = get_staging_datasource(client, base_url, item_id)
+    datasource_id = datasource["id"]
+    response = request(
+        client,
+        "PATCH",
+        f"{base_url}/staging/datasources/{datasource_id}",
+        expected_statuses={httpx.codes.OK},
+        json={
+            "description": description,
+            "instructions": instructions,
+        },
+    )
+    wait_for_operation(client, response)
+
+    if not fewshots:
+        return
+
+    fewshots_response = request(
+        client,
+        "GET",
+        f"{base_url}/staging/datasources/{datasource_id}/fewshots",
+        expected_statuses={httpx.codes.OK},
+    )
+    existing_by_question = {
+        example["question"]: example
+        for example in fewshots_response.json().get("value", [])
+    }
+    for question, query in fewshots.items():
+        existing = existing_by_question.get(question)
+        if existing is None:
+            print(f"Adding {source_name} example query: {question}")
+            request(
+                client,
+                "POST",
+                f"{base_url}/staging/datasources/{datasource_id}/fewshots",
+                expected_statuses={httpx.codes.CREATED},
+                json={"question": question, "query": query},
+            )
+        elif existing.get("query") != query:
+            print(f"Updating {source_name} example query: {question}")
+            request(
+                client,
+                "PATCH",
+                f"{base_url}/staging/datasources/{datasource_id}/fewshots/{existing['id']}",
+                expected_statuses={httpx.codes.OK},
+                json={"query": query},
+            )
+        else:
+            print(f"Reusing {source_name} example query: {question}")
+
+
 def main() -> None:
     """Create or update the ontology and Graph-backed data agent and publish it."""
     tenant_id = require_env("FABRIC_TENANT_ID")
@@ -202,15 +313,7 @@ def main() -> None:
             "PATCH",
             f"{base_url}/staging/settings",
             expected_statuses={httpx.codes.OK, httpx.codes.ACCEPTED},
-            json={
-                "aiInstructions": (
-                    "Use the ontology for Contoso DIY product catalog, category, supplier, "
-                    "store, and current inventory facts. Use the review graph for reviewers, "
-                    "reviews, product features, feature-level sentiment, and relationship "
-                    "traversals. Join results across sources by product SKU when a question "
-                    "requires both operational and customer-review context."
-                )
-            },
+            json={"aiInstructions": AI_INSTRUCTIONS},
         )
         wait_for_operation(client, settings_response)
 
@@ -227,6 +330,24 @@ def main() -> None:
             workspace_id,
             graph_id,
             "review graph",
+        )
+        configure_datasource(
+            client,
+            base_url,
+            ontology_id,
+            "ontology",
+            ONTOLOGY_DESCRIPTION,
+            ONTOLOGY_INSTRUCTIONS,
+            {},
+        )
+        configure_datasource(
+            client,
+            base_url,
+            graph_id,
+            "Graph",
+            GRAPH_DESCRIPTION,
+            GRAPH_INSTRUCTIONS,
+            GRAPH_FEWSHOTS,
         )
 
         print("Publishing the Fabric data agent...")

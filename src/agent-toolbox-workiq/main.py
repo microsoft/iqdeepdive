@@ -17,9 +17,7 @@ logger = logging.getLogger("agent-toolbox-workiq")
 
 PROJECT_ENDPOINT = os.environ["FOUNDRY_PROJECT_ENDPOINT"]
 MODEL_DEPLOYMENT_NAME = os.environ["AZURE_AI_MODEL_DEPLOYMENT_NAME"]
-TOOLBOX_NAME = os.environ.get(
-    "CUSTOM_FOUNDRY_WORKIQ_TOOLBOX_NAME", "work-iq-tools"
-)
+TOOLBOX_NAME = "work-iq-tools"
 
 
 def main() -> None:

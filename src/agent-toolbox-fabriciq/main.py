@@ -16,9 +16,7 @@ logger = logging.getLogger("agent-toolbox-fabriciq")
 
 PROJECT_ENDPOINT = os.environ["FOUNDRY_PROJECT_ENDPOINT"]
 MODEL_DEPLOYMENT_NAME = os.environ["AZURE_AI_MODEL_DEPLOYMENT_NAME"]
-TOOLBOX_NAME = os.environ.get(
-    "CUSTOM_FOUNDRY_FABRIC_TOOLBOX_NAME", "fabric-ontology-tools"
-)
+TOOLBOX_NAME = "fabric-ontology-tools"
 
 
 def main() -> None:
@@ -38,7 +36,6 @@ def main() -> None:
     toolbox = FoundryToolbox(
         credential=credential,
         url=toolbox_endpoint,
-        name="fabric_iq_toolbox",
         load_prompts=False,
     )
     client = FoundryChatClient(

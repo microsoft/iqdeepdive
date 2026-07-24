@@ -133,6 +133,31 @@ HTTP client with redirects enabled before `session.initialize()`; a plain `httpx
 `follow_redirects=False` and can surface a misleading `500 Internal Server Error`. The current MCP client works and
 negotiates the endpoint's supported protocol version when `follow_redirects=True`.
 
+## Open Fabric Data Agent issue
+
+Fabric Data Agent NL2GQL can generate Cypher-style `WHERE` clauses for Fabric Graph queries, but the Fabric Graph
+GQL endpoint requires `FILTER`. For example, a generated negative-sentiment review query timed out with `WHERE`,
+while changing only `WHERE` to `FILTER` succeeded against the same graph. The Graph endpoint may time out on this
+invalid syntax instead of returning a useful syntax diagnostic.
+
+Removing the predicate is not a reliable workaround. Fabric Data Agent also failed to execute a generated
+predicate-free aggregate query and a simple feature-list query, even though the exact generated aggregate GQL
+succeeded through the Graph REST endpoint. An ontology-backed inventory question succeeded through the same
+published Data Agent MCP tool, isolating the broader failure to the Data Agent's Graph source path rather than MCP
+connectivity. Adding Graph-specific instructions and two validated direct-execution GQL examples as published
+few-shot queries did not resolve either Graph question. Diagnostics confirmed that both examples loaded, matched
+the predicate-free question, and guided NL2GQL to a valid query. The exact generated query succeeded through the
+Graph REST endpoint, but the Data Agent's `analyze.database.execute` step failed with `Failed to execute GQL: Unable
+to process the request` (RAID `bc80ee4e-8fc0-4fd0-b47f-8035b54c2c64`). Until the Graph integration is fixed, use
+direct Graph GQL for review questions and ontology-backed questions for Data Agent demonstrations.
+
+Ontology NL2GQL can also generate an invalid `ORDER BY` identifier even when it selects the correct source and
+properties. One inventory query projected `quantityOnHand AS quantity_on_hand` but sorted by the undefined
+`quantity_onHand`, failing with internal code `42000` and RAID `615b7b72-a632-4622-9c4c-65dcb2ed02db`.
+Ontology-specific instructions to preserve exact property names and projected aliases repaired the query. Fabric
+rejects attempts to add source examples with `Few shot examples are not supported for Ontology data sources`, so
+keep ontology guidance instruction-based unless that API capability changes.
+
 ## Upstream Agent Framework issues
 
 Keep these open Python hosting issues in mind when changing the Work IQ consent flow:
