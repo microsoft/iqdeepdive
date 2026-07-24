@@ -1,0 +1,7 @@
+expression DatabaseQuery =
+		let
+			Source = Sql.Database("{{SQL_ENDPOINT}}", "{{SQL_DATABASE}}")
+		in
+			Source
+
+	annotation PBI_IncludeFutureArtifacts = False

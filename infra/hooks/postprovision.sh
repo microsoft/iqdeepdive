@@ -31,6 +31,15 @@ if [ -n "${FABRIC_CAPACITY_ID:-}" ] || [ -n "${FABRIC_WORKSPACE_ID:-}" ]; then
     echo "Creating the Fabric product review graph..."
     uv run --locked python infra/create-fabric-graph.py
 
+    echo "Creating the web analytics lakehouse..."
+    uv run --locked python infra/create-web-analytics-lakehouse.py
+
+    echo "Creating the web analytics semantic model..."
+    uv run --locked python infra/create-semantic-model.py
+
+    echo "Creating the web analytics Power BI report..."
+    uv run --locked python infra/create-web-analytics-report.py
+
     echo "Creating the Fabric data agent..."
     uv run --locked python infra/create-fabric-data-agent.py
 

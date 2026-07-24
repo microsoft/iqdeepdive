@@ -1,0 +1,26 @@
+/// Marketing acquisition channels.
+table Channels
+
+	column ChannelKey
+		dataType: int64
+		formatString: 0
+		isHidden
+		summarizeBy: none
+		sourceColumn: channel_key
+
+	column Channel
+		dataType: string
+		summarizeBy: none
+		sourceColumn: channel_name
+
+	column ChannelGroup
+		dataType: string
+		summarizeBy: none
+		sourceColumn: channel_group
+
+	partition Channels = entity
+		mode: directLake
+		source
+			entityName: dim_channels
+			schemaName: dbo
+			expressionSource: DatabaseQuery

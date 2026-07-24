@@ -33,6 +33,15 @@ if ($env:FABRIC_CAPACITY_ID -or $env:FABRIC_WORKSPACE_ID) {
     Write-Host "Creating the Fabric product review graph..."
     uv run --locked python infra/create-fabric-graph.py
 
+    Write-Host "Creating the web analytics lakehouse..."
+    uv run --locked python infra/create-web-analytics-lakehouse.py
+
+    Write-Host "Creating the web analytics semantic model..."
+    uv run --locked python infra/create-semantic-model.py
+
+    Write-Host "Creating the web analytics Power BI report..."
+    uv run --locked python infra/create-web-analytics-report.py
+
     Write-Host "Creating the Fabric data agent..."
     uv run --locked python infra/create-fabric-data-agent.py
 

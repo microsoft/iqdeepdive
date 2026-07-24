@@ -23,6 +23,9 @@ user's Microsoft 365 work context through Work IQ.
 `agent-toolbox-foundryiq-workiq` instead connects through a Foundry toolbox to the multi-source
 knowledge base created by `infra/create-search-indexes.py --include-workiq`. Its dedicated PMI connection must target that exact
 knowledge-base MCP URL so Toolbox emits the user's Search-scoped query-source authorization.
+Provisioning also creates a separate web analytics lakehouse, Direct Lake Power BI semantic model, and PBIR
+report. The semantic model feeds the same Fabric Data Agent as the ontology and Graph; provisioning selects all
+seven model tables before publishing the agent.
 
 ## Repository map
 
@@ -36,6 +39,9 @@ knowledge-base MCP URL so Toolbox emits the user's Search-scoped query-source au
 - `data/`: source documents and exported JSONL/index definitions used to seed Azure AI Search.
 - `data/ai-search-data/`: files uploaded or indexed for the notebook and agent examples.
 - `data/index-data/`: exported Search indexes and index metadata restored during provisioning.
+- `data/semantic-models/web-analytics/`: source-controlled TMDL definition for the Direct Lake web analytics
+  semantic model.
+- `data/reports/web-analytics/`: source-controlled enhanced PBIR definition for the web analytics Power BI report.
 - `infra/main.bicep`: subscription-scope entry point. Creates the resource group and composes Foundry, Search,
   storage, monitoring, and optional Fabric modules.
 - `infra/main.parameters.json`: maps `azd` environment values into the Bicep deployment.
@@ -47,8 +53,15 @@ knowledge-base MCP URL so Toolbox emits the user's Search-scoped query-source au
   knowledge-base toolbox.
 - `infra/create-fabric-graph.py`: creates or updates the lakehouse-backed product review Graph Model, refreshes
   its queryable data, and writes its ID and Fabric portal URL to `.env`.
-- `infra/create-fabric-data-agent.py`: creates or reuses an ontology- and Graph-backed Fabric Data Agent,
-  publishes its staging configuration through the Fabric REST API, and writes its ID and MCP endpoint to `.env`.
+- `infra/create-fabric-data-agent.py`: creates or reuses an ontology-, Graph-, and semantic-model-backed Fabric
+  Data Agent, selects the semantic model tables, publishes its staging configuration through the Fabric REST API,
+  and writes its ID and MCP endpoint to `.env`.
+- `infra/create-web-analytics-lakehouse.py`: creates a separate lakehouse and loads deterministic website session,
+  page-view, and dimensional data.
+- `infra/create-semantic-model.py`: binds the source-controlled TMDL model to the web analytics lakehouse SQL
+  endpoint, creates or updates the Direct Lake semantic model, and writes its ID and portal URL to `.env`.
+- `infra/create-web-analytics-report.py`: binds the source-controlled PBIR definition to the semantic model,
+  creates or updates the Power BI report, and writes its ID and portal URL to `.env`.
 - `infra/create-toolbox-fabriciq-ontology.py`: creates the `user-entra-token` Fabric ontology connection after the ontology
   exists, then creates and promotes the separate Fabric IQ toolbox.
 - `infra/create-toolbox-workiq.py`: opt-in Graph SDK setup for the Work IQ service principal, single-tenant Entra

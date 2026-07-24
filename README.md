@@ -27,6 +27,10 @@ flowchart LR
   fabricdataagent -->|Published MCP endpoint| clients[MCP clients]
   fabric --> fabrictoolbox[Fabric IQ toolbox]
   fabrictoolbox --> fabricagent[Hosted inventory agent]
+  fabric --> analyticslake[Web analytics lakehouse]
+  analyticslake --> semanticmodel[Power BI semantic model]
+  semanticmodel --> fabricdataagent
+  semanticmodel --> analyticsreport[Web analytics report]
   m365[Microsoft 365] --> workiq[Work IQ A2A]
   workiq --> workiqtoolbox[Work IQ toolbox]
   workiqtoolbox --> workiqagent[Hosted workplace agent]
@@ -49,6 +53,10 @@ notebook-created knowledge base.
 The Fabric Data Agent combines that ontology with a Fabric Graph Model over synthetic product reviews. The
 ontology owns product, category, supplier, store, and inventory facts; the graph owns reviewers, reviews,
 features, and feature-level sentiment. Product SKU is the shared key between the complementary sources.
+The Power BI semantic model uses a separate lakehouse containing deterministic website sessions and
+page views. Its TMDL definition provides a star schema and governed DAX measures for traffic, conversion, bounce,
+and revenue analysis. It is the Fabric Data Agent's third source, and a source-controlled PBIR report visualizes
+the same measures. Provisioning selects all seven model tables in the Data Agent before publishing it.
 The fifth agent uses a separate OAuth2 `RemoteA2A` connection and toolbox to query the signed-in user's
 Microsoft 365 work context through Work IQ.
 The sixth agent uses a Foundry toolbox connected to a provisioned multi-source Work IQ knowledge base.
@@ -82,18 +90,32 @@ azd up
 
 `azd up` provisions the resources, writes the generated local settings to `.env`, restores the
 sample HR and health indexes, creates the low- and minimal-reasoning HR knowledge bases and Foundry toolbox,
-prepares Fabric when enabled, creates the Fabric product review graph, publishes an ontology- and
-Graph-backed Fabric Data Agent, creates a
-separate `fabric-ontology-tools` toolbox, and deploys all six agents. The Fabric Data Agent's ID and
+prepares Fabric when enabled, creates the Fabric product review graph and web analytics lakehouse, provisions the
+Direct Lake semantic model and Power BI report, publishes a Fabric Data Agent backed by the ontology, Graph, and
+semantic model, creates a separate `fabric-ontology-tools` toolbox, and deploys all six agents. The Fabric Data
+Agent's ID and
 MCP endpoint are written to `FABRIC_DATA_AGENT_ID` and `FABRIC_DATA_AGENT_MCP_URL`. The Fabric toolbox
 targets the generated ontology endpoint exactly and uses the `fabric-ontology-connection` remote-tool
 connection. The Graph Model's ID and portal link are written to `FABRIC_GRAPH_ID` and
 `FABRIC_GRAPH_UI_URL`.
 
+The web analytics setup writes the generated lakehouse and semantic model identifiers and portal links to
+`FABRIC_WEB_ANALYTICS_LAKEHOUSE_*` and `FABRIC_WEB_ANALYTICS_SEMANTIC_MODEL_*` in `.env`. It writes the report
+identifier and its single portal URL to `FABRIC_WEB_ANALYTICS_REPORT_ID` and
+`FABRIC_WEB_ANALYTICS_REPORT_URL`. The semantic model definition is stored as TMDL under
+`data/semantic-models/web-analytics/`; the enhanced Power BI report definition is stored as PBIR under
+`data/reports/web-analytics/`. Provisioning creates or updates both definitions by display name.
+
 The review graph is built from deterministic synthetic data loaded into the same lakehouse. Its sentiment,
 confidence, and evidence values are fixture ground truth generated during provisioning; the sample does not
 claim to extract sentiment with AI at runtime. Saving and refreshing the Graph Model ingests those tables into
 Fabric's queryable graph representation.
+
+The separate web analytics lakehouse contains a date dimension, channel, device, geography, and page dimensions,
+plus session- and page-view-grain facts. The Direct Lake semantic model defines explicit measures such as total
+sessions, unique visitors, pages per session, bounce rate, conversion rate, revenue, and average session duration.
+The generated `Contoso Web Analytics Dashboard` item is technically a Power BI report: unlike a Power BI Service
+dashboard, its pages and interactive visuals can be fully represented and deployed through the Fabric API.
 
 Set `DEPLOY_FABRIC_CAPACITY=false` before `azd up` to use an existing Fabric workspace or skip the
 Fabric portions. Set `FABRIC_WORKSPACE_ID`, `FABRIC_ONTOLOGY_ID`, and `FABRIC_GRAPH_ID` in `.env`

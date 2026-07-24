@@ -1,0 +1,26 @@
+/// Device categories used to visit the website.
+table Devices
+
+	column DeviceKey
+		dataType: int64
+		formatString: 0
+		isHidden
+		summarizeBy: none
+		sourceColumn: device_key
+
+	column Device
+		dataType: string
+		summarizeBy: none
+		sourceColumn: device_name
+
+	column DeviceCategory
+		dataType: string
+		summarizeBy: none
+		sourceColumn: device_category
+
+	partition Devices = entity
+		mode: directLake
+		source
+			entityName: dim_devices
+			schemaName: dbo
+			expressionSource: DatabaseQuery

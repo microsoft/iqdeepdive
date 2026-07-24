@@ -1,0 +1,33 @@
+/// Visitor market and regional geography.
+table Geography
+
+	column GeographyKey
+		dataType: int64
+		formatString: 0
+		isHidden
+		summarizeBy: none
+		sourceColumn: geography_key
+
+	column Country
+		dataType: string
+		dataCategory: Country
+		summarizeBy: none
+		sourceColumn: country
+
+	column Region
+		dataType: string
+		dataCategory: StateOrProvince
+		summarizeBy: none
+		sourceColumn: region
+
+	column Market
+		dataType: string
+		summarizeBy: none
+		sourceColumn: market
+
+	partition Geography = entity
+		mode: directLake
+		source
+			entityName: dim_geographies
+			schemaName: dbo
+			expressionSource: DatabaseQuery

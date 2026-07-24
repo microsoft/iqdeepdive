@@ -1,0 +1,31 @@
+/// Website pages and their analytical categories.
+table Pages
+
+	column PageKey
+		dataType: int64
+		formatString: 0
+		isHidden
+		summarizeBy: none
+		sourceColumn: page_key
+
+	column PagePath
+		dataType: string
+		summarizeBy: none
+		sourceColumn: page_path
+
+	column Page
+		dataType: string
+		summarizeBy: none
+		sourceColumn: page_name
+
+	column PageCategory
+		dataType: string
+		summarizeBy: none
+		sourceColumn: page_category
+
+	partition Pages = entity
+		mode: directLake
+		source
+			entityName: dim_pages
+			schemaName: dbo
+			expressionSource: DatabaseQuery

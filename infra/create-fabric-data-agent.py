@@ -1,4 +1,4 @@
-"""Create and publish a Fabric data agent backed by Contoso ontology and Graph."""
+"""Create and publish a Fabric data agent backed by Contoso Fabric IQ sources."""
 
 import os
 import time
@@ -13,10 +13,12 @@ ENV_PATH = REPO_ROOT / ".env"
 FABRIC_API_URL = "https://api.fabric.microsoft.com"
 FABRIC_SCOPE = f"{FABRIC_API_URL}/.default"
 OPERATION_TIMEOUT_SECONDS = 300
-AI_INSTRUCTIONS = """Use the ontology for Contoso DIY product catalog, category, supplier,
-store, and current inventory facts. Use the review graph for reviewers, reviews, products,
-product features, feature-level sentiment, and relationship traversals. Join results across
-sources by product SKU when a question requires both operational and customer-review context.
+AI_INSTRUCTIONS = """Use the web analytics semantic model for website traffic, sessions,
+conversions, channel performance, device usage, geography, and revenue analysis. Use the
+ontology for Contoso DIY product catalog, category, supplier, store, and current inventory
+facts. Use the review graph for reviewers, reviews, products, product features, feature-level
+sentiment, and relationship traversals. Join ontology and graph results by product SKU when a
+question requires both operational and customer-review context.
 """
 ONTOLOGY_DESCRIPTION = (
     "Contoso DIY product catalog, categories, suppliers, stores, and current inventory."
@@ -51,6 +53,15 @@ GRAPH_FEWSHOTS = {
         "ORDER BY negativeMentionCount DESC"
     ),
 }
+WEB_ANALYTICS_TABLES = {
+    "Channels",
+    "Date",
+    "Devices",
+    "Geography",
+    "Page Views",
+    "Pages",
+    "Sessions",
+}
 
 load_dotenv(ENV_PATH, override=True)
 
@@ -79,9 +90,10 @@ def request(
     *,
     expected_statuses: set[int],
     json: dict | None = None,
+    params: dict[str, str] | None = None,
 ) -> httpx.Response:
     """Send a Fabric request and require one of the expected status codes."""
-    response = client.request(method, url, json=json)
+    response = client.request(method, url, json=json, params=params)
     if response.status_code not in expected_statuses:
         response.raise_for_status()
         raise RuntimeError(
@@ -229,6 +241,49 @@ def get_staging_datasource(
     raise RuntimeError(f"Fabric item {item_id} is not a staging data source.")
 
 
+def select_semantic_model_tables(
+    client: httpx.Client,
+    base_url: str,
+    item_id: str,
+) -> None:
+    """Select the web analytics tables exposed to the data agent."""
+    datasource = get_staging_datasource(client, base_url, item_id)
+    datasource_id = datasource["id"]
+    response = request(
+        client,
+        "GET",
+        f"{base_url}/staging/datasources/{datasource_id}/elements",
+        expected_statuses={httpx.codes.OK},
+    )
+    tables = {
+        element["displayName"]: element
+        for element in response.json().get("value", [])
+        if element.get("type") == "Table"
+    }
+    if set(tables) != WEB_ANALYTICS_TABLES:
+        raise RuntimeError(
+            "Web analytics semantic model tables do not match the expected Data Agent "
+            f"schema. Expected {sorted(WEB_ANALYTICS_TABLES)}, found {sorted(tables)}."
+        )
+
+    for table_name in sorted(WEB_ANALYTICS_TABLES):
+        table = tables[table_name]
+        if table.get("isSelected"):
+            print(f"Reusing selected semantic model table: {table_name}")
+            continue
+
+        print(f"Selecting semantic model table: {table_name}")
+        patch_response = request(
+            client,
+            "PATCH",
+            f"{base_url}/staging/datasources/{datasource_id}/elements",
+            expected_statuses={httpx.codes.OK, httpx.codes.ACCEPTED},
+            params={"id": table["id"]},
+            json={"isSelected": True},
+        )
+        wait_for_operation(client, patch_response)
+
+
 def configure_datasource(
     client: httpx.Client,
     base_url: str,
@@ -291,11 +346,12 @@ def configure_datasource(
 
 
 def main() -> None:
-    """Create or update the ontology and Graph-backed data agent and publish it."""
+    """Create or update the multi-source Fabric data agent and publish it."""
     tenant_id = require_env("FABRIC_TENANT_ID")
     workspace_id = require_env("FABRIC_WORKSPACE_ID")
     ontology_id = require_env("FABRIC_ONTOLOGY_ID")
     graph_id = require_env("FABRIC_GRAPH_ID")
+    semantic_model_id = require_env("FABRIC_WEB_ANALYTICS_SEMANTIC_MODEL_ID")
     data_agent_name = os.getenv("FABRIC_DATA_AGENT_NAME", "ContosoDIYDataAgent")
 
     token = get_fabric_token(tenant_id)
@@ -331,6 +387,14 @@ def main() -> None:
             graph_id,
             "review graph",
         )
+        add_fabric_item_datasource(
+            client,
+            base_url,
+            workspace_id,
+            semantic_model_id,
+            "web analytics semantic model",
+        )
+        select_semantic_model_tables(client, base_url, semantic_model_id)
         configure_datasource(
             client,
             base_url,
@@ -358,7 +422,7 @@ def main() -> None:
             expected_statuses={httpx.codes.OK, httpx.codes.CREATED, httpx.codes.ACCEPTED},
             json={
                 "publishedDescription": (
-                    "Contoso DIY product operations and review intelligence data agent"
+                    "Contoso DIY operations, reviews, and web analytics data agent"
                 )
             },
         )

@@ -1,0 +1,39 @@
+relationship 75fba026-9b4a-4fa9-a282-4382c896978e
+	fromColumn: Sessions.DateKey
+	toColumn: Date.DateKey
+
+relationship 681bb4c8-44d1-4cb4-879e-a6081665ae89
+	fromColumn: Sessions.ChannelKey
+	toColumn: Channels.ChannelKey
+
+relationship d59669d5-73ef-48db-8658-522c761c62d4
+	fromColumn: Sessions.DeviceKey
+	toColumn: Devices.DeviceKey
+
+relationship 0bb3f97a-f956-469b-ab47-577aef95b548
+	fromColumn: Sessions.GeographyKey
+	toColumn: Geography.GeographyKey
+
+relationship 20fe81d9-2570-45d7-85b8-3dfd5c5ca96d
+	fromColumn: Sessions.LandingPageKey
+	toColumn: Pages.PageKey
+
+relationship 650699de-714c-43f9-ab4d-ee5eb6111849
+	fromColumn: 'Page Views'.DateKey
+	toColumn: Date.DateKey
+
+relationship 8e55c204-8d85-486a-9874-0520e09c317d
+	fromColumn: 'Page Views'.ChannelKey
+	toColumn: Channels.ChannelKey
+
+relationship cd2583a8-8ea8-42c6-a3a8-ef0a8eb37136
+	fromColumn: 'Page Views'.DeviceKey
+	toColumn: Devices.DeviceKey
+
+relationship 9123dd7f-4efa-47db-8cb2-e7650f27774a
+	fromColumn: 'Page Views'.GeographyKey
+	toColumn: Geography.GeographyKey
+
+relationship 7774dc99-a683-4917-9827-4e23e90b84eb
+	fromColumn: 'Page Views'.PageKey
+	toColumn: Pages.PageKey

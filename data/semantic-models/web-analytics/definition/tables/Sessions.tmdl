@@ -1,0 +1,120 @@
+/// One row per website visit, including conversion and revenue outcomes.
+table Sessions
+
+	measure 'Total Sessions' = COUNTROWS(Sessions)
+		formatString: #,##0
+
+	measure 'Unique Visitors' = DISTINCTCOUNT(Sessions[VisitorId])
+		formatString: #,##0
+
+	measure 'Page Views' = SUM(Sessions[PageViewCount])
+		formatString: #,##0
+
+	measure 'Pages per Session' = DIVIDE([Page Views], [Total Sessions])
+		formatString: 0.00
+
+	measure Bounces = SUM(Sessions[Bounced])
+		formatString: #,##0
+
+	measure 'Bounce Rate' = DIVIDE([Bounces], [Total Sessions])
+		formatString: 0.0%
+
+	measure Conversions = SUM(Sessions[Converted])
+		formatString: #,##0
+
+	measure 'Conversion Rate' = DIVIDE([Conversions], [Total Sessions])
+		formatString: 0.0%
+
+	measure Revenue = SUM(Sessions[RevenueAmount])
+		formatString: $#,##0.00
+
+	measure 'Revenue per Session' = DIVIDE([Revenue], [Total Sessions])
+		formatString: $#,##0.00
+
+	measure 'Average Session Duration' = AVERAGE(Sessions[SessionDurationSeconds])
+		formatString: #,##0 "sec"
+
+	column SessionId
+		dataType: string
+		isHidden
+		summarizeBy: none
+		sourceColumn: session_id
+
+	column VisitorId
+		dataType: string
+		summarizeBy: none
+		sourceColumn: visitor_id
+
+	column DateKey
+		dataType: int64
+		formatString: 0
+		isHidden
+		summarizeBy: none
+		sourceColumn: date_key
+
+	column ChannelKey
+		dataType: int64
+		formatString: 0
+		isHidden
+		summarizeBy: none
+		sourceColumn: channel_key
+
+	column DeviceKey
+		dataType: int64
+		formatString: 0
+		isHidden
+		summarizeBy: none
+		sourceColumn: device_key
+
+	column GeographyKey
+		dataType: int64
+		formatString: 0
+		isHidden
+		summarizeBy: none
+		sourceColumn: geography_key
+
+	column LandingPageKey
+		dataType: int64
+		formatString: 0
+		isHidden
+		summarizeBy: none
+		sourceColumn: landing_page_key
+
+	column SessionDurationSeconds
+		dataType: int64
+		formatString: #,##0
+		summarizeBy: sum
+		sourceColumn: session_duration_seconds
+
+	column PageViewCount
+		dataType: int64
+		formatString: #,##0
+		summarizeBy: sum
+		sourceColumn: page_view_count
+
+	column Bounced
+		dataType: int64
+		formatString: 0
+		isHidden
+		summarizeBy: sum
+		sourceColumn: bounced
+
+	column Converted
+		dataType: int64
+		formatString: 0
+		isHidden
+		summarizeBy: sum
+		sourceColumn: converted
+
+	column RevenueAmount
+		dataType: double
+		formatString: $#,##0.00
+		summarizeBy: sum
+		sourceColumn: revenue
+
+	partition Sessions = entity
+		mode: directLake
+		source
+			entityName: fact_sessions
+			schemaName: dbo
+			expressionSource: DatabaseQuery

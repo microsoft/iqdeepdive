@@ -1,0 +1,80 @@
+/// One row per page viewed during a website session.
+table 'Page Views'
+
+	measure 'Recorded Page Views' = COUNTROWS('Page Views')
+		formatString: #,##0
+
+	measure 'Average Time on Page' = AVERAGE('Page Views'[TimeOnPageSeconds])
+		formatString: #,##0 "sec"
+
+	column PageViewId
+		dataType: string
+		isHidden
+		summarizeBy: none
+		sourceColumn: page_view_id
+
+	column SessionId
+		dataType: string
+		isHidden
+		summarizeBy: none
+		sourceColumn: session_id
+
+	column DateKey
+		dataType: int64
+		formatString: 0
+		isHidden
+		summarizeBy: none
+		sourceColumn: date_key
+
+	column PageKey
+		dataType: int64
+		formatString: 0
+		isHidden
+		summarizeBy: none
+		sourceColumn: page_key
+
+	column ChannelKey
+		dataType: int64
+		formatString: 0
+		isHidden
+		summarizeBy: none
+		sourceColumn: channel_key
+
+	column DeviceKey
+		dataType: int64
+		formatString: 0
+		isHidden
+		summarizeBy: none
+		sourceColumn: device_key
+
+	column GeographyKey
+		dataType: int64
+		formatString: 0
+		isHidden
+		summarizeBy: none
+		sourceColumn: geography_key
+
+	column ViewSequence
+		dataType: int64
+		formatString: 0
+		summarizeBy: none
+		sourceColumn: view_sequence
+
+	column TimeOnPageSeconds
+		dataType: int64
+		formatString: #,##0
+		summarizeBy: sum
+		sourceColumn: time_on_page_seconds
+
+	column IsExit
+		dataType: int64
+		formatString: 0
+		summarizeBy: sum
+		sourceColumn: is_exit
+
+	partition 'Page Views' = entity
+		mode: directLake
+		source
+			entityName: fact_page_views
+			schemaName: dbo
+			expressionSource: DatabaseQuery

@@ -1,0 +1,62 @@
+/// Calendar attributes for web analytics trends.
+table Date
+
+	column DateKey
+		dataType: int64
+		formatString: 0
+		summarizeBy: none
+		sourceColumn: date_key
+
+	column Date
+		dataType: dateTime
+		formatString: yyyy-mm-dd
+		summarizeBy: none
+		sourceColumn: date
+
+	column Year
+		dataType: int64
+		formatString: 0
+		summarizeBy: none
+		sourceColumn: year
+
+	column Quarter
+		dataType: string
+		summarizeBy: none
+		sourceColumn: quarter
+
+	column MonthNumber
+		dataType: int64
+		formatString: 0
+		isHidden
+		summarizeBy: none
+		sourceColumn: month_number
+
+	column Month
+		dataType: string
+		sortByColumn: MonthNumber
+		summarizeBy: none
+		sourceColumn: month_name
+
+	column WeekStart
+		dataType: dateTime
+		formatString: yyyy-mm-dd
+		summarizeBy: none
+		sourceColumn: week_start
+
+	column DayName
+		dataType: string
+		summarizeBy: none
+		sourceColumn: day_name
+
+	column IsWeekend
+		dataType: int64
+		formatString: 0
+		summarizeBy: none
+		sourceColumn: is_weekend
+
+	partition Date = entity
+		mode: directLake
+		source
+			entityName: dim_dates
+			schemaName: dbo
+			expressionSource: DatabaseQuery
