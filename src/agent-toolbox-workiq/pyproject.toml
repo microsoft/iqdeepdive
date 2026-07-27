@@ -13,5 +13,8 @@ dependencies = [
     "python-dotenv>=1.2.2",
 ]
 
+[tool.setuptools]
+py-modules = ["main", "workiq_consent"]
+
 [tool.uv]
 package = false
