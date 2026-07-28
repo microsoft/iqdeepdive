@@ -348,6 +348,7 @@ The notebooks create their own knowledge bases and are unaffected by these.
 | `agent-toolbox-foundryiq` | Uses a Foundry toolbox holding that knowledge base, web search, and code interpreter |
 | `agent-toolbox-foundryiq-workiq` | Uses a Foundry toolbox over the multi-source Work IQ knowledge base |
 | `agent-toolbox-workiq` | Uses an OAuth2 `RemoteA2A` connection and toolbox for the caller's Microsoft 365 context |
+| `agent-workiq-autopilot` | Hosted Agent 365 autopilot in Teams; grounds and acts through the Work IQ MCP server |
 
 Start any of the agents locally, and test them with either the local playground or CLI:
 
