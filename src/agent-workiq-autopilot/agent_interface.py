@@ -10,7 +10,6 @@ generic host (``host_agent_server.py``). Python port of the
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Optional
 
 from microsoft_agents.hosting.core import Authorization, TurnContext
 
@@ -31,7 +30,7 @@ class AgentInterface(ABC):
         self,
         message: str,
         auth: Authorization,
-        auth_handler_name: Optional[str],
+        auth_handler_name: str | None,
         context: TurnContext,
     ) -> str:
         """Process a user message and return a response."""

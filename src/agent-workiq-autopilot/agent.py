@@ -20,7 +20,7 @@ import json
 import logging
 import os
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import httpx
 from azure.core.credentials import AccessToken
@@ -29,7 +29,6 @@ from azure.identity.aio import (
     DefaultAzureCredential,
     ManagedIdentityCredential,
 )
-
 from microsoft_agents.hosting.core import Authorization, TurnContext
 
 try:
@@ -132,7 +131,7 @@ class FoundryDigitalWorkerAgent(AgentInterface):
         self._instance_client_id = os.getenv("FOUNDRY_AGENT_DEFAULT_INSTANCE_CLIENT_ID")
 
         self._aoai_credential = self._build_aoai_credential()
-        self._cached_aoai_token: Optional[AccessToken] = None
+        self._cached_aoai_token: AccessToken | None = None
 
         self._mcp_servers = self._load_mcp_servers()
         self._mcp_token_override = os.getenv("BEARER_TOKEN") or None
@@ -141,7 +140,7 @@ class FoundryDigitalWorkerAgent(AgentInterface):
         self._response_store_dir = Path.home() / ".a365agent"
 
         # Shared HTTP client; created lazily on first use.
-        self._http_client: Optional[httpx.AsyncClient] = None
+        self._http_client: httpx.AsyncClient | None = None
 
         logger.info(
             "✅ Foundry agent ready (endpoint=%s, deployment=%s, mcp_servers=%d)",
@@ -225,7 +224,7 @@ class FoundryDigitalWorkerAgent(AgentInterface):
         self,
         message: str,
         auth: Authorization,
-        auth_handler_name: Optional[str],
+        auth_handler_name: str | None,
         context: TurnContext,
     ) -> str:
         from_prop = context.activity.from_property
@@ -287,7 +286,7 @@ class FoundryDigitalWorkerAgent(AgentInterface):
         self,
         notification_activity,
         auth: Authorization,
-        auth_handler_name: Optional[str],
+        auth_handler_name: str | None,
         context: TurnContext,
     ) -> str:
         """Handle email, Word, Excel, and PowerPoint agentic notifications."""
@@ -354,7 +353,7 @@ class FoundryDigitalWorkerAgent(AgentInterface):
         self,
         notification_activity: Any,
         auth: Authorization,
-        auth_handler_name: Optional[str],
+        auth_handler_name: str | None,
         context: TurnContext,
     ) -> str:
         logger.info("Processing comment notification (Responses API)")
@@ -585,7 +584,7 @@ Comment text: {comment_snippet}
         conversation_id: str,
         instructions: str,
         auth: Authorization,
-        auth_handler_name: Optional[str],
+        auth_handler_name: str | None,
         context: TurnContext,
     ) -> str:
         """Call the Azure OpenAI Responses API with the MCP tool bundle.
@@ -654,7 +653,7 @@ Comment text: {comment_snippet}
     async def _build_mcp_tools(
         self,
         auth: Authorization,
-        auth_handler_name: Optional[str],
+        auth_handler_name: str | None,
         context: TurnContext,
     ) -> list[dict[str, Any]]:
         if not self._mcp_servers:
@@ -662,7 +661,7 @@ Comment text: {comment_snippet}
 
         # Cache exchanged tokens by scope so multiple servers that share an
         # audience only trigger a single token exchange per turn.
-        token_by_scope: dict[str, Optional[str]] = {}
+        token_by_scope: dict[str, str | None] = {}
 
         tools: list[dict[str, Any]] = []
         for server in self._mcp_servers:
@@ -713,10 +712,10 @@ Comment text: {comment_snippet}
     async def _acquire_mcp_token(
         self,
         auth: Authorization,
-        auth_handler_name: Optional[str],
+        auth_handler_name: str | None,
         context: TurnContext,
         scope: str,
-    ) -> Optional[str]:
+    ) -> str | None:
         if self._mcp_token_override:
             return self._mcp_token_override
 
@@ -765,7 +764,7 @@ Comment text: {comment_snippet}
         )
         return self._response_store_dir / f"{safe}.responseid"
 
-    def _load_previous_response_id(self, conversation_id: str) -> Optional[str]:
+    def _load_previous_response_id(self, conversation_id: str) -> str | None:
         try:
             path = self._response_id_path(conversation_id)
             if path.exists():

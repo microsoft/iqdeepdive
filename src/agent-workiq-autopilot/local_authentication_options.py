@@ -42,7 +42,7 @@ class LocalAuthenticationOptions:
         cls,
         env_id_var: str = "ENV_ID",
         token_var: str = "BEARER_TOKEN",
-    ) -> "LocalAuthenticationOptions":
+    ) -> LocalAuthenticationOptions:
         """Build options from environment variables."""
 
         env_id = os.getenv(env_id_var, "")

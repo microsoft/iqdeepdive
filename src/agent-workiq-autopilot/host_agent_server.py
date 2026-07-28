@@ -25,10 +25,14 @@ import logging
 import os
 import socket
 from os import environ
-from typing import Optional
 
+from agent_interface import AgentInterface, check_agent_inheritance
 from aiohttp.web import Application, Request, Response, json_response, run_app
 from aiohttp.web_middlewares import middleware as web_middleware
+from email_channel_compat import (
+    is_email_activity,
+    is_email_notification,
+)
 from microsoft_agents.activity import Activity, load_configuration_from_env
 from microsoft_agents.authentication.msal import MsalConnectionManager
 from microsoft_agents.hosting.aiohttp import (
@@ -51,13 +55,6 @@ from microsoft_agents_a365.notifications.agent_notification import (
     AgentNotification,
     AgentNotificationActivity,
     ChannelId,
-)
-
-from agent_interface import AgentInterface, check_agent_inheritance
-from email_channel_compat import (
-    is_email_activity,
-    is_email_notification,
-    is_wpx_comment_activity,
 )
 from token_cache import cache_agentic_token, get_cached_agentic_token
 
@@ -213,7 +210,7 @@ class GenericAgentHost:
         self.agent_class = agent_class
         self.agent_args = agent_args
         self.agent_kwargs = agent_kwargs
-        self.agent_instance: Optional[AgentInterface] = None
+        self.agent_instance: AgentInterface | None = None
 
         self.storage = MemoryStorage()
         self.connection_manager = MsalConnectionManager(**agents_sdk_config)
