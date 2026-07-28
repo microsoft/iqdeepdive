@@ -1,0 +1,10 @@
+{
+	"mcpServers": [
+		{
+			"mcpServerName": "mcp_WorkIQ",
+			"url": "https://workiq.svc.cloud.microsoft/mcp",
+			"scope": "WorkIQAgent.Ask",
+			"audience": "api://workiq.svc.cloud.microsoft"
+		}
+	]
+}
