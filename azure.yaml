@@ -130,6 +130,28 @@ services:
         protocols:
             - protocol: responses
               version: 2.0.0
+    agent-workiq-maf:
+        project: src/agent-workiq-maf
+        host: azure.ai.agent
+        language: python
+        codeConfiguration:
+            dependencyResolution: remote_build
+            entryPoint: main.py
+            runtime: python_3_13
+        container:
+            resources:
+                cpu: "0.5"
+                memory: 1Gi
+        environmentVariables:
+            - name: AZURE_AI_MODEL_DEPLOYMENT_NAME
+              value: ${AZURE_AI_MODEL_DEPLOYMENT_NAME}
+            - name: CUSTOM_FOUNDRY_WORKIQ_TOOLBOX_NAME
+              value: ${CUSTOM_FOUNDRY_WORKIQ_TOOLBOX_NAME=work-iq-tools}
+        kind: hosted
+        name: agent-workiq-maf
+        protocols:
+            - protocol: responses
+              version: 2.0.0
 hooks:
     postdeploy:
         windows:
