@@ -24,7 +24,13 @@ if [ "${ENABLE_WORK_IQ_KB_TOOLBOX:-false}" = "true" ]; then
         --toolbox-description "Foundry IQ knowledge-base tools backed by a Work IQ knowledge source."
 fi
 
-if [ -n "${FABRIC_CAPACITY_ID:-}" ] || [ -n "${FABRIC_WORKSPACE_ID:-}" ]; then
+if [ "${ENABLE_FABRIC_ITEMS:-false}" = "true" ]; then
+    if [ -z "${FABRIC_CAPACITY_ID:-}" ] && [ -z "${FABRIC_WORKSPACE_ID:-}" ]; then
+        echo "ENABLE_FABRIC_ITEMS is true but neither FABRIC_CAPACITY_ID nor FABRIC_WORKSPACE_ID is set." >&2
+        echo "Set ENABLE_FABRIC_CAPACITY=true to create a capacity, or set FABRIC_WORKSPACE_ID to use an existing workspace." >&2
+        exit 1
+    fi
+
     echo "Creating the optional Fabric lakehouse and ontology..."
     uv run --locked python infra/create-lakehouse.py
 
@@ -42,9 +48,6 @@ if [ -n "${FABRIC_CAPACITY_ID:-}" ] || [ -n "${FABRIC_WORKSPACE_ID:-}" ]; then
 
     echo "Creating the Fabric data agent..."
     uv run --locked python infra/create-fabric-data-agent.py
-
-    echo "Creating the Fabric IQ toolbox..."
-    uv run --locked python infra/create-toolbox-fabriciq-ontology.py
 fi
 
 if [ "${ENABLE_WORK_IQ:-false}" = "true" ]; then

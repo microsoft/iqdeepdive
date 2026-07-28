@@ -1,140 +1,214 @@
-# Foundry IQ deep dive
+<!--
+---
+name: Microsoft IQ Deep Dive with Python
+description: Collection of Python examples for Microsoft Agent Framework using Microsoft Foundry.
+languages:
+- python
+products:
+- azure-openai
+- azure
+- ai-services
+page_type: sample
+urlFragment: iqdeepdive
+---
+-->
 
-This repository combines a six-part Microsoft Foundry IQ notebook lab with six deployable
-[Microsoft Agent Framework](https://learn.microsoft.com/agent-framework/) agents. One `azd`
-project provisions the shared Foundry project, `gpt-5.4` and `text-embedding-3-large` deployments,
-Azure AI Search, storage, monitoring, and an optional F2 Fabric capacity. It then prepares Search
-data, creates low- and minimal-reasoning HR knowledge bases, and deploys the agents directly from Python source.
+# Microsoft IQ Deep Dive with Python
 
-## Architecture
+This is the code companion for the [Microsoft IQ Deep Dive with Python](https://aka.ms/IQDeepDivePython/series) video series.
 
-```mermaid
-flowchart LR
-  azd[azd up] --> foundry[Foundry project and models]
-  azd --> search[Azure AI Search]
-  azd --> fabric[Optional Fabric F2 capacity]
-  search --> lowkb[contoso-company-kb-low: low reasoning]
-  search --> agentkb[contoso-company-kb-minimal: minimal reasoning]
-  agentkb -->|Direct MCP endpoint| mcpagent[Hosted MCP HR agent]
-  agentkb -->|Python retrieval API tool| apiagent[Hosted API HR agent]
-  agentkb --> toolbox[Foundry toolbox]
-  toolbox --> toolboxagent[Hosted toolbox HR agent]
-  search --> notebooks[Six notebook-created KBs]
-  fabric --> notebooks
-  fabric --> reviewgraph[Fabric product review graph]
-  reviewgraph --> fabricdataagent
-  fabric --> fabricdataagent[Fabric Data Agent]
-  fabricdataagent -->|Published MCP endpoint| clients[MCP clients]
-  fabric --> fabrictoolbox[Fabric IQ toolbox]
-  fabrictoolbox --> fabricagent[Hosted inventory agent]
-  fabric --> analyticslake[Web analytics lakehouse]
-  analyticslake --> semanticmodel[Power BI semantic model]
-  semanticmodel --> fabricdataagent
-  semanticmodel --> analyticsreport[Web analytics report]
-  m365[Microsoft 365] --> workiq[Work IQ A2A]
-  workiq --> workiqtoolbox[Work IQ toolbox]
-  workiqtoolbox --> workiqagent[Hosted workplace agent]
-  search --> workiqkb[Work IQ multi-source KB]
-  workiqkb --> workiqkbtoolbox[Foundry IQ toolbox]
-  workiqkbtoolbox --> workiqkbagent[Hosted Work IQ KB agent]
-```
+This repository includes multiple Jupyter notebooks and [Microsoft Agent Framework](https://learn.microsoft.com/agent-framework/) agents that use Foundry IQ, Web IQ, Work IQ, Fabric IQ, or a combination.
 
-The examples intentionally remain independent. The notebooks create learning-path knowledge bases with low
-reasoning effort. Provisioning also creates `contoso-company-kb-low` with low reasoning effort and
-`contoso-company-kb-minimal` with minimal reasoning effort over the same HR and health sources.
-The low-reasoning KB uses the configured Azure OpenAI model for query planning; the minimal-reasoning
-KB is extractive and does not configure a model.
-Three hosted agents use `contoso-company-kb-minimal`: one connects through its direct Foundry IQ
-MCP endpoint, one calls the `2026-05-01-preview` retrieval API from a custom Python tool, and one uses
-a Foundry toolbox containing the knowledge base, web search, and code interpreter tools. The fourth
-agent uses a separate toolbox connected directly to the Fabric IQ ontology used by
-`foundryiq-fabriciq-ontology.ipynb`. It passes through the invoking user's Entra identity and does not use a
-notebook-created knowledge base.
-The Fabric Data Agent combines that ontology with a Fabric Graph Model over synthetic product reviews. The
-ontology owns product, category, supplier, store, and inventory facts; the graph owns reviewers, reviews,
-features, and feature-level sentiment. Product SKU is the shared key between the complementary sources.
-The Power BI semantic model uses a separate lakehouse containing deterministic website sessions and
-page views. Its TMDL definition provides a star schema and governed DAX measures for traffic, conversion, bounce,
-and revenue analysis. It is the Fabric Data Agent's third source, and a source-controlled PBIR report visualizes
-the same measures. Provisioning selects all seven model tables in the Data Agent before publishing it.
-The fifth agent uses a separate OAuth2 `RemoteA2A` connection and toolbox to query the signed-in user's
-Microsoft 365 work context through Work IQ.
-The sixth agent uses a Foundry toolbox connected to a provisioned multi-source Work IQ knowledge base.
-The connection authenticates to Search with the project managed identity;
-Toolbox supplies the signed-in user's Search token as query-source authorization so the knowledge base
-can call its Work IQ knowledge source.
+All of the infrastructure for deployment is included in the repository, using the [Azure Developer CLI](https://learn.microsoft.com/azure/developer/azure-developer-cli/). The infrastructure-as-code (Bicep files) will create `gpt-5.4` and `text-embedding-3-large` deployments, Azure AI Search, storage, monitoring, and an optional Fabric capacity. A sequence of scripts prepares Search data, creates Search knowledge bases, and seeds the Fabric lakehouse.
 
-## Prerequisites
+* [Azure account requirements](#azure-account-requirements)
+* [Getting started](#getting-started)
+  * [GitHub Codespaces](#github-codespaces)
+  * [VS Code Dev Containers](#vs-code-dev-containers)
+  * [Local environment](#local-environment)
+* [Deploying to Azure](#deploying-to-azure)
+  * [Enable Fabric IQ](#enable-fabric-iq)
+  * [Enable Work IQ retrieval for Azure AI Search](#enable-work-iq-retrieval-for-azure-ai-search)
+  * [Enable the hosted Foundry IQ Work IQ agent](#enable-the-hosted-foundry-iq-work-iq-agent)
+  * [Enable the hosted Work IQ toolbox agent](#enable-the-hosted-work-iq-toolbox-agent)
+  * [Seed sample mailbox data](#seed-sample-mailbox-data)
+* [Run the notebooks](#run-the-notebooks)
+* [Run and invoke the agents](#run-and-invoke-the-agents)
+* [Resources](#resources)
 
-- An Azure subscription with permission to create resources and role assignments
-- [Azure Developer CLI](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd)
-  with the `azure.ai.agents` and `azure.ai.connections` extensions available
-- [uv](https://docs.astral.sh/uv/getting-started/installation/) and Python 3.12+
-- Quota in one region for Foundry hosted agents, `gpt-5.4`, and `text-embedding-3-large`
-- For notebook parts 3, 5, and 6, a Fabric-capable tenant and a Fabric/Power BI license (or active Fabric
-  trial) assigned to the account used by `az login`; the default deployment creates an F2 capacity
-- For the Fabric toolbox agent, the same Fabric license and ontology access assigned to the account
-  used by `azd auth login`; its `user-entra-token` connection uses the invoking user's permissions
-- For part 2, a `WEB_IQ_KEY` supplied by the Build lab organizer
-- For parts 4 and 5, Microsoft-approved access to Work IQ retrieval through Azure AI Search, as
-  described below
-- For the Work IQ agent, a Microsoft 365 Copilot license for each caller, a tenant enabled for Work IQ,
+## Azure account requirements
+
+In order to run all of the examples, you will need a tenant with multiple licenses and permissions. However, even if you do not have all of these permissions, you may be able to run some of the examples.
+
+* An Azure subscription with permission to create resources and role assignments
+* Quota in one region for `gpt-5.4`, and `text-embedding-3-large`
+* For Fabric IQ notebooks: A Fabric-capable tenant and a Fabric/Power BI license (or active Fabric trial), with permission to create an F2 capacity
+* For Web IQ notebook: Access to the private preview with an assigned `WEB_IQ_KEY`
+* For Work IQ notebooks and agents: A Microsoft 365 Copilot license for each caller, a tenant enabled for Work IQ,
   and a Global Administrator for the one-time Entra app registration and admin consent
 
-## Provision and deploy
+## Getting started
+
+You have a few options for getting started with this repository.
+The quickest way to get started is GitHub Codespaces, since it will setup everything for you, but you can also [set it up locally](#local-environment).
+
+### GitHub Codespaces
+
+You can run this repository virtually by using GitHub Codespaces. The button will open a web-based VS Code instance in your browser:
+
+1. Open the repository (this may take several minutes):
+
+    [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/Azure-Samples/python-agentframework-demos)
+
+2. Open a terminal window
+3. Continue with the steps to run the examples
+
+### VS Code Dev Containers
+
+A related option is VS Code Dev Containers, which will open the project in your local VS Code using the [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers):
+
+1. Start Docker Desktop (install it if not already installed)
+2. Open the project:
+
+    [![Open in Dev Containers](https://img.shields.io/static/v1?style=for-the-badge&label=Dev%20Containers&message=Open&color=blue&logo=visualstudiocode)](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/Azure-Samples/python-agentframework-demos)
+
+3. In the VS Code window that opens, once the project files show up (this may take several minutes), open a terminal window.
+4. Continue with the steps to run the examples
+
+The dev container includes a Redis server, which is used by the `agent_history_redis.py` example.
+
+### Local environment
+
+1. Make sure the following tools are installed:
+
+    * [Python 3.12+](https://www.python.org/downloads/)
+    * [uv](https://docs.astral.sh/uv/getting-started/installation/)
+    * [Azure Developer CLI](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd)
+      with the `azure.ai.agents` and `azure.ai.connections` extensions available
+    * Git
+
+2. Clone the repository:
+
+    ```shell
+    git clone https://github.com/microsoft/iqdeepdive/
+    cd iqdeepdive
+    ```
+
+3. Install the dependencies:
+
+    ```shell
+    uv sync
+    ```
+
+## Deploying to Azure
+
+1. Login to Azure:
+
+    ```shell
+    azd auth login
+    ```
+
+    For GitHub Codespaces users, if the previous command fails, try:
+
+   ```shell
+    azd auth login --use-device-code
+    ```
+
+2. Create an `azd` environment:
+
+    ```shell
+    azd env new
+    ```
+
+    It will prompt you for an environment name (like "iqdeepdive"), a subscription from your Azure
+    account, and a location.
+
+3. Every optional service is off by default. Enable the ones you have access to now, since they are
+   read during provisioning:
+
+    ```shell
+    # Fabric IQ: F2 capacity, plus the lakehouse, ontology, graph, semantic model, and Data Agent
+    azd env set ENABLE_FABRIC_CAPACITY true
+    azd env set ENABLE_FABRIC_ITEMS true
+
+    # Work IQ knowledge base and toolbox, used by agent-toolbox-foundryiq-workiq
+    azd env set ENABLE_WORK_IQ_KB_TOOLBOX true
+
+    # Work IQ Entra app and toolbox, used by agent-toolbox-workiq
+    azd env set ENABLE_WORK_IQ true
+    ```
+
+    Each flag has prerequisites described in its own section: [Fabric IQ](#enable-fabric-iq),
+    [Work IQ retrieval for Azure AI Search](#enable-work-iq-retrieval-for-azure-ai-search),
+    [the hosted Foundry IQ Work IQ agent](#enable-the-hosted-foundry-iq-work-iq-agent), and
+    [the hosted Work IQ toolbox agent](#enable-the-hosted-work-iq-toolbox-agent).
+    You can also set any of these later and re-run `azd provision`.
+
+4. Provision the Azure resources:
+
+    ```shell
+    azd provision
+    ```
+
+5. Once the resources are provisioned, you should now see a local `.env` file with all the environment variables needed to run the scripts.
+6. To delete the resources, run:
+
+    ```shell
+    azd down
+    ```
+
+### Enable Fabric IQ
+
+The Fabric IQ notebooks need a Fabric workspace with a lakehouse,
+ontology, product review graph, web analytics semantic model, and a published Fabric Data Agent. Fabric is
+opt-in and controlled by two independent flags, one per layer:
+
+* `ENABLE_FABRIC_CAPACITY` (default `false`) creates an F2 Fabric capacity in Bicep. Leave it `false` to
+  use a workspace you already manage.
+* `ENABLE_FABRIC_ITEMS` (default `false`) runs the postprovision steps that create the Fabric items: the
+  lakehouse, ontology, product review graph, web analytics lakehouse, semantic model, Power BI report,
+  Fabric Data Agent, and Fabric IQ toolbox. It requires either `FABRIC_CAPACITY_ID` or
+  `FABRIC_WORKSPACE_ID` to be set, and fails early with a clear message when neither is present.
+
+To create a capacity and all of the Fabric items:
 
 ```bash
-azd auth login
-azd up
+azd env set ENABLE_FABRIC_CAPACITY true
+azd env set ENABLE_FABRIC_ITEMS true
+azd provision
 ```
 
-`azd up` provisions the resources, writes the generated local settings to `.env`, restores the
-sample HR and health indexes, creates the low- and minimal-reasoning HR knowledge bases and Foundry toolbox,
-prepares Fabric when enabled, creates the Fabric product review graph and web analytics lakehouse, provisions the
-Direct Lake semantic model and Power BI report, publishes a Fabric Data Agent backed by the ontology, Graph, and
-semantic model, creates a separate `fabric-ontology-tools` toolbox, and deploys all six agents. The Fabric Data
-Agent's ID and
-MCP endpoint are written to `FABRIC_DATA_AGENT_ID` and `FABRIC_DATA_AGENT_MCP_URL`. The Fabric toolbox
-targets the generated ontology endpoint exactly and uses the `fabric-ontology-connection` remote-tool
-connection. The Graph Model's ID and portal link are written to `FABRIC_GRAPH_ID` and
-`FABRIC_GRAPH_UI_URL`.
+To use a workspace you already manage, set `FABRIC_WORKSPACE_ID` in `.env` and create only the items:
 
-The web analytics setup writes the generated lakehouse and semantic model identifiers and portal links to
-`FABRIC_WEB_ANALYTICS_LAKEHOUSE_*` and `FABRIC_WEB_ANALYTICS_SEMANTIC_MODEL_*` in `.env`. It writes the report
-identifier and its single portal URL to `FABRIC_WEB_ANALYTICS_REPORT_ID` and
-`FABRIC_WEB_ANALYTICS_REPORT_URL`. The semantic model definition is stored as TMDL under
-`data/semantic-models/web-analytics/`; the enhanced Power BI report definition is stored as PBIR under
-`data/reports/web-analytics/`. Provisioning creates or updates both definitions by display name.
+```bash
+azd env set ENABLE_FABRIC_ITEMS true
+azd provision
+```
 
-The review graph is built from deterministic synthetic data loaded into the same lakehouse. Its sentiment,
-confidence, and evidence values are fixture ground truth generated during provisioning; the sample does not
-claim to extract sentiment with AI at runtime. Saving and refreshing the Graph Model ingests those tables into
-Fabric's queryable graph representation.
+To skip Fabric entirely, leave both flags unset. Set `FABRIC_ONTOLOGY_ID` and `FABRIC_GRAPH_ID` in `.env`
+before running the Fabric IQ notebooks when you manage those items separately.
 
-The separate web analytics lakehouse contains a date dimension, channel, device, geography, and page dimensions,
-plus session- and page-view-grain facts. The Direct Lake semantic model defines explicit measures such as total
-sessions, unique visitors, pages per session, bounce rate, conversion rate, revenue, and average session duration.
-The generated `Contoso Web Analytics Dashboard` item is technically a Power BI report: unlike a Power BI Service
-dashboard, its pages and interactive visuals can be fully represented and deployed through the Fabric API.
+The Fabric Data Agent is published over three complementary sources. The ontology owns product, category,
+supplier, store, and inventory facts; the product review graph owns reviewers, reviews, features, and
+feature-level sentiment; the Direct Lake semantic model owns website traffic and conversion measures. Product
+SKU is the shared key between the ontology and the graph. Provisioning selects all seven semantic model tables
+before publishing the Data Agent.
 
-Set `DEPLOY_FABRIC_CAPACITY=false` before `azd up` to use an existing Fabric workspace or skip the
-Fabric portions. Set `FABRIC_WORKSPACE_ID`, `FABRIC_ONTOLOGY_ID`, and `FABRIC_GRAPH_ID` in `.env`
-before running parts 3, 5, and 6 when you manage Fabric separately.
+Provisioning writes the generated identifiers and portal links to `.env`:
 
-After Fabric setup completes, open `notebooks/fabriciq-dataagent-mcp.ipynb` to inspect the tools exposed by the
-published Fabric Data Agent MCP endpoint and make a tool call. The notebook reads `FABRIC_TENANT_ID` and
-`FABRIC_DATA_AGENT_MCP_URL` from `.env`.
-
-Open `notebooks/fabriciq-ontology-mcp.ipynb` to connect directly to the Fabric ontology MCP endpoint, inspect its
-tools, and query product and inventory data. It reads `FABRIC_TENANT_ID` and `FABRIC_ONTOLOGY_MCP_URL` from `.env`.
-
-Open `notebooks/foundryiq-mcp.ipynb` to connect directly to the minimal Foundry IQ knowledge-base MCP endpoint,
-inspect `knowledge_base_retrieve`, and retrieve extractive HR and benefits passages. It reads the Search endpoint
-and `AZURE_AI_SEARCH_KNOWLEDGE_BASE_NAME` from `.env`.
+| Variables | Fabric item |
+| --- | --- |
+| `FABRIC_ONTOLOGY_ID`, `FABRIC_ONTOLOGY_MCP_URL`, `FABRIC_ONTOLOGY_UI_URL` | Lakehouse ontology |
+| `FABRIC_GRAPH_ID`, `FABRIC_GRAPH_UI_URL` | Product review Graph Model |
+| `FABRIC_DATA_AGENT_ID`, `FABRIC_DATA_AGENT_MCP_URL` | Published Fabric Data Agent |
+| `FABRIC_WEB_ANALYTICS_LAKEHOUSE_*` | Web analytics lakehouse |
+| `FABRIC_WEB_ANALYTICS_SEMANTIC_MODEL_*` | Direct Lake semantic model |
+| `FABRIC_WEB_ANALYTICS_REPORT_ID`, `FABRIC_WEB_ANALYTICS_REPORT_URL` | Power BI report |
 
 ### Enable Work IQ retrieval for Azure AI Search
 
-Notebook parts 4 and 5 use a Work IQ knowledge source in Azure AI Search. This preview is disabled by
+The `foundryiq-workiq.ipynb` notebook and the Work IQ knowledge base use a Work IQ knowledge source in
+Azure AI Search. This preview is disabled by
 default and must be approved by Microsoft. An identity with Owner or Contributor on the subscription
 must register the preview feature and then re-register the Search resource provider:
 
@@ -206,9 +280,9 @@ complete this delegated OAuth authorization with their own Microsoft 365 identit
 To test Work IQ with predictable content, sign in to Outlook as the test user and send the following
 three fixture messages to that same user's email address:
 
-- [Urgent: Professional Claw Hammer out of stock at Seattle store](data/workiq-fixtures/urgent-professional-claw-hammer-out-of-stock.txt)
-- [RE: Weekly inventory report - Seattle flagged](data/workiq-fixtures/weekly-inventory-report-seattle-flagged.txt)
-- [Customer escalation - hammer unavailable again](data/workiq-fixtures/customer-escalation-hammer-unavailable.txt)
+* [Urgent: Professional Claw Hammer out of stock at Seattle store](data/workiq-fixtures/urgent-professional-claw-hammer-out-of-stock.txt)
+* [RE: Weekly inventory report - Seattle flagged](data/workiq-fixtures/weekly-inventory-report-seattle-flagged.txt)
+* [Customer escalation - hammer unavailable again](data/workiq-fixtures/customer-escalation-hammer-unavailable.txt)
 
 Use the subject and body from each fixture. Because Outlook cannot impersonate the named colleague,
 prepend `Forwarded message from <name>, <role>` to the body rather than attempting to change the
@@ -232,48 +306,74 @@ uv sync --locked --all-groups
 uv pip install --python .venv/bin/python -r notebooks/requirements.txt
 ```
 
-Add the externally supplied `WEB_IQ_KEY` to `.env` for part 2. Then open `notebooks/` in VS Code,
-select `.venv/bin/python`, and run these in order:
+Then open `notebooks/` in VS Code and select a notebook. Each one is independent, so you can run them in
+any order, as long as you have the resources necessary.
 
-1. `foundryiq-basic.ipynb`
-2. `foundryiq-webiq.ipynb`
-3. `foundryiq-fabriciq-ontology.ipynb`
-4. `foundryiq-workiq.ipynb`
-5. `foundryiq-fabriciq-dataagent.ipynb`
+Knowledge base notebooks, which build a Foundry IQ knowledge base over different kinds of knowledge source:
 
-Part 6 combines the HR and health indexes with the published Fabric Data Agent in a multi-source
-knowledge base. It uses the signed-in user's delegated identity to query the protected Fabric source.
+| Notebook | What it covers |
+| --- | --- |
+| `foundryiq-basic.ipynb` | Indexed knowledge sources over the sample HR and health documents |
+| `foundryiq-webiq.ipynb` | Adds an MCP server knowledge source backed by Web IQ for web grounding. Requires `WEB_IQ_KEY` in `.env`. |
+| `foundryiq-workiq.ipynb` | Adds a Work IQ knowledge source over the signed-in user's Microsoft 365 context |
+| `foundryiq-fabriciq-ontology.ipynb` | Adds a Fabric ontology knowledge source, queried with a delegated user token |
+| `foundryiq-fabriciq-dataagent.ipynb` | Adds a Fabric Data Agent knowledge source for analytical questions |
 
-## Run and invoke the HR agents
+Endpoint notebooks, which skip the knowledge base and call a service endpoint directly:
 
-Start either hosted-agent source locally:
+| Notebook | What it covers |
+| --- | --- |
+| `foundryiq-mcp.ipynb` | Calls `knowledge_base_retrieve` on the `contoso-company-kb-minimal` MCP endpoint |
+| `fabriciq-ontology-mcp.ipynb` | Inspects and calls the tools on the Fabric ontology MCP endpoint |
+| `fabriciq-dataagent-mcp.ipynb` | Inspects and calls the tools on the published Fabric Data Agent MCP endpoint |
+| `fabriciq-graph.ipynb` | Sends GQL to the Fabric Graph `executeQuery` REST API |
+| `workiq-api-concepts.ipynb` | Work IQ API concepts and the signed-in user's work context |
+| `workiq-a2a.ipynb` | Delegates a task to the Work IQ Relay Agent over A2A |
+| `workiq-mcp.ipynb` | Consumes Work IQ as a tool through its MCP server |
+| `workiq-tools-actions.ipynb` | The full Work IQ MCP tool catalog and its resource-path model |
+
+When you run a notebook, select the `.venv/bin/python` virtual environment.
+
+## Run and invoke the agents
+
+Provisioning creates two knowledge bases over the same HR and health sources: `contoso-company-kb-low`
+uses low reasoning effort and the configured Azure OpenAI model for query planning, while
+`contoso-company-kb-minimal` uses minimal reasoning effort and is extractive, so it configures no model.
+The notebooks create their own knowledge bases and are unaffected by these.
+
+| Agent | How it reaches its data |
+| --- | --- |
+| `agent-foundryiq-api` | Calls the retrieval API on `contoso-company-kb-minimal` from a custom Python tool |
+| `agent-foundryiq-mcp` | Connects to the same knowledge base through its Foundry IQ MCP endpoint |
+| `agent-toolbox-foundryiq` | Uses a Foundry toolbox holding that knowledge base, web search, and code interpreter |
+| `agent-toolbox-foundryiq-workiq` | Uses a Foundry toolbox over the multi-source Work IQ knowledge base |
+| `agent-toolbox-workiq` | Uses an OAuth2 `RemoteA2A` connection and toolbox for the caller's Microsoft 365 context |
+
+Start any of the agents locally, and test them with either the local playground or CLI:
 
 ```bash
-azd ai agent run agent-foundryiq-mcp
+azd ai agent run agent-foundryiq-api
 azd ai agent invoke --local "What benefits are available, and when do I need to enroll?"
 
-azd ai agent run agent-foundryiq-api
+azd ai agent run agent-foundryiq-mcp
 azd ai agent invoke --local "What benefits are available, and when do I need to enroll?"
 
 azd ai agent run agent-toolbox-foundryiq
 azd ai agent invoke --local "What benefits are available, and when do I need to enroll?"
-
-azd ai agent run agent-toolbox-fabriciq
-azd ai agent invoke --local "Which product categories have the lowest stock levels right now?"
 
 azd ai agent run agent-toolbox-workiq
 azd ai agent invoke --local \
   "Check my recent Teams chats for messages about the Professional Claw Hammer. Summarize what colleagues are saying and what actions have been requested."
 ```
 
-Redeploy an individual agent after code changes and invoke the deployed version:
+You can also invoke the deployed versions. You may want to re-deploy before invoking, if you've made any changes:
 
 ```bash
-azd deploy agent-foundryiq-mcp
-azd ai agent invoke agent-foundryiq-mcp "What benefits are available, and when do I need to enroll?"
-
 azd deploy agent-foundryiq-api
 azd ai agent invoke agent-foundryiq-api "What benefits are available, and when do I need to enroll?"
+
+azd deploy agent-foundryiq-mcp
+azd ai agent invoke agent-foundryiq-mcp "What benefits are available, and when do I need to enroll?"
 
 azd deploy agent-toolbox-foundryiq
 azd ai agent invoke agent-toolbox-foundryiq "What benefits are available, and when do I need to enroll?"
@@ -282,11 +382,6 @@ azd deploy agent-toolbox-foundryiq-workiq
 azd ai agent invoke agent-toolbox-foundryiq-workiq \
   --new-session --new-conversation \
   "Search my recent emails for Professional Claw Hammer and summarize requested actions. Use the knowledge base and its Work IQ source."
-
-azd deploy agent-toolbox-fabriciq
-azd ai agent invoke agent-toolbox-fabriciq \
-  --new-session --new-conversation \
-  "Which product categories have the lowest stock levels right now?"
 
 azd deploy agent-toolbox-workiq
 azd ai agent invoke agent-toolbox-workiq \
@@ -298,19 +393,31 @@ Direct source deployment is used because the final agent requires no custom OS p
 remote build resolves each agent folder's `pyproject.toml` and `uv.lock`, avoiding an unnecessary
 container registry and image-build path.
 
-## Validate locally
-
-```bash
-uv sync --locked --all-groups
-uv run ruff check .
-uv run python -m compileall -q infra src/agent-foundryiq-mcp src/agent-foundryiq-api src/agent-toolbox-foundryiq src/agent-toolbox-foundryiq-workiq src/agent-toolbox-fabriciq src/agent-toolbox-workiq
-uv run python scripts/check_repo.py
-az bicep build --file infra/main.bicep --stdout > /dev/null
-azd show
-```
-
 ## Resources
 
-- [Mastering Foundry Toolbox](https://github.com/microsoft-foundry/forgebook/blob/main/notebooks/mastering-foundry-toolbox.ipynb)
+The IQ workloads:
 
-See [ATTRIBUTION.md](ATTRIBUTION.md) for the exact upstream revisions and retained licenses.
+* [What is Foundry IQ?](https://learn.microsoft.com/azure/ai-foundry/agents/concepts/what-is-foundry-iq)
+* [What is Fabric IQ?](https://learn.microsoft.com/fabric/iq/overview)
+* [Work IQ MCP tool reference](https://learn.microsoft.com/microsoft-365/copilot/extensibility/work-iq/mcp/tool-reference)
+
+Foundry IQ knowledge bases and agentic retrieval:
+
+* [Agentic retrieval overview](https://learn.microsoft.com/azure/search/agentic-retrieval-overview)
+* [What is a knowledge source?](https://learn.microsoft.com/azure/search/agentic-knowledge-source-overview)
+* [Set the retrieval reasoning effort](https://learn.microsoft.com/azure/search/agentic-retrieval-how-to-set-retrieval-reasoning-effort), which explains the difference between the `low` and `minimal` knowledge bases created here
+* [Query a knowledge base via API or MCP](https://learn.microsoft.com/azure/search/agentic-retrieval-how-to-retrieve)
+* [Create a Work IQ knowledge source](https://learn.microsoft.com/azure/search/agentic-knowledge-source-how-to-work-iq)
+* [Create a Fabric Ontology knowledge source](https://learn.microsoft.com/azure/search/agentic-knowledge-source-how-to-fabric-ontology)
+
+Fabric items used by the Fabric IQ notebooks:
+
+* [Fabric data agent concepts](https://learn.microsoft.com/fabric/data-science/concept-data-agent)
+* [Direct Lake overview](https://learn.microsoft.com/fabric/fundamentals/direct-lake-overview)
+
+Building and deploying the agents:
+
+* [Microsoft Agent Framework](https://learn.microsoft.com/agent-framework/)
+* [Azure Developer CLI](https://learn.microsoft.com/azure/developer/azure-developer-cli/)
+* [Mastering Foundry Toolbox](https://github.com/microsoft-foundry/forgebook/blob/main/notebooks/mastering-foundry-toolbox.ipynb)
+* [Model Context Protocol](https://modelcontextprotocol.io/)

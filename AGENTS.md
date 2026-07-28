@@ -12,12 +12,10 @@ model deployments, Azure AI Search, storage, monitoring, and optional Microsoft 
 The notebooks and hosted agents share infrastructure but create separate knowledge bases. The hosted-agent setup
 creates `contoso-company-kb-low` with low reasoning effort and `contoso-company-kb-minimal` with minimal reasoning
 effort over the same Search sources. The low KB configures the Azure OpenAI model; the extractive minimal KB does
-not configure a model. Three hosted agents use `contoso-company-kb-minimal`:
+not configure a model. Several hosted agents use `contoso-company-kb-minimal`:
 `agent-foundryiq-mcp` connects through the Azure AI Search knowledge-base MCP endpoint,
 `agent-foundryiq-api` calls the knowledge-base retrieval API with a custom Python tool, and
 `agent-toolbox-foundryiq` connects through a Foundry toolbox.
-`agent-toolbox-fabriciq` uses a separate toolbox and a delegated-user connection to the Fabric IQ ontology
-created by `infra/create-lakehouse.py`.
 `agent-toolbox-workiq` uses a separate OAuth2 `RemoteA2A` connection and toolbox to access the signed-in
 user's Microsoft 365 work context through Work IQ.
 `agent-toolbox-foundryiq-workiq` instead connects through a Foundry toolbox to the multi-source
@@ -26,6 +24,20 @@ knowledge-base MCP URL so Toolbox emits the user's Search-scoped query-source au
 Provisioning also creates a separate web analytics lakehouse, Direct Lake Power BI semantic model, and PBIR
 report. The semantic model feeds the same Fabric Data Agent as the ontology and Graph; provisioning selects all
 seven model tables before publishing the agent.
+
+## Sample data design
+
+The product review graph is built from deterministic synthetic data loaded into the ontology lakehouse. Its
+sentiment, confidence, and evidence values are fixture ground truth generated during provisioning; the sample
+does not claim to extract sentiment with AI at runtime. Saving and refreshing the Graph Model ingests those
+tables into Fabric's queryable graph representation.
+
+The separate web analytics lakehouse contains a date dimension, channel, device, geography, and page dimensions,
+plus session- and page-view-grain facts. The Direct Lake semantic model defines explicit measures such as total
+sessions, unique visitors, pages per session, bounce rate, conversion rate, revenue, and average session
+duration. The generated `Contoso Web Analytics Dashboard` item is technically a Power BI report: unlike a
+Power BI Service dashboard, its pages and interactive visuals can be fully represented and deployed through the
+Fabric API. Provisioning creates or updates the TMDL and PBIR definitions by display name.
 
 ## Repository map
 
@@ -62,8 +74,6 @@ seven model tables before publishing the agent.
   endpoint, creates or updates the Direct Lake semantic model, and writes its ID and portal URL to `.env`.
 - `infra/create-web-analytics-report.py`: binds the source-controlled PBIR definition to the semantic model,
   creates or updates the Power BI report, and writes its ID and portal URL to `.env`.
-- `infra/create-toolbox-fabriciq-ontology.py`: creates the `user-entra-token` Fabric ontology connection after the ontology
-  exists, then creates and promotes the separate Fabric IQ toolbox.
 - `infra/create-toolbox-workiq.py`: opt-in Graph SDK setup for the Work IQ service principal, single-tenant Entra
   app, delegated consent, OAuth2 `RemoteA2A` connection, callback URI, and separate Work IQ toolbox.
 - `infra/create-lakehouse.py`: creates optional Fabric lakehouse and ontology resources.
@@ -88,8 +98,6 @@ seven model tables before publishing the agent.
   web search, and code interpreter through `FoundryToolbox`.
 - `src/agent-toolbox-foundryiq-workiq/main.py`: standalone Agent Framework application that accesses the
   Work IQ-backed multi-source knowledge base through `FoundryToolbox`.
-- `src/agent-toolbox-fabriciq/main.py`: sibling Agent Framework application that accesses product and
-  inventory data through the Fabric IQ ontology toolbox.
 - `src/agent-toolbox-workiq/main.py`: sibling Agent Framework application that accesses the signed-in
   user's Microsoft 365 work context through the Work IQ toolbox.
 - `src/agent-foundryiq-mcp/pyproject.toml`, `src/agent-foundryiq-mcp/uv.lock`, and `src/agent-foundryiq-mcp/uv.toml`: isolated MCP agent dependency
@@ -102,9 +110,6 @@ seven model tables before publishing the agent.
 - `src/agent-toolbox-foundryiq-workiq/pyproject.toml`, `src/agent-toolbox-foundryiq-workiq/uv.lock`, and
   `src/agent-toolbox-foundryiq-workiq/uv.toml`: isolated Work IQ knowledge-base agent dependency definition,
   lockfile, and remote-build TLS configuration.
-- `src/agent-toolbox-fabriciq/pyproject.toml`, `src/agent-toolbox-fabriciq/uv.lock`, and
-  `src/agent-toolbox-fabriciq/uv.toml`: isolated Fabric toolbox agent dependency definition, lockfile, and
-  remote-build TLS configuration.
 - `src/agent-toolbox-workiq/pyproject.toml`, `src/agent-toolbox-workiq/uv.lock`, and
   `src/agent-toolbox-workiq/uv.toml`: isolated Work IQ agent dependency definition, lockfile, and
   remote-build TLS configuration.
@@ -193,7 +198,7 @@ Install and validate root tooling:
 ```bash
 uv sync --locked --all-groups
 uv run ruff check .
-uv run python -m compileall -q infra src/agent-foundryiq-mcp src/agent-foundryiq-api src/agent-toolbox-foundryiq src/agent-toolbox-foundryiq-workiq src/agent-toolbox-fabriciq src/agent-toolbox-workiq
+uv run python -m compileall -q infra src/agent-foundryiq-mcp src/agent-foundryiq-api src/agent-toolbox-foundryiq src/agent-toolbox-foundryiq-workiq src/agent-toolbox-workiq
 az bicep build --file infra/main.bicep --stdout > /dev/null
 azd show
 ```
@@ -209,8 +214,6 @@ uv sync --project src/agent-toolbox-foundryiq --python 3.13 --frozen --dry-run
 uv run --project src/agent-toolbox-foundryiq --python 3.13 python -m py_compile src/agent-toolbox-foundryiq/main.py
 uv sync --project src/agent-toolbox-foundryiq-workiq --python 3.13 --frozen --dry-run
 uv run --project src/agent-toolbox-foundryiq-workiq --python 3.13 python -m py_compile src/agent-toolbox-foundryiq-workiq/main.py
-uv sync --project src/agent-toolbox-fabriciq --python 3.13 --frozen --dry-run
-uv run --project src/agent-toolbox-fabriciq --python 3.13 python -m py_compile src/agent-toolbox-fabriciq/main.py
 uv sync --project src/agent-toolbox-workiq --python 3.13 --frozen --dry-run
 uv run --project src/agent-toolbox-workiq --python 3.13 python -m py_compile src/agent-toolbox-workiq/main.py
 ```
@@ -235,9 +238,6 @@ azd ai agent invoke --local "What benefits are available, and when do I need to 
 
 azd ai agent run agent-toolbox-foundryiq
 azd ai agent invoke --local "What benefits are available, and when do I need to enroll?"
-
-azd ai agent run agent-toolbox-fabriciq
-azd ai agent invoke --local "Which product categories have the lowest stock levels right now?"
 
 azd ai agent run agent-toolbox-workiq
 azd ai agent invoke --local \
@@ -269,10 +269,6 @@ azd deploy agent-toolbox-foundryiq-workiq
 azd ai agent invoke agent-toolbox-foundryiq-workiq --new-session --new-conversation \
   "Search my recent emails for Professional Claw Hammer and summarize requested actions."
 
-azd deploy agent-toolbox-fabriciq
-azd ai agent invoke agent-toolbox-fabriciq --new-session --new-conversation \
-  "Which product categories have the lowest stock levels right now?"
-
 azd deploy agent-toolbox-workiq
 azd ai agent invoke agent-toolbox-workiq --new-session --new-conversation \
   "Check my recent Teams chats for messages about the Professional Claw Hammer. Summarize what colleagues are saying and what actions have been requested."
@@ -283,9 +279,8 @@ azd ai agent invoke agent-toolbox-workiq --new-session --new-conversation \
 1. Bicep provisions shared Azure resources.
 2. `postprovision` writes `.env`, restores Search data, creates the agent knowledge base and toolbox, and optionally
   configures Fabric.
-3. Foundry remotely builds and deploys all five agent packages under `src/`.
-4. `postdeploy` grants Search data access to the three Search-backed agents. The Fabric toolbox agent instead uses
-  the invoking user's delegated Fabric permissions.
+3. Foundry remotely builds and deploys all agent packages under `src/`.
+4. `postdeploy` grants Search data access to the Search-backed agents.
     The Work IQ agent additionally receives Foundry User at account and project scopes and uses the caller's
     delegated Microsoft 365 identity.
 
@@ -311,9 +306,6 @@ uv sync --project src/agent-toolbox-foundryiq --python 3.13 --frozen --dry-run
 
 uv lock --project src/agent-toolbox-foundryiq-workiq --python 3.13
 uv sync --project src/agent-toolbox-foundryiq-workiq --python 3.13 --frozen --dry-run
-
-uv lock --project src/agent-toolbox-fabriciq --python 3.13
-uv sync --project src/agent-toolbox-fabriciq --python 3.13 --frozen --dry-run
 
 uv lock --project src/agent-toolbox-workiq --python 3.13
 uv sync --project src/agent-toolbox-workiq --python 3.13 --frozen --dry-run

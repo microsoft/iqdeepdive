@@ -26,7 +26,11 @@ if ($env:ENABLE_WORK_IQ_KB_TOOLBOX -eq "true") {
         --toolbox-description "Foundry IQ knowledge-base tools backed by a Work IQ knowledge source."
 }
 
-if ($env:FABRIC_CAPACITY_ID -or $env:FABRIC_WORKSPACE_ID) {
+if ($env:ENABLE_FABRIC_ITEMS -eq "true") {
+    if (-not $env:FABRIC_CAPACITY_ID -and -not $env:FABRIC_WORKSPACE_ID) {
+        Write-Error "ENABLE_FABRIC_ITEMS is true but neither FABRIC_CAPACITY_ID nor FABRIC_WORKSPACE_ID is set. Set ENABLE_FABRIC_CAPACITY=true to create a capacity, or set FABRIC_WORKSPACE_ID to use an existing workspace."
+    }
+
     Write-Host "Creating the optional Fabric lakehouse and ontology..."
     uv run --locked python infra/create-lakehouse.py
 
@@ -44,9 +48,6 @@ if ($env:FABRIC_CAPACITY_ID -or $env:FABRIC_WORKSPACE_ID) {
 
     Write-Host "Creating the Fabric data agent..."
     uv run --locked python infra/create-fabric-data-agent.py
-
-    Write-Host "Creating the Fabric IQ toolbox..."
-    uv run --locked python infra/create-toolbox-fabriciq-ontology.py
 }
 
 if ($env:ENABLE_WORK_IQ -eq "true") {

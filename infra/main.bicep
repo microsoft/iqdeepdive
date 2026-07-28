@@ -37,8 +37,8 @@ param enableMonitoring bool = true
 ])
 param searchServiceSku string = 'standard'
 
-@description('Deploy an F2 Microsoft Fabric capacity for notebook parts 3 and 5.')
-param deployFabricCapacity bool = true
+@description('Create an F2 Microsoft Fabric capacity for the Fabric IQ notebooks and agent.')
+param enableFabricCapacity bool = false
 
 @description('Optional user UPN to add as a Fabric capacity administrator.')
 param fabricAdminUpn string = ''
@@ -101,7 +101,7 @@ module aiProject 'core/ai/ai-project.bicep' = {
   }
 }
 
-module fabricCapacity 'core/fabric/fabric-capacity.bicep' = if (deployFabricCapacity) {
+module fabricCapacity 'core/fabric/fabric-capacity.bicep' = if (enableFabricCapacity) {
   scope: rg
   name: 'fabric-capacity'
   params: {
@@ -141,7 +141,7 @@ output AZURE_STORAGE_ACCOUNT_NAME string = aiProject.outputs.storage.accountName
 output APPLICATIONINSIGHTS_CONNECTION_STRING string = aiProject.outputs.APPLICATIONINSIGHTS_CONNECTION_STRING
 output APPLICATIONINSIGHTS_RESOURCE_ID string = aiProject.outputs.APPLICATIONINSIGHTS_RESOURCE_ID
 
-output FABRIC_CAPACITY_NAME string = deployFabricCapacity ? fabricCapacity!.outputs.name : ''
-output FABRIC_CAPACITY_ID string = deployFabricCapacity ? fabricCapacity!.outputs.id : ''
-output FABRIC_TENANT_ID string = deployFabricCapacity ? tenant().tenantId : ''
+output FABRIC_CAPACITY_NAME string = enableFabricCapacity ? fabricCapacity!.outputs.name : ''
+output FABRIC_CAPACITY_ID string = enableFabricCapacity ? fabricCapacity!.outputs.id : ''
+output FABRIC_TENANT_ID string = enableFabricCapacity ? tenant().tenantId : ''
 output AZURE_TENANT_ID string = tenant().tenantId

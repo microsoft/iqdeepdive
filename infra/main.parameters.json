@@ -26,8 +26,8 @@
     "searchServiceSku": {
       "value": "${AZURE_AI_SEARCH_SKU_NAME=standard}"
     },
-    "deployFabricCapacity": {
-      "value": "${DEPLOY_FABRIC_CAPACITY=true}"
+    "enableFabricCapacity": {
+      "value": "${ENABLE_FABRIC_CAPACITY=false}"
     },
     "fabricAdminUpn": {
       "value": "${FABRIC_ADMIN_UPN=}"

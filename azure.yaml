@@ -46,26 +46,6 @@ services:
         protocols:
             - protocol: responses
               version: 2.0.0
-    agent-toolbox-fabriciq:
-        project: src/agent-toolbox-fabriciq
-        host: azure.ai.agent
-        language: python
-        codeConfiguration:
-            dependencyResolution: remote_build
-            entryPoint: main.py
-            runtime: python_3_13
-        container:
-            resources:
-                cpu: "0.5"
-                memory: 1Gi
-        environmentVariables:
-            - name: AZURE_AI_MODEL_DEPLOYMENT_NAME
-              value: ${AZURE_AI_MODEL_DEPLOYMENT_NAME}
-        kind: hosted
-        name: agent-toolbox-fabriciq
-        protocols:
-            - protocol: responses
-              version: 2.0.0
     agent-toolbox-foundryiq:
         project: src/agent-toolbox-foundryiq
         host: azure.ai.agent
