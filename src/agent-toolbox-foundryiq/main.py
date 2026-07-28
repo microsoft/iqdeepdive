@@ -74,7 +74,6 @@ def main() -> None:
     toolbox = FoundryToolbox(
         credential=credential,
         url=toolbox_endpoint,
-        name="toolbox",
         load_prompts=False,
     )
     client = FoundryChatClient(
