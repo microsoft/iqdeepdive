@@ -19,6 +19,21 @@ def post(url: str, headers: dict[str, str]) -> dict:
     return response.json()
 
 
+def post_optional_keys(url: str, headers: dict[str, str], resource: str) -> dict | None:
+    """List keys for a resource, or return None when local authentication is disabled.
+
+    An account with `disableLocalAuth` set rejects this call, and the keys it would
+    return are unusable anyway. Treat that as "no key" rather than a fatal error so
+    provisioning still writes a usable .env for identity-based authentication.
+    """
+    response = requests.post(url, headers=headers, timeout=120)
+    if response.status_code in (401, 403):
+        print(f"Local authentication appears disabled for {resource}; continuing without its key.")
+        return None
+    response.raise_for_status()
+    return response.json()
+
+
 def main() -> None:
     """Fetch local-auth keys and write the complete local development environment."""
     subscription_id = os.environ["AZURE_SUBSCRIPTION_ID"]
@@ -37,12 +52,13 @@ def main() -> None:
         f"/listAdminKeys?api-version=2023-11-01",
         headers,
     )["primaryKey"]
-    openai_key = post(
+    openai_keys = post_optional_keys(
         f"https://management.azure.com/subscriptions/{subscription_id}/resourceGroups/{resource_group}"
         f"/providers/Microsoft.CognitiveServices/accounts/{openai_name}"
         f"/listKeys?api-version=2023-05-01",
         headers,
-    )["key1"]
+        f"Azure AI Services account '{openai_name}'",
+    )
 
     ENV_PATH.touch()
     values = {
@@ -55,7 +71,6 @@ def main() -> None:
         "AZURE_AI_PROJECT_ID": os.environ["AZURE_AI_PROJECT_ID"],
         "AZURE_AI_MODEL_DEPLOYMENT_NAME": os.environ["AZURE_AI_MODEL_DEPLOYMENT_NAME"],
         "AZURE_OPENAI_ENDPOINT": os.environ["AZURE_OPENAI_ENDPOINT"],
-        "AZURE_OPENAI_KEY": openai_key,
         "AZURE_OPENAI_CHATGPT_DEPLOYMENT": os.environ["AZURE_OPENAI_CHATGPT_DEPLOYMENT"],
         "AZURE_OPENAI_CHATGPT_MODEL_NAME": os.environ["AZURE_OPENAI_CHATGPT_MODEL_NAME"],
         "AZURE_OPENAI_EMBEDDING_DEPLOYMENT": os.environ["AZURE_OPENAI_EMBEDDING_DEPLOYMENT"],
@@ -79,6 +94,11 @@ def main() -> None:
     fabric_tenant_id = os.environ.get("FABRIC_TENANT_ID", "")
     if fabric_tenant_id:
         values["FABRIC_TENANT_ID"] = fabric_tenant_id
+
+    # Only written when the account still allows key based authentication. The notebooks
+    # read it with os.environ.get, so its absence selects managed identity instead.
+    if openai_keys:
+        values["AZURE_OPENAI_KEY"] = openai_keys["key1"]
 
     for key, value in values.items():
         set_key(ENV_PATH, key, value, quote_mode="never")
