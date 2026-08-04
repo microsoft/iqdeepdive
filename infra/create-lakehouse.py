@@ -31,6 +31,7 @@ import io
 import json
 import os
 import sys
+import time
 import traceback
 import uuid
 import warnings
@@ -318,7 +319,7 @@ def create_lakehouse(workspace_id: str, name: str) -> dict:
     try:
         lakehouse = get_fabric_client().lakehouse.items.begin_create_lakehouse(
             workspace_id, CreateLakehouseRequest(display_name=name)
-        ).result()
+        ).result
         log_message(f"Lakehouse created: {lakehouse.id}")
         return {"id": lakehouse.id, "displayName": lakehouse.display_name}
     except HttpResponseError as error:
@@ -1140,6 +1141,23 @@ def get_existing_ontology(workspace_id: str, name: str) -> dict | None:
     return None
 
 
+def wait_for_ontology(
+    workspace_id: str, name: str, timeout: int = 300, interval: int = 5
+) -> dict:
+    """Poll for an ontology by display name until its creation operation completes."""
+    deadline = time.monotonic() + timeout
+    while True:
+        existing = get_existing_ontology(workspace_id, name)
+        if existing:
+            return existing
+        if time.monotonic() >= deadline:
+            raise RuntimeError(
+                f"Timed out after {timeout}s waiting for ontology '{name}' "
+                f"to appear in workspace {workspace_id}."
+            )
+        time.sleep(interval)
+
+
 def create_or_get_ontology(workspace_id: str, name: str) -> dict:
     """Create a Fabric IQ ontology item, or reuse an existing one with the same name."""
     if FABRIC_ONTOLOGY_ID:
@@ -1166,15 +1184,18 @@ def create_or_get_ontology(workspace_id: str, name: str) -> dict:
         return existing
 
     log_message(f"Creating ontology '{name}'...")
-    ontology = get_fabric_client().ontology.items.begin_create_ontology(
+    get_fabric_client().ontology.items.begin_create_ontology(
         workspace_id,
         CreateOntologyRequest(
             display_name=name,
             description="Ontology for the Contoso DIY lakehouse data.",
         ),
-    ).result()
-    log_message(f"Ontology created: {ontology.id}")
-    return {"id": ontology.id, "displayName": ontology.display_name}
+    )
+    # The SDK resolves this long running operation through an asynchronous done
+    # callback, so the returned result is still empty here. Poll for the item.
+    created = wait_for_ontology(workspace_id, name)
+    log_message(f"Ontology created: {created['id']}")
+    return created
 
 
 def update_ontology_definition(

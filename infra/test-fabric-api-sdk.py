@@ -119,7 +119,7 @@ def exercise_lakehouse_create(client: FabricClient, workspace_id: str) -> None:
                 description="Temporary microsoft-fabric-api SDK probe.",
             ),
         )
-        lakehouse = poller.result()
+        lakehouse = poller.result
         probe_id = item_id(lakehouse)
         retrieved = client.lakehouse.items.get_lakehouse(workspace_id, probe_id)
         print(f"Created and retrieved: {display_name(retrieved)} ({probe_id})")
