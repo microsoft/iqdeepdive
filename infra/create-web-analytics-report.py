@@ -29,7 +29,7 @@ REPORT_NAME = os.getenv(
     "FABRIC_WEB_ANALYTICS_REPORT_NAME", "Contoso Web Analytics Dashboard"
 )
 FABRIC_PORTAL_BASE_URL = os.getenv(
-    "FABRIC_PORTAL_BASE_URL", "https://msit.powerbi.com"
+    "FABRIC_PORTAL_BASE_URL", "https://app.fabric.microsoft.com"
 ).rstrip("/")
 
 

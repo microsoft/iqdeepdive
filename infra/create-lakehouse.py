@@ -14,7 +14,7 @@ Environment variables (from .env):
   FABRIC_WORKSPACE_ID  - Existing Fabric workspace GUID
   FABRIC_CAPACITY_ID   - Fabric capacity GUID or ARM resource ID for workspace creation
     FABRIC_TENANT_ID     - Required Microsoft Entra tenant ID for Fabric auth
-    FABRIC_PORTAL_BASE_URL - Fabric UI host (default: https://msit.powerbi.com)
+    FABRIC_PORTAL_BASE_URL - Fabric UI host (default: https://app.fabric.microsoft.com)
     LAKEHOUSE_NAME       - Name for the lakehouse (default: ContosoDIYLakehouse)
   FABRIC_ONTOLOGY_ID   - Existing ontology GUID to update, if known
     FABRIC_ONTOLOGY_NAME - Name for the ontology (default: ContosoDIYOntology)
@@ -78,7 +78,7 @@ WORKSPACE_NAME = os.getenv("FABRIC_WORKSPACE_NAME", "ContosoDIYWorkspace")
 FABRIC_CAPACITY_ID = os.getenv("FABRIC_CAPACITY_ID", "")
 FABRIC_TENANT_ID = os.getenv("FABRIC_TENANT_ID", "").strip()
 FABRIC_PORTAL_BASE_URL = os.getenv(
-    "FABRIC_PORTAL_BASE_URL", "https://msit.powerbi.com"
+    "FABRIC_PORTAL_BASE_URL", "https://app.fabric.microsoft.com"
 ).rstrip("/")
 FABRIC_ONTOLOGY_ID = os.getenv("FABRIC_ONTOLOGY_ID", "")
 FABRIC_ONTOLOGY_NAME = os.getenv("FABRIC_ONTOLOGY_NAME", "ContosoDIYOntology")
