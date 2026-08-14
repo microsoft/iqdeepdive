@@ -25,3 +25,28 @@ __pycache__/
 fabric_setup_*.log
 infra/create-lakehouse.log
 .azure
+
+# Cached raw Semantic Scholar responses (large, regenerable)
+data/research-graph/raw-s2-edges.json
+
+# Research graph artifacts. Every one is an output of a script in infra/ and is
+# rebuilt from the two caches in data/research-graph/, so none of them is committed:
+#   graph.json          infra/export-research-graph.py
+#   map.json            infra/build-research-map.py
+web/research-explorer/graph.json
+web/research-explorer/map.json
+web/research-explorer/*.parquet
+
+# Conference deck and its generator: presentation material, not part of the sample.
+web/research-explorer/make-deck.py
+web/research-explorer/*.pptx
+web/research-explorer/*.pdf
+
+# Playwright MCP scratch output
+.playwright-mcp/
+
+# Local review-hook cache
+.impeccable/
+
+# PowerPoint lock files
+~$*

@@ -1,0 +1,1129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Research IQ · RAG Literature Ontology</title>
+<style>
+  :root {
+    --bg: #05070c;
+    --panel: #0c1017;
+    --panel-2: #141a25;
+    --line: #1e2735;
+    --ink: #e9edf5;
+    --ink-dim: #8e98ad;
+    --ink-faint: #5c6779;
+    --accent: #ff5a4d;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; height: 100%; overflow: hidden;
+    background: var(--bg); color: var(--ink);
+    font: 13px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  #app { display: grid; grid-template-columns: 250px 1fr 330px; height: 100%; }
+  aside { background: var(--panel); overflow-y: auto; overscroll-behavior: contain; }
+  #sidebar { border-right: 1px solid var(--line); }
+  #detail  { border-left: 1px solid var(--line); }
+
+  .brand { padding: 15px 16px; border-bottom: 1px solid var(--line); }
+  .brand h1 { margin: 0; font-size: 15px; font-weight: 650; letter-spacing: -.1px; }
+  .brand p  { margin: 5px 0 0; font-size: 11px; color: var(--ink-faint); }
+
+  .sec { padding: 13px 16px; border-bottom: 1px solid var(--line); }
+  .sec > h2 {
+    margin: 0 0 9px; font-size: 9.5px; font-weight: 600;
+    letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint);
+  }
+  .seg { display: flex; border: 1px solid var(--line); border-radius: 7px; overflow: hidden; }
+  .seg button {
+    flex: 1; padding: 7px 4px; cursor: pointer; border: 0; font: inherit; font-size: 12px;
+    background: var(--panel-2); color: var(--ink-dim);
+  }
+  .seg button + button { border-left: 1px solid var(--line); }
+  .seg button.on { background: var(--accent); color: #fff; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chips button {
+    padding: 6px 10px; cursor: pointer; font: inherit; font-size: 11.5px;
+    border: 1px solid var(--line); border-radius: 6px;
+    background: var(--panel-2); color: var(--ink-dim);
+  }
+  .chips button.on { border-color: var(--accent); color: #fff; background: #2a1614; }
+
+  .row { display: flex; align-items: center; gap: 8px; padding: 3.5px 0; cursor: pointer; user-select: none; }
+  .row:hover .nm { color: #fff; }
+  .row input { accent-color: var(--accent); margin: 0; cursor: pointer; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+  .dot.ghost { background: none; box-shadow: inset 0 0 0 1.5px #4c5680; }
+  .row.static { cursor: default; padding-left: 1px; }
+  .nm { flex: 1; color: var(--ink-dim); font-size: 12px; }
+  .ct { color: var(--ink-faint); font-variant-numeric: tabular-nums; font-size: 11px; }
+
+  input[type=search] {
+    width: 100%; padding: 8px 9px; border-radius: 6px; font: inherit; font-size: 12.5px;
+    border: 1px solid var(--line); background: var(--panel-2); color: var(--ink);
+  }
+  input[type=search]::placeholder { color: var(--ink-faint); }
+  input[type=range] { width: 100%; accent-color: var(--accent); }
+  .rangeval { font-size: 11px; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+
+  #stage { position: relative; overflow: hidden; background: var(--bg); }
+
+  /* The CSS2D layer sits over the canvas and must never eat orbit/zoom gestures. */
+  .labelLayer { position: absolute; inset: 0; pointer-events: none; z-index: 2; }
+  .rlabel, .plabel { pointer-events: none; white-space: nowrap; transform: translate(-50%, -50%); }
+  .rlabel {
+    font-size: 11px; font-weight: 600; letter-spacing: 1.6px; text-transform: uppercase;
+    text-shadow: 0 0 12px #05070c, 0 0 4px #05070c, 0 1px 2px #05070c;
+  }
+  .plabel {
+    font-size: 11px; color: #dde5f4; letter-spacing: .1px;
+    text-shadow: 0 0 10px #05070c, 0 0 6px #05070c, 0 0 3px #05070c, 0 1px 2px #05070c;
+  }
+  #viz { position: absolute; inset: 0; }
+  #topbar {
+    position: absolute; top: 0; left: 0; right: 0; z-index: 3;
+    padding: 14px 18px 26px; pointer-events: none;
+    background: linear-gradient(to bottom, #05070cf5, #05070cb0 50%, #05070c00);
+  }
+  #topbar h2 { margin: 0; font-size: 22px; font-weight: 650; letter-spacing: -.3px; }
+  #topbar p  { margin: 4px 0 0; font-size: 12px; color: var(--ink-dim); }
+  #hint {
+    position: absolute; right: 18px; bottom: 14px; z-index: 3;
+    font-size: 11px; color: var(--ink-faint); pointer-events: none;
+  }
+  #back {
+    position: absolute; left: 18px; bottom: 14px; z-index: 4; display: none;
+    padding: 7px 13px; cursor: pointer; font: inherit; font-size: 12px;
+    border: 1px solid var(--line); border-radius: 7px;
+    background: #0c1017dd; color: var(--ink-dim);
+  }
+  #back:hover { color: #fff; border-color: #3a465c; }
+  #back.on { display: block; }
+  #loading {
+    position: absolute; inset: 0; z-index: 5; display: grid; place-items: center;
+    color: var(--ink-faint); font-size: 13px; background: var(--bg);
+  }
+
+  #tip {
+    position: absolute; z-index: 4; pointer-events: none; display: none;
+    max-width: 300px; padding: 9px 11px; border-radius: 8px;
+    background: #0c1017f2; border: 1px solid var(--line);
+    box-shadow: 0 8px 26px #000a;
+  }
+  #tip .k { font-size: 9.5px; letter-spacing: .09em; text-transform: uppercase; color: var(--accent); }
+  #tip .t { margin-top: 3px; font-size: 12.5px; line-height: 1.35; }
+  #tip .m { margin-top: 4px; font-size: 11px; color: var(--ink-faint); }
+
+  #detail .pad { padding: 15px 16px; }
+  #dkind { font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); }
+  #dtitle { margin: 7px 0 0; font-size: 20px; font-weight: 650; line-height: 1.28; letter-spacing: -.3px; }
+  .tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
+  .tag {
+    padding: 3px 8px; border-radius: 5px; font-size: 11px;
+    background: var(--panel-2); color: var(--ink-dim); border: 1px solid var(--line);
+  }
+  #dessence {
+    margin-top: 11px; padding: 9px 11px; border-radius: 7px; font-size: 12px;
+    line-height: 1.5; color: var(--ink-dim); background: var(--panel-2);
+    border-left: 2px solid var(--accent);
+  }
+  .grp { margin-top: 16px; }
+  .grp > h3 {
+    margin: 0 0 7px; font-size: 9.5px; font-weight: 600;
+    letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint);
+  }
+  .grp button {
+    display: block; width: 100%; text-align: left; cursor: pointer;
+    padding: 6px 8px; border: 0; border-radius: 5px; margin-bottom: 1px;
+    background: none; color: var(--ink-dim); font: inherit; font-size: 12px;
+  }
+  .grp button:hover { background: var(--panel-2); color: #fff; }
+  .grp button .why { display: block; font-size: 10.5px; color: var(--accent); margin-top: 1px; }
+  a { color: #6ba8ff; }
+  .empty { color: var(--ink-faint); font-size: 12.5px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <aside id="sidebar">
+    <div class="brand">
+      <h1>Research IQ · Literature Ontology</h1>
+      <p id="provenance">loading…</p>
+    </div>
+
+    <div class="sec">
+      <h2>View</h2>
+      <div class="seg" id="viewSeg">
+        <button data-view="ontology" class="on">Ontology</button>
+        <button data-view="topographic">Topographic</button>
+      </div>
+    </div>
+
+    <div class="sec">
+      <h2>Cluster by</h2>
+      <div class="chips" id="clusterChips">
+        <button data-group="tier">Tier</button>
+        <button data-group="cluster" class="on">Subfield</button>
+        <button data-group="decade">Era</button>
+        <button data-group="venue">Venue</button>
+      </div>
+    </div>
+
+    <div class="sec">
+      <h2>Regions</h2>
+      <div id="regionRows"></div>
+    </div>
+
+    <div class="sec">
+      <h2>Entities</h2>
+      <div id="typeRows"></div>
+    </div>
+
+    <div class="sec">
+      <h2>Links</h2>
+      <div id="linkRows"></div>
+    </div>
+
+    <div class="sec">
+      <h2>Minimum citations <span class="rangeval" id="minCiteVal">0</span></h2>
+      <input type="range" id="minCite" min="0" max="4" step="1" value="0" />
+    </div>
+
+    <div class="sec">
+      <h2>Search</h2>
+      <input type="search" id="search" placeholder="paper, author, method…" />
+      <div id="hits" class="grp"></div>
+    </div>
+  </aside>
+
+  <div id="stage">
+    <div id="viz"></div>
+    <div id="topbar">
+      <h2 id="viewTitle">One connected corpus</h2>
+      <p id="viewDesc">Every paper, author, method and dataset in the graph, grouped into regions.</p>
+    </div>
+    <button id="back">← Back to full ontology</button>
+    <div id="hint">drag to orbit · scroll to zoom · click a node</div>
+    <div id="tip"></div>
+    <div id="loading">Building the ontology…</div>
+  </div>
+
+  <aside id="detail">
+    <div class="pad" id="detailBody">
+      <p class="empty">Click any node to inspect it.</p>
+      <p class="empty" style="margin-top:12px">
+        Papers sit on the sphere grouped by region; every link you see is an edge read
+        from the Fabric graph.
+      </p>
+    </div>
+  </aside>
+</div>
+
+<script type="module">
+import ForceGraph3D from 'https://esm.sh/3d-force-graph@1.79.0?deps=three@0.182.0';
+import * as THREE from 'https://esm.sh/three@0.182.0';
+import { UnrealBloomPass } from 'https://esm.sh/three@0.182.0/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { CSS2DRenderer, CSS2DObject }
+  from 'https://esm.sh/three@0.182.0/examples/jsm/renderers/CSS2DRenderer.js';
+
+const $ = id => document.getElementById(id);
+
+/* ---------------------------------------------------------------- palette */
+
+const TYPE_COLOR = {
+  Paper: '#ff5a4d', Author: '#7c8cff', Venue: '#c084fc', Method: '#22d3ee',
+  Task: '#facc15', Dataset: '#4ade80', Metric: '#f472b6', Limitation: '#fb923c'
+};
+const TIER_COLOR = { foundation: '#38bdf8', core: '#ff5a4d', descendant: '#4ade80' };
+const GROUP_PALETTE = [
+  '#ff5a4d', '#38bdf8', '#4ade80', '#facc15', '#c084fc',
+  '#f472b6', '#22d3ee', '#fb923c', '#a3e635', '#818cf8'
+];
+const LINK_TYPES = [
+  'CITES', 'AUTHORED', 'COAUTHORED', 'PUBLISHED_IN', 'PROPOSES',
+  'USES', 'ADDRESSES', 'EVALUATES_ON', 'MEASURES', 'REPORTS_LIMITATION'
+];
+// Entity links share their entity's colour so a region reads as one system.
+const LINK_COLOR = {
+  CITES: '#ff5a4d', AUTHORED: '#7c8cff', COAUTHORED: '#4c5680', PUBLISHED_IN: '#c084fc',
+  PROPOSES: '#22d3ee', USES: '#22d3ee', ADDRESSES: '#facc15',
+  EVALUATES_ON: '#4ade80', MEASURES: '#f472b6', REPORTS_LIMITATION: '#fb923c'
+};
+
+const RADIUS = 320;          // globe radius in scene units
+const PACKING = 0.55;        // fraction of the sphere the patches together cover
+
+const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+
+/* ------------------------------------------------------------------ state */
+
+let RAW = null, MAP = null;
+let nodesById = new Map();
+let adjacency = new Map();
+let view = 'ontology';
+let groupBy = 'cluster';   // subfields give the most balanced regions
+// Authors now spread across the subfield regions rather than forming one blob, so they
+// can be shown; coauthorship stays off because 1,484 within-team edges bury the citations.
+let hiddenTypes = new Set();
+let hiddenLinks = new Set(['COAUTHORED']);
+let minCitations = 0;
+let focusId = null;
+let selectedId = null;
+let graph = null;
+let shell = null;
+let labelRenderer = null;
+let labelGroup = null;
+const PROJ = new THREE.Vector3();
+const TOP_GUTTER = 84;
+let regionAnchors = new Map();
+let regionMembers = new Map();
+
+/* ------------------------------------------------------------------- data */
+
+const CITE_STEPS = [0, 100, 2000, 5000, 20000];  // 119 / 60 / 38 / 20 / 6 papers
+
+async function boot() {
+  const [g, m] = await Promise.all([
+    fetch('graph.json').then(r => r.json()),
+    fetch('map.json').then(r => r.json())
+  ]);
+  RAW = g; MAP = m;
+
+  const mapById = new Map(MAP.items.map(i => [i.id, i]));
+  const clusterLabel = new Map(MAP.clusters.map(c => [c.id, c.label]));
+
+  for (const node of RAW.nodes) {
+    const mapped = mapById.get(node.id);
+    node.cluster = mapped ? clusterLabel.get(mapped.cluster) : null;
+    node.essence = mapped ? mapped.essence : null;
+    node.mapX = mapped ? mapped.x : null;
+    node.mapY = mapped ? mapped.y : null;
+    node.decade = node.year ? `${Math.floor(node.year / 5) * 5}s` : null;
+    nodesById.set(node.id, node);
+  }
+
+  for (const link of RAW.links) {
+    if (!adjacency.has(link.source)) adjacency.set(link.source, []);
+    if (!adjacency.has(link.target)) adjacency.set(link.target, []);
+    adjacency.get(link.source).push({ other: link.target, type: link.type, dir: 'out' });
+    adjacency.get(link.target).push({ other: link.source, type: link.type, dir: 'in' });
+  }
+
+  $('provenance').textContent =
+    `${RAW.nodes.length.toLocaleString()} entities · ${RAW.links.length.toLocaleString()} relationships · Fabric graph`;
+
+  buildTypeRows();
+  buildLinkRows();
+  initGraph();
+  apply();
+  $('loading').style.display = 'none';
+}
+
+/* ------------------------------------------------------------- filtering */
+
+function nodeVisible(node) {
+  if (hiddenTypes.has(node.type)) return false;
+  if (node.type === 'Paper' && (node.citationCount || 0) < CITE_STEPS[minCitations]) return false;
+  if (focusId) return focusSet.has(node.id);
+  return true;
+}
+
+let focusSet = new Set();
+
+function computeFocusSet() {
+  focusSet = new Set();
+  if (!focusId) return;
+  focusSet.add(focusId);
+  for (const edge of adjacency.get(focusId) || []) {
+    if (hiddenLinks.has(edge.type)) continue;
+    focusSet.add(edge.other);
+  }
+}
+
+// d3's link force resolves link.source/target from id strings into node object references
+// and writes them back onto the very objects we hold in RAW.links. So from the second
+// render onwards an endpoint is an object, and any id comparison must go through this.
+const endId = end => (end && typeof end === 'object' ? end.id : end);
+
+function currentData() {
+  computeFocusSet();
+  let nodes = RAW.nodes.filter(nodeVisible);
+  // An entity only exists here in relation to a paper. Once the citation filter removes the
+  // papers that mention it, leaving it behind strews the globe with unconnected dust, so
+  // drop any entity with no surviving paper.
+  if (minCitations > 0 && !focusId) {
+    const papers = new Set(nodes.filter(n => n.type === 'Paper').map(n => n.id));
+    nodes = nodes.filter(n => n.type === 'Paper' ||
+      (adjacency.get(n.id) || []).some(e => papers.has(e.other)));
+  }
+  const keep = new Set(nodes.map(n => n.id));
+  const links = RAW.links.filter(l =>
+    !hiddenLinks.has(l.type) && keep.has(endId(l.source)) && keep.has(endId(l.target)));
+  return { nodes, links };
+}
+
+/* --------------------------------------------------------------- layout */
+
+/** Evenly spaced directions on a sphere - the standard Fibonacci construction. */
+function fibonacciDirections(count) {
+  const out = [];
+  const golden = Math.PI * (3 - Math.sqrt(5));
+  for (let i = 0; i < count; i++) {
+    // Half-step offset: the naive i/(count-1) form puts the first and last group on the
+    // exact poles, so a two-region view (which the citation filter reaches) renders as two
+    // tufts at top and bottom with nothing between them.
+    const y = 1 - ((2 * i + 1) / count);
+    const r = Math.sqrt(Math.max(0, 1 - y * y));
+    const theta = golden * i;
+    out.push([Math.cos(theta) * r, y, Math.sin(theta) * r]);
+  }
+  return out;
+}
+
+/** The grouping attribute, which only papers carry directly. */
+function paperGroup(node) {
+  if (groupBy === 'tier') return node.tier;
+  if (groupBy === 'cluster') return node.cluster;
+  if (groupBy === 'decade') return node.decade;
+  if (groupBy === 'venue') return node.venue;
+  return null;
+}
+
+// Region membership for every node. A method or author has no subfield of its own, so it
+// inherits the region of the papers that use it (the modal one, ties broken by name for
+// determinism). This is what makes a patch a coherent research area rather than a bucket
+// of one entity type, and it is why a cross-patch chord means something: a method reused
+// by another subfield, or a paper citing outside its own region.
+let groupOf = new Map();
+
+function resolveGroups(nodes) {
+  groupOf = new Map();
+  const pending = [];
+  for (const node of nodes) {
+    const own = node.type === 'Paper' ? paperGroup(node) : null;
+    if (own) groupOf.set(node.id, own); else pending.push(node);
+  }
+  // Two passes so entities linked only to other entities still settle somewhere sensible.
+  for (let pass = 0; pass < 2; pass++) {
+    for (const node of pending) {
+      if (groupOf.has(node.id) && pass === 1) continue;
+      const tally = new Map();
+      for (const edge of adjacency.get(node.id) || []) {
+        const g = groupOf.get(edge.other);
+        if (g) tally.set(g, (tally.get(g) || 0) + 1);
+      }
+      if (!tally.size) continue;
+      const best = [...tally.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0][0];
+      groupOf.set(node.id, best);
+    }
+  }
+  for (const node of nodes) if (!groupOf.has(node.id)) groupOf.set(node.id, 'unassigned');
+}
+
+function groupKey(node) {
+  return groupOf.get(node.id) || node.type;
+}
+
+// A deterministic hash keeps a node in the same spot between redraws, so toggling
+// a filter does not reshuffle the globe under the viewer.
+function hash(str, salt) {
+  let h = 2166136261 ^ salt;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return ((h >>> 0) % 100000) / 100000;
+}
+
+/** Place every node on the globe surface, inside its group's patch. */
+function layoutGlobe(nodes) {
+  resolveGroups(nodes);
+  regionAnchors = new Map();
+  regionMembers = new Map();
+  const groups = [...new Set(nodes.map(groupKey))].sort();
+  const dirs = fibonacciDirections(groups.length);
+  const centre = new Map(groups.map((g, i) => [g, dirs[i]]));
+  groupColors = new Map(groups.map((g, i) => [g, GROUP_PALETTE[i % GROUP_PALETTE.length]]));
+
+  // Patch footprint follows population. With a fixed spread a 27-member region and a
+  // 1,000-member one claim the same area, so the large one packs into an opaque blob
+  // while the small one scatters. Area proportional to count keeps surface density even.
+  // Park a label just off the surface above each patch centre.
+  for (const [g, d] of centre) regionAnchors.set(g, [d[0] * RADIUS * 1.1, d[1] * RADIUS * 1.1, d[2] * RADIUS * 1.1]);
+
+  const size = new Map();
+  for (const node of nodes) size.set(groupKey(node), (size.get(groupKey(node)) || 0) + 1);
+  const spread = new Map();
+  for (const [g, n] of size) {
+    spread.set(g, clamp(Math.sqrt(4 * PACKING * (n / nodes.length)), 0.16, 0.92));
+  }
+
+  for (const node of nodes) {
+    const [cx, cy, cz] = centre.get(groupKey(node));
+    // Build a tangent frame at the patch centre, then offset within it.
+    const up = Math.abs(cy) < 0.9 ? [0, 1, 0] : [1, 0, 0];
+    const t1 = normalize(cross([cx, cy, cz], up));
+    const t2 = cross([cx, cy, cz], t1);
+
+    const angle = hash(node.id, 1) * Math.PI * 2;
+    // sqrt keeps members spread evenly over the patch rather than piling at its centre.
+    const reach = Math.sqrt(hash(node.id, 2)) * spread.get(groupKey(node));
+    const vx = cx + (t1[0] * Math.cos(angle) + t2[0] * Math.sin(angle)) * reach;
+    const vy = cy + (t1[1] * Math.cos(angle) + t2[1] * Math.sin(angle)) * reach;
+    const vz = cz + (t1[2] * Math.cos(angle) + t2[2] * Math.sin(angle)) * reach;
+    const [nx, ny, nz] = normalize([vx, vy, vz]);
+
+    // Papers ride slightly proud of the shell; supporting entities sit just inside,
+    // which separates the two without breaking the sphere silhouette.
+    const depth = node.type === 'Paper' ? 1.0 : 0.9 - hash(node.id, 3) * 0.12;
+    node.fx = nx * RADIUS * depth;
+    node.fy = ny * RADIUS * depth;
+    node.fz = nz * RADIUS * depth;
+
+    const g = groupKey(node);
+    if (!regionMembers.has(g)) regionMembers.set(g, []);
+    regionMembers.get(g).push(nx, ny, nz);
+  }
+}
+
+/** Papers on the map plane, lifted by citation count - a terrain rather than a globe. */
+/**
+ * Egocentric layout for a drilled-in neighbourhood: the subject at the origin with its
+ * neighbours on a shell around it, clustered by region. Reusing the globe here put the
+ * subject somewhere on the surface among its own neighbours, which read as an arbitrary
+ * scatter; from the centre every link is a spoke and the regional mix is obvious.
+ */
+function layoutFocus(nodes) {
+  resolveGroups(nodes);
+  regionAnchors = new Map();
+  regionMembers = new Map();
+  const others = nodes.filter(n => n.id !== focusId);
+  const groups = [...new Set(others.map(groupKey))].sort();
+  const dirs = fibonacciDirections(groups.length);
+  const centre = new Map(groups.map((g, i) => [g, dirs[i]]));
+  groupColors = new Map(groups.map((g, i) => [g, GROUP_PALETTE[i % GROUP_PALETTE.length]]));
+
+  const size = new Map();
+  for (const node of others) size.set(groupKey(node), (size.get(groupKey(node)) || 0) + 1);
+
+  for (const node of nodes) {
+    if (node.id === focusId) { node.fx = node.fy = node.fz = 0; continue; }
+    const [cx, cy, cz] = centre.get(groupKey(node));
+    const up = Math.abs(cy) < 0.9 ? [0, 1, 0] : [1, 0, 0];
+    const t1 = normalize(cross([cx, cy, cz], up));
+    const t2 = cross([cx, cy, cz], t1);
+    const spread = clamp(Math.sqrt(1.6 * (size.get(groupKey(node)) / others.length)), 0.14, 0.7);
+    const angle = hash(node.id, 1) * Math.PI * 2;
+    const reach = Math.sqrt(hash(node.id, 2)) * spread;
+    const v = normalize([
+      cx + (t1[0] * Math.cos(angle) + t2[0] * Math.sin(angle)) * reach,
+      cy + (t1[1] * Math.cos(angle) + t2[1] * Math.sin(angle)) * reach,
+      cz + (t1[2] * Math.cos(angle) + t2[2] * Math.sin(angle)) * reach
+    ]);
+    const r = 185 + hash(node.id, 3) * 55;
+    node.fx = v[0] * r; node.fy = v[1] * r; node.fz = v[2] * r;
+  }
+}
+
+/** Terrain height for a paper: how often the world cites it. */
+const paperHeight = node => Math.log1p(node.citationCount || 0) * 26 - 20;
+
+function layoutTopographic(nodes) {
+  resolveGroups(nodes);
+  regionMembers = new Map();
+  const groups = [...new Set(nodes.map(groupKey))].sort();
+  groupColors = new Map(groups.map((g, i) => [g, GROUP_PALETTE[i % GROUP_PALETTE.length]]));
+  const SPAN = 520;
+  for (const node of nodes) {
+    if (node.mapX != null) {
+      node.fx = node.mapX * SPAN;
+      node.fz = -node.mapY * SPAN;
+      node.fy = paperHeight(node);
+    } else {
+      // Entities float below the paper terrain, near the papers that mention them.
+      const anchors = (adjacency.get(node.id) || [])
+        .map(e => nodesById.get(e.other))
+        .filter(n => n && n.mapX != null);
+      const mean = (pick) => anchors.reduce((sum, n) => sum + pick(n), 0) / anchors.length;
+      const ax = anchors.length ? mean(n => n.mapX) : 0;
+      const ay = anchors.length ? mean(n => n.mapY) : 0;
+      // Hang beneath the anchors' own height rather than a flat floor, so the entity layer
+      // mirrors the canopy. A fixed floor gave heavily cited peaks 300-unit stalactites.
+      const surface = anchors.length ? mean(paperHeight) : 0;
+      node.fx = ax * SPAN + (hash(node.id, 4) - 0.5) * 46;
+      node.fz = -ay * SPAN + (hash(node.id, 5) - 0.5) * 46;
+      node.fy = surface - 60 - hash(node.id, 6) * 55;
+    }
+  }
+
+  regionAnchors = new Map();
+  const acc = new Map();
+  for (const node of nodes) {
+    if (node.mapX == null) continue;
+    const g = groupKey(node);
+    if (!acc.has(g)) acc.set(g, { x: 0, z: 0, top: -1e9, n: 0 });
+    const a = acc.get(g);
+    a.x += node.fx; a.z += node.fz; a.top = Math.max(a.top, node.fy); a.n++;
+  }
+  for (const [g, a] of acc) regionAnchors.set(g, [a.x / a.n, a.top + 70, a.z / a.n]);
+}
+
+let groupColors = new Map();
+
+const normalize = v => {
+  const l = Math.hypot(v[0], v[1], v[2]) || 1;
+  return [v[0] / l, v[1] / l, v[2] / l];
+};
+const cross = (a, b) => [
+  a[1] * b[2] - a[2] * b[1],
+  a[2] * b[0] - a[0] * b[2],
+  a[0] * b[1] - a[1] * b[0]
+];
+
+/* ---------------------------------------------------------------- render */
+
+function colorOf(node) {
+  if (node.id === selectedId) return '#ffffff';
+  return groupColors.get(groupKey(node)) || TYPE_COLOR[node.type];
+}
+
+function endpointIds(link) {
+  return [endId(link.source), endId(link.target)];
+}
+
+function linkColorOf(link) {
+  if (selectedId) {
+    const [a, b] = endpointIds(link);
+    if (a === selectedId || b === selectedId) return '#ffffff';
+    // Everything else recedes so the selected node's own edges stay readable.
+    return 'rgba(120,134,170,0.10)';
+  }
+  const src = nodesById.get(endId(link.source));
+  return (src && groupColors.get(groupKey(src))) || LINK_COLOR[link.type] || '#43506b';
+}
+
+function widthOf(link) {
+  if (selectedId) {
+    const [a, b] = endpointIds(link);
+    if (a === selectedId || b === selectedId) return 2.4;
+  }
+  return link.type === 'CITES' ? 1.1 : 0.6;
+}
+
+function sizeOf(node) {
+  const base = node.type === 'Paper'
+    ? 0.20 + Math.log1p(node.citationCount || 0) * 0.17
+    : 0.07 + Math.log1p(node.degree || 1) * 0.05;
+  return node.id === selectedId ? base + 6 : base;
+}
+
+function initGraph() {
+  labelRenderer = new CSS2DRenderer();
+  labelRenderer.domElement.className = 'labelLayer';
+
+  graph = new ForceGraph3D($('viz'), { controlType: 'orbit', extraRenderers: [labelRenderer] })
+    .backgroundColor('#05070c')
+    .showNavInfo(false)
+    .nodeId('id')
+    .nodeLabel(() => '')
+    .nodeVal(sizeOf)
+    .nodeColor(colorOf)
+    .nodeOpacity(0.96)
+    .nodeResolution(10)
+    .linkColor(linkColorOf)
+    .linkWidth(widthOf)
+    .linkOpacity(0.28)
+    .linkCurvature(0)
+    .linkDirectionalParticles(l => (l.type === 'CITES' && !focusId ? 0 : l.type === 'CITES' ? 2 : 0))
+    .linkDirectionalParticleWidth(1.4)
+    .linkDirectionalParticleSpeed(0.006)
+    .onNodeHover(showTip)
+    .onNodeClick(node => selectNode(node.id, true))
+    .onBackgroundClick(() => {
+      if (selectedId) clearSelection();
+      else if (focusId) resetFocus();
+    });
+
+  // Positions are computed analytically, so the simulation must not move anything.
+  // The link force is kept at zero strength rather than removed: it is what resolves
+  // link.source/target from ids into node objects, so dropping it leaves every link
+  // with string endpoints and nothing to draw.
+  graph.d3Force('charge').strength(0);
+  graph.d3Force('link').strength(0).distance(0);
+  graph.d3Force('center', null);
+
+  const bloom = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.62, 0.42, 0.62);
+  graph.postProcessingComposer().addPass(bloom);
+
+  shell = new THREE.Mesh(
+    new THREE.SphereGeometry(RADIUS, 44, 32),
+    new THREE.MeshBasicMaterial({ color: 0x38507a, wireframe: true, transparent: true, opacity: 0.06 })
+  );
+  graph.scene().add(shell);
+
+  const sizeTo = () => {
+    const box = $('stage').getBoundingClientRect();
+    graph.width(box.width).height(box.height);
+  };
+  sizeTo();
+  new ResizeObserver(sizeTo).observe($('stage'));
+
+  graph.cameraPosition({ x: 0, y: 120, z: 900 });
+  const tick = () => { updateLabelVisibility(); requestAnimationFrame(tick); };
+  requestAnimationFrame(tick);
+
+  // Exposed deliberately: lets the graph be inspected from the console during a demo
+  // or a debugging session without rebuilding anything.
+  window.__graph = graph;
+}
+
+const PAPER_LABELS_PER_REGION = 2;   // beyond a couple per patch the globe turns to soup
+
+/**
+ * Region names over each patch, plus the handful of papers anyone would recognise.
+ * Labelling every node is unreadable at 1,606 entities, so the rule is: name the
+ * geography always, name the landmarks, and let clicking reveal the rest.
+ */
+function buildLabels(data) {
+  if (labelGroup) { labelGroup.clear(); graph.scene().remove(labelGroup); }
+  labelGroup = new THREE.Group();
+
+  for (const [region, pos] of regionAnchors) {
+    const el = document.createElement('div');
+    el.className = 'rlabel';
+    el.textContent = prettyRegion(region);
+    el.style.color = groupColors.get(region) || '#8fa0c4';
+    const obj = new CSS2DObject(el);
+    obj.position.set(pos[0], pos[1], pos[2]);
+    obj.userData.kind = 'region';
+    obj.userData.region = region;
+    labelGroup.add(obj);
+  }
+
+  // Top papers overall are nearly all in the largest region, so naming them globally
+  // stacks a dozen labels in one patch. Take the leaders of each region instead: the
+  // labels spread out and each one says something about where it sits.
+  const perRegion = new Map();
+  for (const node of data.nodes) {
+    if (node.type !== 'Paper' || node.fx == null) continue;
+    const g = groupKey(node);
+    if (!perRegion.has(g)) perRegion.set(g, []);
+    perRegion.get(g).push(node);
+  }
+  const named = [];
+  const quota = focusId ? 2 : PAPER_LABELS_PER_REGION;
+  for (const list of perRegion.values()) {
+    list.sort((a, b) => (b.citationCount || 0) - (a.citationCount || 0));
+    named.push(...list.slice(0, quota));
+  }
+  for (const node of named) {
+    const el = document.createElement('div');
+    el.className = 'plabel';
+    el.textContent = truncate(node.name, 42);
+    const obj = new CSS2DObject(el);
+    // Nudge outward along the view-independent radial so text clears its own dot.
+    const len = Math.hypot(node.fx, node.fy, node.fz) || 1;
+    obj.position.set(node.fx * (1 + 9 / len), node.fy * (1 + 9 / len), node.fz * (1 + 9 / len));
+    obj.userData.kind = 'paper';
+    obj.userData.rank = node.citationCount || 0;
+    labelGroup.add(obj);
+  }
+  graph.scene().add(labelGroup);
+}
+
+/**
+ * CSS2D has no depth test, so labels on the far side of the globe would otherwise show
+ * through it. Hide anything past the horizon and fade the rest as it approaches the rim.
+ */
+function updateLabelVisibility() {
+  if (!labelGroup || !graph) return;
+  const cam = graph.camera();
+  const camLen = Math.hypot(cam.position.x, cam.position.y, cam.position.z) || 1;
+  const horizon = view === 'ontology' && !focusId ? (RADIUS / camLen) * 0.92 : -1;
+  // A wide patch can have its geometric centre behind the globe while most of its nodes
+  // face the camera, which left the largest region unlabelled. Re-centre each region label
+  // on the mean of its currently front-facing members before testing visibility.
+  if (horizon > 0) {
+    for (const obj of labelGroup.children) {
+      if (obj.userData.kind !== 'region') continue;
+      const pts = regionMembers.get(obj.userData.region);
+      if (!pts) continue;
+      let sx = 0, sy = 0, sz = 0, n = 0;
+      for (let i = 0; i < pts.length; i += 3) {
+        const f = (pts[i] * cam.position.x + pts[i + 1] * cam.position.y + pts[i + 2] * cam.position.z) / camLen;
+        if (f <= horizon) continue;
+        sx += pts[i]; sy += pts[i + 1]; sz += pts[i + 2]; n++;
+      }
+      // Only a sliver of the patch is in view; naming it would point at nothing.
+      obj.userData.faint = n / (pts.length / 3) < 0.04;
+      if (!n) continue;
+      let len = Math.hypot(sx, sy, sz) || 1;
+      // Bias toward the centre of the visible disc. Purely mass-centred anchors drift to
+      // the rim for patches that wrap around the back, where the text runs off the stage.
+      const BIAS = 0.28;
+      sx = (sx / len) * (1 - BIAS) + (cam.position.x / camLen) * BIAS;
+      sy = (sy / len) * (1 - BIAS) + (cam.position.y / camLen) * BIAS;
+      sz = (sz / len) * (1 - BIAS) + (cam.position.z / camLen) * BIAS;
+      len = Math.hypot(sx, sy, sz) || 1;
+      obj.position.set((sx / len) * RADIUS * 1.1, (sy / len) * RADIUS * 1.1, (sz / len) * RADIUS * 1.1);
+    }
+  }
+
+  // Horizon culling decides what *could* be drawn; the screen-space pass below decides what
+  // actually is. Regions are the geography and always win; papers are ranked by citations so
+  // the same landmark keeps its name as the globe turns.
+  const ordered = [...labelGroup.children].sort((a, b) => {
+    if (a.userData.kind !== b.userData.kind) return a.userData.kind === 'region' ? -1 : 1;
+    return (b.userData.rank || 0) - (a.userData.rank || 0);
+  });
+  const W = graph.width() || 1;
+  const H = graph.height() || 1;
+  const placed = [];
+
+  for (const obj of ordered) {
+    const p = obj.position;
+    const len = Math.hypot(p.x, p.y, p.z) || 1;
+    const facing =
+      (p.x * cam.position.x + p.y * cam.position.y + p.z * cam.position.z) / (len * camLen);
+    let shown = facing > horizon && !obj.userData.faint;
+
+    if (shown) {
+      PROJ.copy(obj.position).project(cam);
+      const cx = (PROJ.x * 0.5 + 0.5) * W;
+      const cy = (-PROJ.y * 0.5 + 0.5) * H;
+      // offsetWidth is only real once the element has been laid out, so fall back to a
+      // per-character estimate on the first frame and cache the true width afterwards.
+      if (obj.element.offsetWidth) obj.userData.w = obj.element.offsetWidth;
+      const w = obj.userData.w || obj.element.textContent.length * (obj.userData.kind === 'region' ? 8.4 : 5.8);
+      const box = [cx - w / 2 - 5, cy - 10, cx + w / 2 + 5, cy + 10];
+      // Off the stage, under the title gradient, or already occupied: stay quiet.
+      if (box[0] < 6 || box[2] > W - 6 || box[1] < TOP_GUTTER || box[3] > H - 24) shown = false;
+      else if (placed.some((q) => box[0] < q[2] && box[2] > q[0] && box[1] < q[3] && box[3] > q[1])) shown = false;
+      else placed.push(box);
+    }
+
+    obj.element.style.display = shown ? '' : 'none';
+    if (shown && horizon > 0) {
+      obj.element.style.opacity = clamp((facing - horizon) / 0.18, 0.3, 1).toFixed(2);
+    } else if (shown) {
+      obj.element.style.opacity = '1';
+    }
+  }
+}
+
+function apply() {
+  const data = currentData();
+  if (view !== 'ontology') layoutTopographic(data.nodes);
+  else if (focusId) layoutFocus(data.nodes);
+  else layoutGlobe(data.nodes);
+  shell.visible = view === 'ontology' && !focusId;
+  graph.graphData(data);
+  buildLabels(data);
+  updateLabelVisibility();
+  updateChrome(data);
+}
+
+function updateChrome(data) {
+  const papers = data.nodes.filter(n => n.type === 'Paper').length;
+  if (focusId) {
+    const node = nodesById.get(focusId);
+    $('viewTitle').textContent = node.name;
+    $('viewDesc').textContent =
+      `${data.nodes.length - 1} directly connected entities, read from the Fabric graph.`;
+  } else if (view === 'ontology') {
+    $('viewTitle').textContent = 'One connected corpus';
+    $('viewDesc').textContent =
+      `${data.nodes.length.toLocaleString()} entities on the sphere, grouped by ${groupLabel()}; ` +
+      `${data.links.length.toLocaleString()} relationships chord through it.`;
+  } else {
+    $('viewTitle').textContent = 'The citation terrain';
+    $('viewDesc').textContent =
+      `${papers} papers placed by citation overlap; height is how often the world cites them.`;
+  }
+  $('back').classList.toggle('on', !!focusId);
+  buildRegionRows(data);
+}
+
+/** Legend for the regions actually on screen, in size order. */
+function buildRegionRows(data) {
+  const counts = new Map();
+  for (const node of data.nodes) counts.set(groupKey(node), (counts.get(groupKey(node)) || 0) + 1);
+  const rows = [...counts.entries()].sort((a, b) => b[1] - a[1]);
+  $('regionRows').innerHTML = rows.map(([name, n]) =>
+    `<div class="row static">
+       <span class="dot" style="background:${groupColors.get(name) || '#4c5680'}"></span>
+       <span class="nm">${escapeHtml(prettyRegion(name))}</span>
+       <span class="ct">${n.toLocaleString()}</span>
+     </div>`).join('');
+}
+
+const prettyRegion = name =>
+  name === 'unassigned' ? 'Unassigned' : name.replace(/[-_]/g, ' ').replace(/^./, c => c.toUpperCase());
+
+const groupLabel = () =>
+  ({ tier: 'tier', cluster: 'subfield', decade: 'era', venue: 'venue' })[groupBy];
+
+/* ----------------------------------------------------------- interaction */
+
+function showTip(node) {
+  const tip = $('tip');
+  if (!node) { tip.style.display = 'none'; return; }
+  const meta = node.type === 'Paper'
+    ? `${node.year || ''} · ${(node.citationCount || 0).toLocaleString()} citations`
+    : `${node.type} · ${node.degree || 0} connections`;
+  tip.innerHTML =
+    `<div class="k">${escapeHtml(node.tier || node.type)}</div>` +
+    `<div class="t">${escapeHtml(node.name)}</div>` +
+    `<div class="m">${escapeHtml(meta)}</div>`;
+  tip.style.display = 'block';
+}
+
+$('viz').addEventListener('mousemove', e => {
+  const tip = $('tip');
+  if (tip.style.display !== 'block') return;
+  const box = $('stage').getBoundingClientRect();
+  tip.style.left = Math.min(e.clientX - box.left + 14, box.width - 312) + 'px';
+  tip.style.top = Math.min(e.clientY - box.top + 14, box.height - 90) + 'px';
+});
+
+function selectNode(id, fly) {
+  selectedId = id;
+  const node = nodesById.get(id);
+  renderDetail(node);
+  refreshStyles();
+  if (fly && node.fx != null) {
+    // Stand well clear of the surface: closer than about a globe radius and the camera
+    // ends up inside the node shell, filling the screen with unreadable near geometry.
+    const d = 1 + 430 / Math.hypot(node.fx, node.fy, node.fz);
+    graph.cameraPosition(
+      { x: node.fx * d, y: node.fy * d, z: node.fz * d },
+      { x: node.fx, y: node.fy, z: node.fz },
+      900
+    );
+  }
+}
+
+/** Re-runs the style accessors so selection highlighting repaints without a relayout. */
+function refreshStyles() {
+  graph.nodeColor(colorOf).nodeVal(sizeOf).linkColor(linkColorOf).linkWidth(widthOf);
+}
+
+/** Ids incident to the selection, so its immediate neighbourhood lifts out of the crowd. */
+function neighbourIds() {
+  if (!selectedId) return null;
+  const set = new Set([selectedId]);
+  for (const e of adjacency.get(selectedId) || []) set.add(e.other);
+  return set;
+}
+
+const EMPTY_DETAIL =
+  '<p class="empty">Click any node to inspect it.</p>' +
+  '<p class="empty" style="margin-top:12px">Papers sit on the sphere grouped by region; ' +
+  'every link you see is an edge read from the Fabric graph.</p>';
+
+/** Drops the highlight and restores the full-colour globe. */
+function clearSelection() {
+  selectedId = null;
+  refreshStyles();
+  $('detailBody').innerHTML = EMPTY_DETAIL;
+}
+
+function focusOn(id) {
+  focusId = id;
+  apply();
+  graph.cameraPosition({ x: 0, y: 70, z: 620 }, { x: 0, y: 0, z: 0 }, 900);
+}
+
+function resetFocus() {
+  focusId = null;
+  apply();
+  graph.cameraPosition({ x: 0, y: 120, z: 900 }, { x: 0, y: 0, z: 0 }, 900);
+}
+
+$('back').onclick = resetFocus;
+
+/* --------------------------------------------------------- detail panel */
+
+const REL_LABEL = {
+  CITES: { out: 'Cites', in: 'Cited by' },
+  AUTHORED: { out: 'Wrote', in: 'Authors' },
+  COAUTHORED: { out: 'Co-authors', in: 'Co-authors' },
+  PUBLISHED_IN: { out: 'Published in', in: 'Papers' },
+  PROPOSES: { out: 'Proposes', in: 'Proposed by' },
+  USES: { out: 'Uses', in: 'Used by' },
+  ADDRESSES: { out: 'Addresses', in: 'Addressed by' },
+  EVALUATES_ON: { out: 'Evaluates on', in: 'Used to evaluate' },
+  MEASURES: { out: 'Measures', in: 'Measured by' },
+  REPORTS_LIMITATION: { out: 'Reports', in: 'Reported by' }
+};
+
+/** Other papers reachable through a shared entity, with the reason they surfaced. */
+function relatedPapers(id, limit = 8) {
+  const scores = new Map();
+  for (const edge of adjacency.get(id) || []) {
+    const via = nodesById.get(edge.other);
+    if (!via || via.type === 'Paper' || via.type === 'Author') continue;
+    for (const back of adjacency.get(edge.other) || []) {
+      const other = nodesById.get(back.other);
+      if (!other || other.type !== 'Paper' || other.id === id) continue;
+      if (!scores.has(other.id)) scores.set(other.id, { node: other, via: new Set() });
+      scores.get(other.id).via.add(via.name);
+    }
+  }
+  return [...scores.values()]
+    .sort((a, b) => b.via.size - a.via.size || (b.node.citationCount || 0) - (a.node.citationCount || 0))
+    .slice(0, limit);
+}
+
+function renderDetail(node) {
+  const body = $('detailBody');
+  const isPaper = node.type === 'Paper';
+
+  const tags = [];
+  if (node.tier) tags.push(node.tier);
+  if (node.year) tags.push(node.year);
+  if (node.cluster) tags.push(node.cluster);
+  if (isPaper) tags.push(`${(node.citationCount || 0).toLocaleString()} citations`);
+  if (!isPaper) tags.push(`${node.degree || 0} connections`);
+
+  const buckets = new Map();
+  for (const edge of adjacency.get(node.id) || []) {
+    const other = nodesById.get(edge.other);
+    if (!other) continue;
+    const label = (REL_LABEL[edge.type] || {})[edge.dir] || edge.type;
+    if (!buckets.has(label)) buckets.set(label, []);
+    buckets.get(label).push(other);
+  }
+
+  let html =
+    `<div id="dkind">${escapeHtml(node.type)}</div>` +
+    `<h2 id="dtitle">${escapeHtml(node.name)}</h2>` +
+    `<div class="tags">${tags.map(t => `<span class="tag">${escapeHtml(String(t))}</span>`).join('')}</div>`;
+
+  if (node.essence) html += `<div id="dessence">${escapeHtml(node.essence)}</div>`;
+  if (node.arxivId) {
+    const bare = String(node.arxivId).replace(/^arXiv:/, '');
+    html += `<div class="tags"><a class="tag" href="https://arxiv.org/abs/${encodeURIComponent(bare)}" target="_blank" rel="noopener">${escapeHtml(node.arxivId)} ↗</a></div>`;
+  }
+
+  html += `<div class="grp"><button id="drill">Show only this neighbourhood →</button></div>`;
+
+  if (isPaper) {
+    const related = relatedPapers(node.id);
+    if (related.length) {
+      html += `<div class="grp"><h3>Related work (${related.length})</h3>` +
+        related.map(r =>
+          `<button data-goto="${r.node.id}">${escapeHtml(truncate(r.node.name, 46))}` +
+          `<span class="why">shared ${escapeHtml([...r.via].slice(0, 2).join(', '))}</span></button>`
+        ).join('') + `</div>`;
+    }
+  }
+
+  for (const [label, list] of buckets) {
+    html += `<div class="grp"><h3>${escapeHtml(label)} (${list.length})</h3>` +
+      list.slice(0, 12).map(n =>
+        `<button data-goto="${n.id}">${escapeHtml(truncate(n.name, 46))}</button>`
+      ).join('') +
+      (list.length > 12 ? `<button disabled style="color:var(--ink-faint)">+ ${list.length - 12} more</button>` : '') +
+      `</div>`;
+  }
+
+  body.innerHTML = html;
+  body.querySelectorAll('[data-goto]').forEach(b =>
+    b.onclick = () => selectNode(b.dataset.goto, true));
+  const drill = $('drill');
+  if (drill) drill.onclick = () => focusOn(node.id);
+}
+
+const truncate = (s, n) => (s.length > n ? s.slice(0, n - 1) + '…' : s);
+const escapeHtml = s => String(s).replace(/[&<>"']/g,
+  c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+/* ------------------------------------------------------------- controls */
+
+function buildTypeRows() {
+  const counts = {};
+  for (const n of RAW.nodes) counts[n.type] = (counts[n.type] || 0) + 1;
+  $('typeRows').innerHTML = Object.keys(TYPE_COLOR).map(type =>
+    `<label class="row">
+       <input type="checkbox" data-type="${type}" ${hiddenTypes.has(type) ? '' : 'checked'} />
+       <span class="dot ghost"></span>
+       <span class="nm">${type}</span>
+       <span class="ct">${(counts[type] || 0).toLocaleString()}</span>
+     </label>`).join('');
+  $('typeRows').querySelectorAll('input').forEach(input =>
+    input.onchange = () => {
+      input.checked ? hiddenTypes.delete(input.dataset.type) : hiddenTypes.add(input.dataset.type);
+      apply();
+    });
+}
+
+function buildLinkRows() {
+  const counts = {};
+  for (const l of RAW.links) counts[l.type] = (counts[l.type] || 0) + 1;
+  $('linkRows').innerHTML = LINK_TYPES.map(type =>
+    `<label class="row">
+       <input type="checkbox" data-link="${type}" ${hiddenLinks.has(type) ? '' : 'checked'} />
+       <span class="dot" style="background:${LINK_COLOR[type]}"></span>
+       <span class="nm">${type.toLowerCase().replace(/_/g, ' ')}</span>
+       <span class="ct">${(counts[type] || 0).toLocaleString()}</span>
+     </label>`).join('');
+  $('linkRows').querySelectorAll('input').forEach(input =>
+    input.onchange = () => {
+      input.checked ? hiddenLinks.delete(input.dataset.link) : hiddenLinks.add(input.dataset.link);
+      apply();
+    });
+}
+
+$('viewSeg').onclick = e => {
+  const button = e.target.closest('button');
+  if (!button) return;
+  view = button.dataset.view;
+  [...$('viewSeg').children].forEach(b => b.classList.toggle('on', b === button));
+  if (view === 'topographic') {
+    graph.cameraPosition({ x: 0, y: 560, z: 1180 }, { x: 0, y: -40, z: 0 }, 1100);
+  } else {
+    graph.cameraPosition({ x: 0, y: 120, z: 900 }, { x: 0, y: 0, z: 0 }, 1100);
+  }
+  apply();
+};
+
+$('clusterChips').onclick = e => {
+  const button = e.target.closest('button');
+  if (!button) return;
+  groupBy = button.dataset.group;
+  [...$('clusterChips').children].forEach(b => b.classList.toggle('on', b === button));
+  apply();
+};
+
+$('minCite').oninput = e => {
+  minCitations = +e.target.value;
+  $('minCiteVal').textContent = CITE_STEPS[minCitations].toLocaleString();
+  apply();
+};
+
+$('search').oninput = e => {
+  const query = e.target.value.trim().toLowerCase();
+  if (query.length < 2) { $('hits').innerHTML = ''; return; }
+  const hits = RAW.nodes
+    .filter(n => n.name.toLowerCase().includes(query))
+    .sort((a, b) => (b.citationCount || b.degree || 0) - (a.citationCount || a.degree || 0))
+    .slice(0, 10);
+  $('hits').innerHTML = hits.length
+    ? hits.map(n => `<button data-goto="${n.id}">${escapeHtml(truncate(n.name, 40))}` +
+        `<span class="why">${n.type}</span></button>`).join('')
+    : '<p class="empty">No match.</p>';
+  $('hits').querySelectorAll('[data-goto]').forEach(b =>
+    b.onclick = () => selectNode(b.dataset.goto, true));
+};
+
+boot().catch(err => {
+  $('loading').textContent = 'Failed to load: ' + err.message;
+  console.error(err);
+});
+</script>
+</body>
+</html>

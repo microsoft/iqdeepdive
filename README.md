@@ -34,6 +34,7 @@ All of the infrastructure for deployment is included in the repository, using th
   * [Seed sample mailbox data](#seed-sample-mailbox-data)
 * [Run the notebooks](#run-the-notebooks)
 * [Run and invoke the agents](#run-and-invoke-the-agents)
+* [Build an ontology over your own papers](#build-an-ontology-over-your-own-papers)
 * [Resources](#resources)
 
 ## Azure account requirements
@@ -416,6 +417,79 @@ azd ai agent invoke agent-toolbox-workiq \
 Direct source deployment is used because the final agent requires no custom OS packages. Foundry's
 remote build resolves each agent folder's `pyproject.toml` and `uv.lock`, avoiding an unnecessary
 container registry and image-build path.
+
+## Build an ontology over your own papers
+
+The research-literature example builds a citation graph, a Fabric Graph Model, a Fabric ontology, and a
+Foundry IQ knowledge base from a list of arXiv ids. Nothing in the pipeline is specific to the papers that
+ship with it, so pointing it at a different literature is a one-file edit.
+
+![Twenty arXiv ids expanded into 1,606 entities and 4,051 relationships, drawn as a sphere and grouped by
+subfield. Selecting a paper reveals its related work and the papers that cite
+it.](docs/images/research-explorer.jpg)
+
+The corpus that ships with the sample is twenty retrieval-augmented-generation and language-model-agent
+papers. Crawling one hop in each direction expands that to 119 papers and 1,077 authors, plus the methods,
+tasks, datasets, metrics and reported limitations extracted from the core twenty.
+`web/research-explorer/index.html` renders the result from `graph.json` and needs no server beyond a static
+file host.
+
+Edit `data/research-corpus.json`:
+
+```json
+{
+  "thresholds": { "foundationMinCoreCiters": 4, "descendantMinCoreCited": 6 },
+  "papers": [
+    { "arxivId": "2005.11401", "note": "RAG" },
+    { "arxivId": "2404.16130", "note": "GraphRAG" }
+  ]
+}
+```
+
+The two thresholds decide how far the graph reaches beyond your list: a paper your corpus cites becomes a
+*foundation* once enough of your papers cite it, and a paper citing your corpus becomes a *descendant* on the
+same rule. Raise them for a tighter graph, lower them for a wider one.
+
+Then run the pipeline:
+
+```bash
+# 1. Crawl the citation neighbourhood (keyless Semantic Scholar; minutes, cached)
+uv run python infra/fetch-research-citations.py
+
+# 2. Extract methods, tasks, datasets, metrics and reported limitations (model calls, cached)
+uv run python infra/extract-research-entities.py
+
+# 3. Load Delta tables and create the Graph Model, then the typed ontology over them
+uv run python infra/create-research-graph.py
+uv run python infra/create-research-ontology.py
+
+# 4. Build the Foundry IQ index and knowledge base (no Fabric capacity required)
+uv run python infra/create-research-knowledge-base.py
+
+# 5. Create the agents that read both surfaces over MCP
+uv run python infra/create-fabriciq-ontology-connection.py
+uv run python infra/create-research-ontology-agent.py
+```
+
+Step 3 is where the corpus becomes queryable structure. The entity types and relationships are declared once
+as `NODE_SPECS` and `EDGE_SPECS` in `infra/create-research-graph.py` and imported by the ontology script, so
+the Graph Model and the ontology cannot drift apart:
+
+![The generated ResearchLiteratureOntology open in Fabric, with Paper at the centre linked to Author, Venue,
+Method, Task, Dataset, Metric, Limitation and Theme by the cites, authored, publishedIn, proposes, addresses,
+evaluatesOn, measures and reportsLimitation relationships.](docs/images/research-ontology.png)
+
+Steps 1 and 2 write the only committed artifacts, `data/research-graph/citation-graph.json` and
+`paper-entities.json`, because one is an expensive crawl and the other is non-deterministic model output.
+Everything else is regenerated on demand and is not tracked:
+
+```bash
+uv run python infra/export-research-graph.py   # web/research-explorer/graph.json
+uv run python infra/build-research-map.py      # web/research-explorer/map.json
+```
+
+Step 4 reads the projection from step 1 and 2 in memory, so the Foundry IQ half of the sample works on its own
+if you only want retrieval and no Fabric.
 
 ## Resources
 
