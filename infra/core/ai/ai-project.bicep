@@ -180,6 +180,22 @@ module knowledgeBaseMcpConnection 'connection.bicep' = {
   }
 }
 
+module researchKnowledgeBaseMcpConnection 'connection.bicep' = {
+  name: 'research-knowledge-base-mcp-connection'
+  params: {
+    aiServicesAccountName: aiAccount.name
+    aiProjectName: aiAccount::project.name
+    connectionConfig: {
+      name: 'research-kb-mcp-connection'
+      category: 'RemoteTool'
+      target: 'https://${azureAiSearch.outputs.searchServiceName}.search.windows.net/knowledgebases/research-literature-kb/mcp?api-version=2026-05-01-preview'
+      authType: 'ProjectManagedIdentity'
+      audience: 'https://search.azure.com/'
+      isSharedToAll: true
+    }
+  }
+}
+
 module workIqKnowledgeBaseMcpConnection 'connection.bicep' = {
   name: 'workiq-knowledge-base-mcp-connection'
   params: {
