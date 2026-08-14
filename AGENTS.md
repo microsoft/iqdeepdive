@@ -203,6 +203,12 @@ az bicep build --file infra/main.bicep --stdout > /dev/null
 azd show
 ```
 
+On a network that blocks `files.pythonhosted.org`, every one of these fails at the resolver with
+`Failed to fetch`. Set `UV_DEFAULT_INDEX` to an Azure Artifacts feed with a PyPI upstream, as
+described under "Local environment" in `README.md`. Prefer tools already present in the synced
+environment over installing new ones: a blocked index turns `uv run --with <package>` into a hard
+failure rather than a slow path.
+
 Validate the hosted-agent package separately:
 
 ```bash

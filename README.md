@@ -100,6 +100,30 @@ The dev container includes a Redis server, which is used by the `agent_history_r
     uv sync
     ```
 
+    If your organization blocks the public package index, this fails with
+    `Failed to fetch: https://files.pythonhosted.org/...`. Managed Microsoft devices are
+    configured this way. Create an Azure Artifacts feed with a PyPI upstream by following
+    [Consume packages from PyPI](https://learn.microsoft.com/azure/devops/artifacts/python/use-packages-from-pypi),
+    then point uv at it with a personal access token carrying the **Packaging > Read** scope:
+
+    ```shell
+    export UV_DEFAULT_INDEX="https://<FEED>:<TOKEN>@pkgs.dev.azure.com/<ORGANIZATION>/_packaging/<FEED>/pypi/simple/"
+    uv sync
+    ```
+
+    Insert the project name before `_packaging` for a project-scoped feed. Export the variable
+    from your shell profile rather than writing the token into a `pip.conf` in the repository.
+
+    Two details differ from the linked article, which configures pip. It sets `extra-index-url`,
+    which keeps pypi.org in the list and still fails when it is unreachable, so replace the
+    default index instead. Its `artifacts-keyring` flow also cannot bootstrap itself here,
+    because installing that package needs the very index it authenticates; once the feed
+    resolves you can switch to `uv tool install keyring --with artifacts-keyring` with
+    `UV_KEYRING_PROVIDER=subprocess` and drop the token from the URL.
+
+    The same variable applies to the per-agent `uv sync` and `uv lock` commands under `src/`,
+    and to `uv run` for the notebooks.
+
 ## Deploying to Azure
 
 1. Login to Azure:
