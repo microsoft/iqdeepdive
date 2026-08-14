@@ -1,0 +1,31 @@
+{
+  "name": "Retrieval-augmented generation and LLM agents",
+  "description": "The corpus the sample ships with. Replace the paper list to generate a knowledge base, Fabric graph, and ontology over your own literature: nothing downstream is specific to these papers.",
+  "thresholds": {
+    "comment": "An external paper joins the graph once it links this many core papers. Tuned to keep both outer tiers comparable in size to the core so the graph stays legible.",
+    "foundationMinCoreCiters": 4,
+    "descendantMinCoreCited": 6
+  },
+  "papers": [
+    { "arxivId": "2005.11401", "note": "RAG" },
+    { "arxivId": "2404.16130", "note": "GraphRAG" },
+    { "arxivId": "2310.11511", "note": "Self-RAG" },
+    { "arxivId": "2212.10496", "note": "HyDE" },
+    { "arxivId": "2210.03629", "note": "ReAct" },
+    { "arxivId": "2302.04761", "note": "Toolformer" },
+    { "arxivId": "2201.11903", "note": "Chain-of-Thought" },
+    { "arxivId": "2305.14283", "note": "Query Rewriting for RAG" },
+    { "arxivId": "2007.01282", "note": "Fusion-in-Decoder" },
+    { "arxivId": "2004.04906", "note": "Dense Passage Retrieval" },
+    { "arxivId": "2312.10997", "note": "RAG survey" },
+    { "arxivId": "2401.18059", "note": "RAPTOR" },
+    { "arxivId": "2309.15217", "note": "Ragas" },
+    { "arxivId": "2305.15334", "note": "Gorilla" },
+    { "arxivId": "2303.17580", "note": "HuggingGPT" },
+    { "arxivId": "2308.08155", "note": "AutoGen" },
+    { "arxivId": "2402.03367", "note": "RAG-Fusion" },
+    { "arxivId": "2101.00027", "note": "The Pile" },
+    { "arxivId": "2211.09260", "note": "Task-aware Retrieval with Instructions" },
+    { "arxivId": "2306.05685", "note": "LLM-as-a-Judge / MT-Bench" }
+  ]
+}

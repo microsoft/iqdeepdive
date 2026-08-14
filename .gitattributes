@@ -1,0 +1,11 @@
+# The two research-graph caches are machine-generated fixtures, not hand-written source.
+# They are committed deliberately: citation-graph.json is an expensive crawl of the
+# keyless Semantic Scholar API, and paper-entities.json is non-deterministic model
+# output. Marking them generated keeps them out of the reviewable diff and out of the
+# language statistics without giving up reproducibility.
+data/research-graph/citation-graph.json linguist-generated=true
+data/research-graph/paper-entities.json linguist-generated=true
+
+# Lockfiles are resolver output; review the manifest instead.
+uv.lock linguist-generated=true
+src/*/uv.lock linguist-generated=true

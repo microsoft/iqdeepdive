@@ -1,0 +1,2419 @@
+{
+  "papers": {
+    "2004.04906v3_Dense_Passage_Retrieval_for_Open-Domain_Question_Answering.pdf": {
+      "arxiv_id": "2004.04906",
+      "essence": "This paper introduces Dense Passage Retriever (DPR), a simple BERT-based dual-encoder dense retrieval method trained only on question\u2013passage pairs that substantially improves passage retrieval and end-to-end open-domain QA over BM25 and prior systems on multiple benchmarks.",
+      "proposes": [
+        "DPR"
+      ],
+      "uses": [
+        "BERT",
+        "DPR",
+        "FAISS",
+        "BM25",
+        "Lucene"
+      ],
+      "tasks": [
+        "Question answering",
+        "Document retrieval"
+      ],
+      "datasets": [
+        "Natural Questions",
+        "TriviaQA",
+        "WebQuestions",
+        "CuratedTREC",
+        "SQuAD"
+      ],
+      "metrics": [
+        "Top-1 retrieval accuracy",
+        "Recall@5",
+        "Top-20 retrieval accuracy",
+        "Recall@100",
+        "Exact Match"
+      ],
+      "limitations": [
+        {
+          "statement": "DPR underperforms BM25 on SQuAD, which the authors attribute to high lexical overlap between questions and passages and dataset bias from a small set of Wikipedia articles.",
+          "theme": "Retrieval quality bounds end-task accuracy"
+        },
+        {
+          "statement": "DPR may lack sufficient capacity to represent salient rare phrases, as shown in qualitative examples.",
+          "theme": "Retrieval quality bounds end-task accuracy"
+        },
+        {
+          "statement": "Building the dense index is much more expensive than sparse indexing: computing embeddings for 21M passages and building the FAISS index take hours, whereas Lucene indexing is much cheaper.",
+          "theme": "Efficiency and scalability costs"
+        },
+        {
+          "statement": "Direct cross-dataset application causes a 3\u20135 point drop in top-20 retrieval accuracy relative to the best fine-tuned model.",
+          "theme": "Limited generalization, transfer, and data coverage"
+        }
+      ]
+    },
+    "2005.11401v4_Retrieval-Augmented_Generation_for_Knowledge-Intensive_NLP_Tasks.pdf": {
+      "arxiv_id": "2005.11401",
+      "essence": "This paper introduces Retrieval-Augmented Generation (RAG), a framework that combines a pre-trained seq2seq generator with a dense Wikipedia retriever and jointly fine-tunes them end-to-end for knowledge-intensive NLP tasks.",
+      "proposes": [
+        "Retrieval-Augmented Generation",
+        "RAG-Sequence",
+        "RAG-Token",
+        "Thorough Decoding",
+        "Fast Decoding"
+      ],
+      "uses": [
+        "DPR",
+        "BART",
+        "BERT",
+        "Wikipedia",
+        "FAISS",
+        "BM25"
+      ],
+      "tasks": [
+        "Question answering",
+        "Question generation",
+        "Fact verification",
+        "Sequence classification"
+      ],
+      "datasets": [
+        "Natural Questions",
+        "TriviaQA",
+        "WebQuestions",
+        "CuratedTREC",
+        "MS MARCO",
+        "SearchQA",
+        "FEVER"
+      ],
+      "metrics": [
+        "Exact Match",
+        "BLEU-1",
+        "ROUGE-L",
+        "Accuracy",
+        "Distinct-3"
+      ],
+      "limitations": [
+        {
+          "statement": "Some MS-MARCO questions cannot be answered in a way that matches the reference answer without access to the gold passages.",
+          "theme": "Retrieval quality bounds end-task accuracy"
+        },
+        {
+          "statement": "Some MS-MARCO questions cannot be answered using Wikipedia alone.",
+          "theme": "Retrieval quality bounds end-task accuracy"
+        },
+        {
+          "statement": "For some tasks such as story generation, the retrieval component can collapse and learn to retrieve the same documents regardless of the input, after which the generator ignores the documents and the model performs equivalently to BART.",
+          "theme": "Retrieval quality bounds end-task accuracy"
+        },
+        {
+          "statement": "As FEVER uses a different Wikipedia dump, directly tackling FEVER's evidence extraction sub-task is not straightforward.",
+          "theme": "Limited generalization, transfer, and data coverage"
+        },
+        {
+          "statement": "RAG-Sequence decoding for longer output sequences can require many forward passes because the candidate set can become large.",
+          "theme": "Efficiency and scalability costs"
+        }
+      ]
+    },
+    "2007.01282v2_Leveraging_Passage_Retrieval_with_Generative_Models_for_Open_Domain_Qu.pdf": {
+      "arxiv_id": "2007.01282",
+      "essence": "This paper introduces a retrieval-augmented generative open-domain QA approach, Fusion-in-Decoder, that processes retrieved passages independently in the encoder and jointly in the decoder, achieving state-of-the-art results on Natural Questions and TriviaQA.",
+      "proposes": [
+        "Fusion-in-Decoder"
+      ],
+      "uses": [
+        "BM25",
+        "DPR",
+        "T5",
+        "BART",
+        "Adam"
+      ],
+      "tasks": [
+        "Question answering"
+      ],
+      "datasets": [
+        "Natural Questions",
+        "TriviaQA",
+        "SQuAD"
+      ],
+      "metrics": [
+        "Exact Match",
+        "F1"
+      ],
+      "limitations": [
+        {
+          "statement": "The model is not efficient when scaling to large numbers of support passages.",
+          "theme": "Efficiency and scalability costs"
+        },
+        {
+          "statement": "The retrieval component is not integrated into the model and the system is not trained end-to-end.",
+          "theme": "Architectural rigidity and lack of interactive retrieval"
+        },
+        {
+          "statement": "Reducing the number of training passages leads to a decrease in accuracy.",
+          "theme": "Limited generalization, transfer, and data coverage"
+        }
+      ]
+    },
+    "2101.00027v1_The_Pile_An_800GB_Dataset_of_Diverse_Text_for_Language_Modeling.pdf": {
+      "arxiv_id": "2101.00027",
+      "essence": "This paper introduces The Pile, an 825.18 GiB English text corpus built from 22 diverse high-quality components for training and benchmarking large-scale language models, and shows that models trained on it outperform models trained on Raw CC and CC-100 across Pile components and on downstream evaluations.",
+      "proposes": [
+        "The Pile",
+        "OpenWebText",
+        "BookCorpus",
+        "USPTO Backgrounds",
+        "YouTube Subtitles"
+      ],
+      "uses": [
+        "GPT-2",
+        "GPT-3",
+        "justext",
+        "OpenWebText",
+        "BookCorpus",
+        "Books3",
+        "PG-19",
+        "EuroParl"
+      ],
+      "tasks": [
+        "Language modeling",
+        "Language model benchmarking",
+        "Cross-domain generalization evaluation"
+      ],
+      "datasets": [
+        "The Pile",
+        "CC-100",
+        "Common Crawl",
+        "WikiText",
+        "LAMBADA"
+      ],
+      "metrics": [
+        "Bits per byte",
+        "Perplexity",
+        "Accuracy"
+      ],
+      "limitations": [
+        {
+          "statement": "Documents may still be duplicated across the train/validation/test splits despite deduplication efforts.",
+          "theme": "Limited generalization, transfer, and data coverage"
+        },
+        {
+          "statement": "The GPT-3 relative componentwise performance measure is only a proxy for similarity and could be confounded by dataset-specific scaling effects.",
+          "theme": "LLM-as-judge and benchmark bias"
+        },
+        {
+          "statement": "The language identification used to estimate language composition provides only a rough estimate and does not support reliable conclusions for low-resource languages.",
+          "theme": "Limited generalization, transfer, and data coverage"
+        },
+        {
+          "statement": "Their profanity analysis is only a proxy for profanity because determining whether a word or phrase is profane depends on context.",
+          "theme": "LLM-as-judge and benchmark bias"
+        },
+        {
+          "statement": "Their co-occurrence-based bias analyses have limitations and do not imply the dataset is free of bias.",
+          "theme": "LLM-as-judge and benchmark bias"
+        },
+        {
+          "statement": "They did not perform Pile-wide deduplication due to memory constraints.",
+          "theme": "Limited generalization, transfer, and data coverage"
+        }
+      ]
+    },
+    "2201.11903v6_Chain-of-Thought_Prompting_Elicits_Reasoning_in_Large_Language_Models.pdf": {
+      "arxiv_id": "2201.11903",
+      "essence": "The paper introduces Chain-of-Thought prompting, showing that providing few-shot exemplars with intermediate natural-language reasoning steps can elicit multi-step reasoning in sufficiently large language models and substantially improve arithmetic, commonsense, and symbolic reasoning performance.",
+      "proposes": [
+        "Chain-of-Thought"
+      ],
+      "uses": [
+        "PaLM",
+        "LaMDA",
+        "GPT-3",
+        "UL2",
+        "Codex",
+        "standard prompting"
+      ],
+      "tasks": [
+        "Arithmetic reasoning",
+        "Commonsense reasoning",
+        "Symbolic reasoning",
+        "Math problem solving",
+        "Instruction following"
+      ],
+      "datasets": [
+        "GSM8K",
+        "SVAMP",
+        "ASDiv",
+        "AQuA",
+        "MAWPS",
+        "CSQA",
+        "StrategyQA",
+        "SayCan"
+      ],
+      "metrics": [
+        "Accuracy",
+        "Success Rate"
+      ],
+      "limitations": [
+        {
+          "statement": "It remains an open question whether the model is actually reasoning rather than only emulating human thought processes.",
+          "theme": "Reasoning reliability and process fidelity"
+        },
+        {
+          "statement": "Manually augmenting exemplars with chains of thought may be minimal in few-shot settings but could be prohibitively costly for finetuning.",
+          "theme": "Tool-use limitations and sample inefficiency"
+        },
+        {
+          "statement": "There is no guarantee of correct reasoning paths, so chains of thought can lead to both correct and incorrect answers.",
+          "theme": "Reasoning reliability and process fidelity"
+        },
+        {
+          "statement": "Chain-of-thought reasoning emerges only at large model scales, making real-world serving costly.",
+          "theme": "Efficiency and scalability costs"
+        }
+      ]
+    },
+    "2210.03629v3_ReAct_Synergizing_Reasoning_and_Acting_in_Language_Models.pdf": {
+      "arxiv_id": "2210.03629",
+      "essence": "This paper introduces ReAct, a prompting paradigm that interleaves reasoning traces and task-specific actions in language models to improve performance and interpretability across knowledge-intensive reasoning and interactive decision-making tasks.",
+      "proposes": [
+        "ReAct",
+        "CoT-SC\u2192ReAct"
+      ],
+      "uses": [
+        "Chain-of-Thought",
+        "Self-Consistency",
+        "PaLM",
+        "GPT-3",
+        "Wikipedia API",
+        "Inner Monologue"
+      ],
+      "tasks": [
+        "Question answering",
+        "Fact verification",
+        "Text-based interactive decision making",
+        "Web navigation"
+      ],
+      "datasets": [
+        "HotpotQA",
+        "FEVER",
+        "ALFWorld",
+        "WebShop"
+      ],
+      "metrics": [
+        "Exact Match",
+        "Accuracy",
+        "Success Rate",
+        "Average score"
+      ],
+      "limitations": [
+        {
+          "statement": "Under prompting, ReAct has limited support of reasoning and acting behaviors.",
+          "theme": "Reasoning reliability and process fidelity"
+        },
+        {
+          "statement": "Complex tasks with large action spaces require more demonstrations, which can exceed the input length limit of in-context learning.",
+          "theme": "Architectural rigidity and lack of interactive retrieval"
+        },
+        {
+          "statement": "ReAct has higher reasoning error rate than CoT because the interleaved reasoning-action-observation structure reduces flexibility in formulating reasoning steps.",
+          "theme": "Reasoning reliability and process fidelity"
+        },
+        {
+          "statement": "The model can repetitively generate previous thoughts and actions and fail to break out of loops.",
+          "theme": "Agent and workflow instability"
+        },
+        {
+          "statement": "ReAct is sensitive to non-informative search results, which can derail reasoning and be hard to recover from.",
+          "theme": "Retrieval quality bounds end-task accuracy"
+        },
+        {
+          "statement": "Manually annotating reasoning traces and actions at scale is challenging, motivating bootstrapping and finetuning.",
+          "theme": "Tool-use limitations and sample inefficiency"
+        }
+      ]
+    },
+    "2211.09260v2_Task-aware_Retrieval_with_Instructions.pdf": {
+      "arxiv_id": "2211.09260",
+      "essence": "This paper introduces retrieval with instructions as a new retrieval formulation, along with the BERRI benchmark and TART models, showing strong zero-shot and cross-task retrieval performance when explicit natural-language instructions are provided.",
+      "proposes": [
+        "Retrieval with Instructions",
+        "BERRI",
+        "TART",
+        "X2-Retrieval",
+        "instruction-unfollowing negative samples"
+      ],
+      "uses": [
+        "Contriever",
+        "SBERT",
+        "T0-3B",
+        "FLAN-T5",
+        "EncT5"
+      ],
+      "tasks": [
+        "Retrieval with instructions",
+        "Zero-shot dense retrieval",
+        "Cross-task cross-domain retrieval",
+        "Document retrieval",
+        "Reranking"
+      ],
+      "datasets": [
+        "BERRI",
+        "BEIR",
+        "LOTTE",
+        "X2-Retrieval"
+      ],
+      "metrics": [
+        "NDCG@10",
+        "Recall@5"
+      ],
+      "limitations": [
+        {
+          "statement": "TART-dual shows performance deterioration on some datasets such as Touche-2020 and Climate-FEVER.",
+          "theme": "Retrieval quality bounds end-task accuracy"
+        },
+        {
+          "statement": "The authors hypothesize that smaller model size and limited interactions between query and document embeddings make instruction-following retrieval more challenging for bi-encoders.",
+          "theme": "Architectural rigidity and lack of interactive retrieval"
+        },
+        {
+          "statement": "TART-full relies on reranking after an initial lightweight retrieval stage, so efficiency remains an open issue compared with more efficient retrieval architectures.",
+          "theme": "Efficiency and scalability costs"
+        },
+        {
+          "statement": "The paper notes the need for further scaling up the number of instruction-annotated retrieval datasets, indicating current dataset coverage is still limited.",
+          "theme": "Limited generalization, transfer, and data coverage"
+        }
+      ]
+    },
+    "2212.10496v1_Precise_Zero-Shot_Dense_Retrieval_without_Relevance_Labels.pdf": {
+      "arxiv_id": "2212.10496",
+      "essence": "This paper introduces HyDE, a zero-shot dense retrieval method that uses an instruction-following language model to generate hypothetical documents and an unsupervised contrastive encoder to retrieve real documents without relevance labels.",
+      "proposes": [
+        "HyDE"
+      ],
+      "uses": [
+        "InstructGPT",
+        "Contriever",
+        "Pyserini",
+        "BM25"
+      ],
+      "tasks": [
+        "Zero-shot dense retrieval",
+        "Web search",
+        "Document retrieval",
+        "Fact verification retrieval",
+        "Multilingual retrieval"
+      ],
+      "datasets": [
+        "TREC DL19",
+        "TREC DL20",
+        "SciFact",
+        "ArguAna",
+        "TREC-COVID",
+        "FiQA",
+        "DBPedia-Entity",
+        "TREC-NEWS",
+        "Mr.TyDi"
+      ],
+      "metrics": [
+        "MAP",
+        "NDCG@10",
+        "Recall@100",
+        "Recall@1000",
+        "MRR"
+      ],
+      "limitations": [
+        {
+          "statement": "The method assumes the query is not ambiguous and leaves ambiguous queries and diversity to future work.",
+          "theme": "Retrieval quality bounds end-task accuracy"
+        },
+        {
+          "statement": "The generated hypothetical document can be unreal, factually ungrounded, and contain false details.",
+          "theme": "Hallucination, grounding, and weak synthesis"
+        },
+        {
+          "statement": "In multilingual retrieval, the authors observe gaps between HyDE and fine-tuned mContrieverFT and hypothesize that the non-English languages considered are under-trained in both pre-training and instruction learning stages.",
+          "theme": "Limited generalization, transfer, and data coverage"
+        },
+        {
+          "statement": "Performance differences on FiQA and DBPedia may be due to under-specified instructions, and more elaborative instructions may help.",
+          "theme": "Prompt and instruction sensitivity"
+        },
+        {
+          "statement": "Using less powerful instruction-following language models can negatively impact the performance of a fine-tuned encoder.",
+          "theme": "Architectural rigidity and lack of interactive retrieval"
+        }
+      ]
+    },
+    "2302.04761v1_Toolformer_Language_Models_Can_Teach_Themselves_to_Use_Tools.pdf": {
+      "arxiv_id": "2302.04761",
+      "essence": "This paper introduces Toolformer, a self-supervised method for training a language model to decide when and how to call external APIs and incorporate their outputs to improve zero-shot task performance without harming core language modeling ability.",
+      "proposes": [
+        "Toolformer",
+        "DATESET"
+      ],
+      "uses": [
+        "GPT-J",
+        "CCNet",
+        "Atlas",
+        "BM25",
+        "KILT",
+        "NLLB",
+        "fastText"
+      ],
+      "tasks": [
+        "Tool use via APIs",
+        "Language modeling",
+        "Zero-shot knowledge completion",
+        "Math problem solving",
+        "Question answering"
+      ],
+      "datasets": [
+        "CCNet",
+        "LAMA",
+        "SQuAD",
+        "Google-RE",
+        "T-REx",
+        "ASDiv",
+        "SVAMP",
+        "MAWPS",
+        "WebQuestions",
+        "Natural Questions",
+        "TriviaQA",
+        "MLQA",
+        "TempLAMA",
+        "DATESET",
+        "WikiText"
+      ],
+      "metrics": [
+        "Accuracy",
+        "Perplexity",
+        "weighted cross entropy loss"
+      ],
+      "limitations": [
+        {
+          "statement": "Toolformer cannot use tools in a chain because API calls for each tool are generated independently.",
+          "theme": "Architectural rigidity and lack of interactive retrieval"
+        },
+        {
+          "statement": "Toolformer cannot use tools interactively, such as browsing search results or refining search queries.",
+          "theme": "Architectural rigidity and lack of interactive retrieval"
+        },
+        {
+          "statement": "Models trained with Toolformer are often sensitive to the exact wording of the input when deciding whether to call an API.",
+          "theme": "Tool-use limitations and sample inefficiency"
+        },
+        {
+          "statement": "The method can be very sample-inefficient for some tools, such as the calculator API.",
+          "theme": "Tool-use limitations and sample inefficiency"
+        },
+        {
+          "statement": "Toolformer does not take tool-dependent computational cost into account when deciding whether to make an API call.",
+          "theme": "Tool-use limitations and sample inefficiency"
+        }
+      ]
+    },
+    "2303.17580v4_HuggingGPT_Solving_AI_Tasks_with_ChatGPT_and_its_Friends_in_Hugging_Fa.pdf": {
+      "arxiv_id": "2303.17580",
+      "essence": "This paper introduces HuggingGPT, an LLM-powered agent that uses ChatGPT to plan tasks, select Hugging Face models by their descriptions, execute them with dependency handling, and synthesize multimodal results for complex AI requests.",
+      "proposes": [
+        "HuggingGPT",
+        "inter-model cooperation protocol"
+      ],
+      "uses": [
+        "ChatGPT",
+        "Hugging Face",
+        "GPT-3.5",
+        "InstructGPT",
+        "GPT-4"
+      ],
+      "tasks": [
+        "Task planning",
+        "Model selection",
+        "Dialogue generation",
+        "Image captioning",
+        "Object detection",
+        "Image classification",
+        "Text-to-speech",
+        "Text-to-video"
+      ],
+      "datasets": [
+        "task planning dataset"
+      ],
+      "metrics": [
+        "Accuracy",
+        "Precision",
+        "Recall",
+        "F1",
+        "normalized Edit Distance",
+        "GPT-4 Score",
+        "Passing Rate",
+        "Rationality",
+        "Success Rate"
+      ],
+      "limitations": [
+        {
+          "statement": "Planning heavily relies on the capability of the LLM, so the generated plan is not always feasible or optimal.",
+          "theme": "Agent and workflow instability"
+        },
+        {
+          "statement": "Efficiency is a challenge because multiple interactions with LLMs throughout the workflow increase response time.",
+          "theme": "Efficiency and scalability costs"
+        },
+        {
+          "statement": "Limited maximum token length makes it hard to connect numerous models and include their descriptions.",
+          "theme": "Efficiency and scalability costs"
+        },
+        {
+          "statement": "Instability arises because LLMs are uncontrollable and may fail to follow instructions or give incorrect answers, causing workflow exceptions.",
+          "theme": "Agent and workflow instability"
+        }
+      ]
+    },
+    "2305.14283v3_Query_Rewriting_for_Retrieval-Augmented_Large_Language_Models.pdf": {
+      "arxiv_id": "2305.14283",
+      "essence": "This paper introduces Rewrite-Retrieve-Read, a retrieval-augmented LLM framework that rewrites queries before web retrieval and can train a small rewriter with LLM feedback via reinforcement learning to improve QA performance.",
+      "proposes": [
+        "Rewrite-Retrieve-Read"
+      ],
+      "uses": [
+        "T5",
+        "Proximal Policy Optimization",
+        "Generalized Advantage Estimation",
+        "BM25",
+        "Bing search engine",
+        "ChatGPT",
+        "Vicuna"
+      ],
+      "tasks": [
+        "Question answering",
+        "Query rewriting",
+        "Language modeling"
+      ],
+      "datasets": [
+        "HotpotQA",
+        "AmbigNQ",
+        "PopQA",
+        "MMLU"
+      ],
+      "metrics": [
+        "Exact Match",
+        "F1",
+        "Hit Rate"
+      ],
+      "limitations": [
+        {
+          "statement": "There is a trade-off between generalization and specialization across downstream tasks, and adding training compromises direct-transfer scalability compared with few-shot in-context learning.",
+          "theme": "Limited generalization, transfer, and data coverage"
+        },
+        {
+          "statement": "The method is designed for a one-turn retrieve-then-read framework and does not provide the flexible multi-step retrieval interaction used by LLM-agent approaches.",
+          "theme": "Architectural rigidity and lack of interactive retrieval"
+        },
+        {
+          "statement": "Using a web search engine as the retriever has limitations, and neural dense retrievers built on professional, filtered knowledge bases may achieve better and more controllable retrieval.",
+          "theme": "Retrieval quality bounds end-task accuracy"
+        }
+      ]
+    },
+    "2305.15334v1_Gorilla_Large_Language_Model_Connected_with_Massive_APIs.pdf": {
+      "arxiv_id": "2305.15334",
+      "essence": "This paper introduces Gorilla, a retrieve-aware finetuned LLaMA-7B model for generating accurate API calls, along with APIBench for benchmarking large-scale API use across model hubs.",
+      "proposes": [
+        "Gorilla",
+        "APIBench"
+      ],
+      "uses": [
+        "LLaMA",
+        "Self-Instruct",
+        "GPT-4",
+        "BM25",
+        "LlamaIndex",
+        "AST sub-tree matching"
+      ],
+      "tasks": [
+        "API call generation",
+        "Tool use via APIs",
+        "Constraint-aware API invocation",
+        "Adapting to test-time API documentation changes"
+      ],
+      "datasets": [
+        "APIBench",
+        "TorchHub",
+        "TensorFlow Hub",
+        "HuggingFace"
+      ],
+      "metrics": [
+        "Accuracy",
+        "Hallucination rate",
+        "Error rate"
+      ],
+      "limitations": [
+        {
+          "statement": "The benchmark focuses on ML APIs, which may limit generalization beyond the ML domain.",
+          "theme": "LLM-as-judge and benchmark bias"
+        },
+        {
+          "statement": "ML APIs in the benchmark may produce biased predictions if trained on skewed data, potentially disadvantaging certain sub-groups.",
+          "theme": "LLM-as-judge and benchmark bias"
+        }
+      ]
+    },
+    "2306.05685v4_Judging_LLM-as-a-Judge_with_MT-Bench_and_Chatbot_Arena.pdf": {
+      "arxiv_id": "2306.05685",
+      "essence": "This paper systematically studies LLM-as-a-judge for chatbot evaluation and introduces the MT-Bench and Chatbot Arena benchmarks, showing that strong judges like GPT-4 achieve over 80% agreement with human preferences.",
+      "proposes": [
+        "LLM-as-a-judge",
+        "MT-Bench",
+        "Chatbot Arena"
+      ],
+      "uses": [
+        "GPT-4",
+        "GPT-3.5",
+        "Claude",
+        "LLaMA",
+        "Vicuna",
+        "RLHF",
+        "Chain-of-Thought"
+      ],
+      "tasks": [
+        "LLM-as-a-judge"
+      ],
+      "datasets": [
+        "MT-Bench",
+        "Chatbot Arena",
+        "MMLU",
+        "TruthfulQA"
+      ],
+      "metrics": [
+        "agreement rate",
+        "average win rate",
+        "MT-Bench score",
+        "MMLU",
+        "TruthfulQA",
+        "consistency",
+        "Error rate"
+      ],
+      "limitations": [
+        {
+          "statement": "The study emphasizes helpfulness but largely neglects safety.",
+          "theme": "Safety, security, and oversight gaps"
+        },
+        {
+          "statement": "Honesty and harmlessness are not evaluated in this work.",
+          "theme": "Safety, security, and oversight gaps"
+        },
+        {
+          "statement": "Within helpfulness, multiple dimensions such as accuracy, relevance, and creativity are combined into a single metric.",
+          "theme": "Evaluation ambiguity and immature measurement"
+        },
+        {
+          "statement": "LLM judges exhibit position bias.",
+          "theme": "LLM-as-judge and benchmark bias"
+        },
+        {
+          "statement": "LLM judges exhibit verbosity bias.",
+          "theme": "LLM-as-judge and benchmark bias"
+        },
+        {
+          "statement": "LLM judges may show self-enhancement bias, though the study cannot determine this conclusively.",
+          "theme": "LLM-as-judge and benchmark bias"
+        },
+        {
+          "statement": "LLM judges have limited capability in grading math and reasoning questions.",
+          "theme": "LLM-as-judge and benchmark bias"
+        },
+        {
+          "statement": "The proposed mitigations are preliminary, and the authors expect more advanced methods can be developed.",
+          "theme": "Safety, security, and oversight gaps"
+        }
+      ]
+    },
+    "2308.08155v2_AutoGen_Enabling_Next-Gen_LLM_Applications_via_Multi-Agent_Conversatio.pdf": {
+      "arxiv_id": "2308.08155",
+      "essence": "This paper introduces AutoGen, an open-source framework for building LLM applications through customizable multi-agent conversations programmed via unified conversational interfaces and flexible control flows.",
+      "proposes": [
+        "AutoGen",
+        "ConversableAgent",
+        "conversation programming",
+        "AssistantAgent",
+        "UserProxyAgent",
+        "GroupChatManager",
+        "Retrieval-Augmented Generation"
+      ],
+      "uses": [
+        "GPT-4",
+        "GPT-3.5",
+        "ReAct",
+        "OptiGuide",
+        "Chroma",
+        "SBERT",
+        "ALFWorld",
+        "Natural Questions"
+      ],
+      "tasks": [
+        "Multi-agent LLM application development",
+        "Math problem solving",
+        "Question answering",
+        "Retrieval-augmented generation",
+        "Text-based interactive decision making",
+        "Multi-agent coding",
+        "Dynamic group chat",
+        "Conversational chess"
+      ],
+      "datasets": [
+        "MATH",
+        "Natural Questions",
+        "ALFWorld"
+      ],
+      "metrics": [
+        "Success Rate",
+        "Accuracy",
+        "F1",
+        "Recall",
+        "runtime",
+        "number of user interactions",
+        "lines of code"
+      ],
+      "limitations": [
+        {
+          "statement": "The work is still in its early experimental stages.",
+          "theme": "Other"
+        },
+        {
+          "statement": "There may not be a one-size-fits-all design for multi-agent workflows; optimal agent topology, roles, and interaction patterns remain unclear.",
+          "theme": "Agent and workflow instability"
+        },
+        {
+          "statement": "As workflows scale and grow more complex, they may become difficult to log, track, debug, and adjust.",
+          "theme": "Agent and workflow instability"
+        },
+        {
+          "statement": "Increasing the number of agents and other degrees of freedom may introduce new safety challenges.",
+          "theme": "Safety, security, and oversight gaps"
+        },
+        {
+          "statement": "Fully autonomous agent conversations can pose risks in high-risk applications and require fail-safes and effective human oversight.",
+          "theme": "Safety, security, and oversight gaps"
+        },
+        {
+          "statement": "Allowing LLM agents to make changes in external environments through code execution or function calls, such as installing packages, could be risky.",
+          "theme": "Safety, security, and oversight gaps"
+        },
+        {
+          "statement": "LLMs do not follow all instructions perfectly, so additional mechanisms are needed to handle exceptions and faults.",
+          "theme": "Agent and workflow instability"
+        }
+      ]
+    },
+    "2309.15217v2_Ragas_Automated_Evaluation_of_Retrieval_Augmented_Generation.pdf": {
+      "arxiv_id": "2309.15217",
+      "essence": "This paper introduces Ragas, a reference-free framework for automated evaluation of Retrieval-Augmented Generation systems via metrics for faithfulness, answer relevance, and context relevance, and validates it on the new WikiEval dataset.",
+      "proposes": [
+        "Ragas",
+        "WikiEval"
+      ],
+      "uses": [
+        "ChatGPT",
+        "GPT-3.5",
+        "text-embedding-ada-002",
+        "LlamaIndex",
+        "LangChain"
+      ],
+      "tasks": [
+        "Retrieval-augmented generation",
+        "Faithfulness evaluation",
+        "Answer relevance evaluation",
+        "Context relevance evaluation"
+      ],
+      "datasets": [
+        "WikiEval"
+      ],
+      "metrics": [
+        "Faithfulness",
+        "Answer Relevance",
+        "Context Relevance",
+        "Accuracy"
+      ],
+      "limitations": [
+        {
+          "statement": "Answer relevance agreement is lower because the differences between candidate answers are often very subtle.",
+          "theme": "Evaluation ambiguity and immature measurement"
+        },
+        {
+          "statement": "Context relevance was the hardest quality dimension to evaluate.",
+          "theme": "Evaluation ambiguity and immature measurement"
+        },
+        {
+          "statement": "ChatGPT often struggles with selecting the sentences from the context that are crucial, especially for longer contexts.",
+          "theme": "Retrieval quality bounds end-task accuracy"
+        }
+      ]
+    },
+    "2310.11511v1_Self-RAG_Learning_to_Retrieve_Generate_and_Critique_through_Self-Refle.pdf": {
+      "arxiv_id": "2310.11511",
+      "essence": "SELF-RAG is a retrieval-augmented language modeling framework that trains a single LM to adaptively retrieve, generate, and self-critique with reflection tokens, improving factuality, controllability, and citation quality across diverse tasks.",
+      "proposes": [
+        "SELF-RAG"
+      ],
+      "uses": [
+        "LLaMA",
+        "GPT-4",
+        "Contriever",
+        "Google Programmable Search",
+        "GTR-XXL",
+        "vLLM"
+      ],
+      "tasks": [
+        "Question answering",
+        "Fact verification",
+        "Multiple-choice reasoning",
+        "Biography generation",
+        "Instruction following"
+      ],
+      "datasets": [
+        "PopQA",
+        "TriviaQA",
+        "PubHealth",
+        "ARC-Challenge",
+        "ASQA"
+      ],
+      "metrics": [
+        "Accuracy",
+        "FactScore",
+        "Exact Match",
+        "ROUGE",
+        "MAUVE",
+        "Precision",
+        "Recall"
+      ],
+      "limitations": [
+        {
+          "statement": "It can still generate outputs that are not fully supported by the citations.",
+          "theme": "Hallucination, grounding, and weak synthesis"
+        },
+        {
+          "statement": "Off-the-shelf retrieval models trained primarily on knowledge-intensive tasks show limited effectiveness for open-ended generation such as instruction following.",
+          "theme": "Retrieval quality bounds end-task accuracy"
+        },
+        {
+          "statement": "The work limits SELF-RAG training data size to 150k instances, and the authors note that further expanding training data may lead to further improvements.",
+          "theme": "Limited generalization, transfer, and data coverage"
+        }
+      ]
+    },
+    "2312.10997v5_Retrieval-Augmented_Generation_for_Large_Language_Models_A_Survey.pdf": {
+      "arxiv_id": "2312.10997",
+      "essence": "This survey systematically organizes Retrieval-Augmented Generation for large language models into Naive, Advanced, and Modular paradigms, reviews techniques across retrieval, generation, and augmentation, and summarizes tasks, datasets, evaluation methods, challenges, and future directions.",
+      "proposes": [
+        "Naive RAG",
+        "Advanced RAG",
+        "Modular RAG"
+      ],
+      "uses": [],
+      "tasks": [
+        "Question answering",
+        "Information Extraction",
+        "Dialogue generation",
+        "Code Search",
+        "Fact verification",
+        "Text Summarization",
+        "Recommendation",
+        "Machine Translation"
+      ],
+      "datasets": [
+        "Natural Questions",
+        "TriviaQA",
+        "SQuAD",
+        "WebQuestions",
+        "PopQA",
+        "MS MARCO",
+        "HotpotQA",
+        "2WikiMultiHopQA"
+      ],
+      "metrics": [
+        "Exact Match",
+        "F1",
+        "Accuracy",
+        "BLEU",
+        "ROUGE",
+        "Hit Rate",
+        "MRR",
+        "NDCG@10"
+      ],
+      "limitations": [
+        {
+          "statement": "Naive RAG retrieval often struggles with precision and recall, causing irrelevant chunk selection and missing crucial information.",
+          "theme": "Retrieval quality bounds end-task accuracy"
+        },
+        {
+          "statement": "Generation may hallucinate or produce irrelevant, toxic, or biased outputs not supported by retrieved context.",
+          "theme": "Hallucination, grounding, and weak synthesis"
+        },
+        {
+          "statement": "Integrating retrieved information with tasks can yield disjointed or incoherent outputs, redundancy, and stylistic inconsistency.",
+          "theme": "Hallucination, grounding, and weak synthesis"
+        },
+        {
+          "statement": "A single retrieval based on the original query may be insufficient for complex issues requiring adequate context information.",
+          "theme": "Retrieval quality bounds end-task accuracy"
+        },
+        {
+          "statement": "Generation models may overly rely on augmented information and merely echo retrieved content without synthesis.",
+          "theme": "Hallucination, grounding, and weak synthesis"
+        },
+        {
+          "statement": "There is a notable paucity of research dedicated to evaluating the distinct characteristics of RAG models, and evaluation is not yet mature or standardized.",
+          "theme": "Evaluation ambiguity and immature measurement"
+        },
+        {
+          "statement": "The presence of noise or contradictory information during retrieval can harm output quality, so robustness remains a challenge.",
+          "theme": "Retrieval quality bounds end-task accuracy"
+        },
+        {
+          "statement": "Production challenges remain, including retrieval efficiency, document recall in large knowledge bases, and data security such as preventing disclosure of document sources or metadata.",
+          "theme": "Safety, security, and oversight gaps"
+        }
+      ]
+    },
+    "2401.18059v1_RAPTOR_Recursive_Abstractive_Processing_for_Tree-Organized_Retrieval.pdf": {
+      "arxiv_id": "2401.18059",
+      "essence": "This paper introduces RAPTOR, a tree-based retrieval method that recursively clusters and summarizes text chunks so language models can retrieve context at multiple levels of abstraction for question answering over long documents.",
+      "proposes": [
+        "RAPTOR",
+        "tree traversal",
+        "collapsed tree"
+      ],
+      "uses": [
+        "SBERT",
+        "Gaussian Mixture Models",
+        "UMAP",
+        "Bayesian Information Criterion",
+        "Expectation-Maximization",
+        "GPT-3.5",
+        "BM25",
+        "DPR"
+      ],
+      "tasks": [
+        "Question answering"
+      ],
+      "datasets": [
+        "NarrativeQA",
+        "QASPER",
+        "QuALITY"
+      ],
+      "metrics": [
+        "Accuracy",
+        "F1",
+        "ROUGE-L",
+        "BLEU-1",
+        "BLEU-4",
+        "METEOR"
+      ],
+      "limitations": [
+        {
+          "statement": "The collapsed tree approach requires cosine similarity search over all nodes in the tree.",
+          "theme": "Efficiency and scalability costs"
+        },
+        {
+          "statement": "The Gaussian assumption in GMMs may not perfectly align with the sparse and skewed distribution of text data.",
+          "theme": "Architectural rigidity and lack of interactive retrieval"
+        },
+        {
+          "statement": "About 4% of generated summaries contained minor hallucinations.",
+          "theme": "Hallucination, grounding, and weak synthesis"
+        },
+        {
+          "statement": "Summarization can be a lossy means of compression.",
+          "theme": "Hallucination, grounding, and weak synthesis"
+        }
+      ]
+    },
+    "2402.03367v2_RAG-Fusion_a_New_Take_on_Retrieval-Augmented_Generation.pdf": {
+      "arxiv_id": "2402.03367",
+      "essence": "The paper evaluates an Infineon chatbot built with RAG-Fusion and reports that generating multiple queries and fusing retrieved results with reciprocal rank fusion improves answer accuracy and comprehensiveness over traditional RAG, while increasing latency and sometimes reducing topical relevance.",
+      "proposes": [],
+      "uses": [
+        "RAG-Fusion",
+        "Retrieval-Augmented Generation"
+      ],
+      "tasks": [
+        "Question answering"
+      ],
+      "datasets": [
+        "Infineon Developer Community forum questions",
+        "Infineon product datasheets",
+        "Infineon product selection guides"
+      ],
+      "metrics": [
+        "Accuracy",
+        "Answer Relevance",
+        "Comprehensiveness",
+        "runtime"
+      ],
+      "limitations": [
+        {
+          "statement": "RAG-Fusion has slower answer time than traditional RAG due to the second LLM API call with multiple queries and more documents.",
+          "theme": "Efficiency and scalability costs"
+        },
+        {
+          "statement": "Generated queries can be insufficiently relevant, causing answers to stray off topic from the original query.",
+          "theme": "Retrieval quality bounds end-task accuracy"
+        },
+        {
+          "statement": "The system often gives general guidance for troubleshooting when the database lacks the needed product-specific documentation.",
+          "theme": "Retrieval quality bounds end-task accuracy"
+        },
+        {
+          "statement": "The approach is hard to evaluate empirically because many questions do not have a single expected answer, making standard metrics less effective.",
+          "theme": "Evaluation ambiguity and immature measurement"
+        },
+        {
+          "statement": "Users may need to rewrite or engineer prompts to get the intended generated queries.",
+          "theme": "Prompt and instruction sensitivity"
+        },
+        {
+          "statement": "The system cannot provide definitively negative answers when documents do not explicitly state that a feature is absent.",
+          "theme": "Retrieval quality bounds end-task accuracy"
+        }
+      ]
+    },
+    "2404.16130v2_From_Local_to_Global_A_Graph_RAG_Approach_to_Query-Focused_Summarizati.pdf": {
+      "arxiv_id": "2404.16130",
+      "essence": "This paper introduces GraphRAG, a graph-based retrieval-augmented generation method that builds an LLM-derived knowledge graph and hierarchical community summaries to answer global query-focused summarization questions over large text corpora more comprehensively and diversely than a conventional vector RAG baseline.",
+      "proposes": [
+        "GraphRAG"
+      ],
+      "uses": [
+        "Leiden community detection",
+        "LLM-as-a-judge",
+        "Claimify",
+        "graspologic"
+      ],
+      "tasks": [
+        "Retrieval-augmented generation",
+        "Query-focused summarization",
+        "Question answering",
+        "Global sensemaking"
+      ],
+      "datasets": [
+        "Behind the Tech podcast transcripts",
+        "MultiHop-RAG news articles"
+      ],
+      "metrics": [
+        "Comprehensiveness",
+        "Diversity",
+        "Empowerment",
+        "Directness",
+        "average number of extracted claims",
+        "average number of claim clusters"
+      ],
+      "limitations": [
+        {
+          "statement": "The evaluation focused only on sensemaking questions over two corpora of about 1 million tokens each, so more work is needed to understand generalization across domains and use cases.",
+          "theme": "Limited generalization, transfer, and data coverage"
+        },
+        {
+          "statement": "The current analysis would be strengthened by comparing fabrication rates, for example with approaches like SelfCheckGPT.",
+          "theme": "Evaluation ambiguity and immature measurement"
+        },
+        {
+          "statement": "Empowerment results were mixed, and the authors note that GraphRAG may lose specific examples, quotes, and citations; they suggest tuning element extraction prompts to retain more of these details.",
+          "theme": "Hallucination, grounding, and weak synthesis"
+        },
+        {
+          "statement": "For claim-based diversity evaluation, results were sensitive to the chosen clustering distance threshold.",
+          "theme": "Evaluation ambiguity and immature measurement"
+        },
+        {
+          "statement": "For claim-based comparison with LLM judgments, defining ties for claim-based metrics was difficult because outcomes were sensitive to the threshold choice.",
+          "theme": "Evaluation ambiguity and immature measurement"
+        }
+      ]
+    }
+  },
+  "vocabulary": {
+    "method": {
+      "alfworld": "ALFWorld",
+      "apibench": "APIBench",
+      "ast sub-tree matching": "AST sub-tree matching",
+      "adam": "Adam",
+      "advanced rag": "Advanced RAG",
+      "assistantagent": "AssistantAgent",
+      "atlas": "Atlas",
+      "autogen": "AutoGen",
+      "bart": "BART",
+      "berri": "BERRI",
+      "bert": "BERT",
+      "bm25": "BM25",
+      "bayesian information criterion": "Bayesian Information Criterion",
+      "bing search engine": "Bing search engine",
+      "bookcorpus": "BookCorpus",
+      "bookcorpus2": "BookCorpus",
+      "books3": "Books3",
+      "ccnet": "CCNet",
+      "chain-of-thought": "Chain-of-Thought",
+      "chatgpt": "ChatGPT",
+      "chatbot arena": "Chatbot Arena",
+      "chroma": "Chroma",
+      "claimify": "Claimify",
+      "claude-v1": "Claude",
+      "cot-sc\u2192react": "CoT-SC\u2192ReAct",
+      "codex": "Codex",
+      "contriever": "Contriever",
+      "conversableagent": "ConversableAgent",
+      "dateset": "DATESET",
+      "dpr": "DPR",
+      "dual-encoder architecture": "DPR",
+      "enct5": "EncT5",
+      "europarl": "EuroParl",
+      "expectation-maximization": "Expectation-Maximization",
+      "faiss": "FAISS",
+      "flan-t5": "FLAN-T5",
+      "fast decoding": "Fast Decoding",
+      "fusion-in-decoder": "Fusion-in-Decoder",
+      "gpt-2": "GPT-2",
+      "gpt-3": "GPT-3",
+      "gpt-3.5": "GPT-3.5",
+      "gpt-4": "GPT-4",
+      "gpt-j": "GPT-J",
+      "gtr-xxl": "GTR-XXL",
+      "gaussian mixture models": "Gaussian Mixture Models",
+      "generalized advantage estimation": "Generalized Advantage Estimation",
+      "google programmable search": "Google Programmable Search",
+      "gorilla": "Gorilla",
+      "graphrag": "GraphRAG",
+      "groupchatmanager": "GroupChatManager",
+      "hugging face": "Hugging Face",
+      "hugginggpt": "HuggingGPT",
+      "hyde": "HyDE",
+      "inner monologue": "Inner Monologue",
+      "instructgpt": "InstructGPT",
+      "kilt": "KILT",
+      "llm-as-a-judge": "LLM-as-a-judge",
+      "llama": "LLaMA",
+      "llama 2": "LLaMA",
+      "lamda": "LaMDA",
+      "langchain": "LangChain",
+      "leiden community detection": "Leiden community detection",
+      "llamaindex": "LlamaIndex",
+      "lucene": "Lucene",
+      "mt-bench": "MT-Bench",
+      "modular rag": "Modular RAG",
+      "nllb": "NLLB",
+      "naive rag": "Naive RAG",
+      "natural questions": "Natural Questions",
+      "openwebtext": "OpenWebText",
+      "openwebtext2": "OpenWebText",
+      "optiguide": "OptiGuide",
+      "pg-19": "PG-19",
+      "palm": "PaLM",
+      "pile-cc": "The Pile",
+      "the pile": "The Pile",
+      "proximal policy optimization": "Proximal Policy Optimization",
+      "pyserini": "Pyserini",
+      "rag-fusion": "RAG-Fusion",
+      "rag-sequence": "RAG-Sequence",
+      "rag-token": "RAG-Token",
+      "raptor": "RAPTOR",
+      "rlhf": "RLHF",
+      "ragas": "Ragas",
+      "react": "ReAct",
+      "react\u2192cot-sc": "ReAct",
+      "retrieval with instructions": "Retrieval with Instructions",
+      "retrieval-augmented generation": "Retrieval-Augmented Generation",
+      "rewrite-retrieve-read": "Rewrite-Retrieve-Read",
+      "sbert": "SBERT",
+      "ms-marco-minilm-l-12-v2": "SBERT",
+      "self-rag": "SELF-RAG",
+      "self-consistency": "Self-Consistency",
+      "self-instruct": "Self-Instruct",
+      "t0-3b": "T0-3B",
+      "t5": "T5",
+      "tart": "TART",
+      "thorough decoding": "Thorough Decoding",
+      "toolformer": "Toolformer",
+      "ul2": "UL2",
+      "umap": "UMAP",
+      "uspto backgrounds": "USPTO Backgrounds",
+      "userproxyagent": "UserProxyAgent",
+      "vicuna": "Vicuna",
+      "wikieval": "WikiEval",
+      "wikipedia": "Wikipedia",
+      "wikipedia api": "Wikipedia API",
+      "x2-retrieval": "X2-Retrieval",
+      "youtube subtitles": "YouTube Subtitles",
+      "collapsed tree": "collapsed tree",
+      "conversation programming": "conversation programming",
+      "fasttext": "fastText",
+      "graspologic": "graspologic",
+      "instruction-unfollowing negative samples": "instruction-unfollowing negative samples",
+      "inter-model cooperation protocol": "inter-model cooperation protocol",
+      "justext": "justext",
+      "standard prompting": "standard prompting",
+      "text-embedding-ada-002": "text-embedding-ada-002",
+      "tree traversal": "tree traversal",
+      "vllm": "vLLM"
+    },
+    "task": {
+      "api call generation": "API call generation",
+      "abstractive question answering": "Question answering",
+      "customer-oriented product question answering": "Question answering",
+      "long-document question answering": "Question answering",
+      "multi-hop question answering": "Question answering",
+      "multilingual question answering": "Question answering",
+      "multiple-choice question answering": "Question answering",
+      "open-domain question answering": "Question answering",
+      "product question answering": "Question answering",
+      "question answering": "Question answering",
+      "question answering over private text corpora": "Question answering",
+      "retrieval-augmented question answering": "Question answering",
+      "sales strategy question answering": "Question answering",
+      "temporal question answering": "Question answering",
+      "adapting to test-time api documentation changes": "Adapting to test-time API documentation changes",
+      "answer relevance evaluation": "Answer relevance evaluation",
+      "arithmetic reasoning": "Arithmetic reasoning",
+      "biography generation": "Biography generation",
+      "chatbot evaluation": "LLM-as-a-judge",
+      "human preference evaluation": "LLM-as-a-judge",
+      "instruction-following evaluation": "LLM-as-a-judge",
+      "llm-as-a-judge": "LLM-as-a-judge",
+      "code search": "Code Search",
+      "commonsense reasoning": "Commonsense reasoning",
+      "constraint-aware api invocation": "Constraint-aware API invocation",
+      "context relevance evaluation": "Context relevance evaluation",
+      "conversational chess": "Conversational chess",
+      "cross-domain generalization evaluation": "Cross-domain generalization evaluation",
+      "cross-task cross-domain retrieval": "Cross-task cross-domain retrieval",
+      "dialogue generation": "Dialogue generation",
+      "document retrieval": "Document retrieval",
+      "question answering retrieval": "Document retrieval",
+      "fact verification": "Fact verification",
+      "fact verification retrieval": "Fact verification retrieval",
+      "faithfulness evaluation": "Faithfulness evaluation",
+      "global sensemaking": "Global sensemaking",
+      "image captioning": "Image captioning",
+      "image classification": "Image classification",
+      "information extraction": "Information Extraction",
+      "instruction following": "Instruction following",
+      "language model benchmarking": "Language model benchmarking",
+      "language modeling": "Language modeling",
+      "retrieval-augmented language modeling": "Language modeling",
+      "machine translation": "Machine Translation",
+      "math problem solving": "Math problem solving",
+      "model selection": "Model selection",
+      "multi-agent llm application development": "Multi-agent LLM application development",
+      "multi-agent coding": "Multi-agent coding",
+      "multilingual retrieval": "Multilingual retrieval",
+      "multiple-choice reasoning": "Multiple-choice reasoning",
+      "object detection": "Object detection",
+      "query rewriting": "Query rewriting",
+      "query-focused summarization": "Query-focused summarization",
+      "question generation": "Question generation",
+      "recommendation": "Recommendation",
+      "reranking": "Reranking",
+      "retrieval with instructions": "Retrieval with instructions",
+      "retrieval-augmented generation evaluation": "Retrieval-augmented generation",
+      "retrieval-augmented code generation": "Retrieval-augmented generation",
+      "retrieval-augmented generation": "Retrieval-augmented generation",
+      "sequence classification": "Sequence classification",
+      "symbolic reasoning": "Symbolic reasoning",
+      "task planning": "Task planning",
+      "text summarization": "Text Summarization",
+      "text-based interactive decision making": "Text-based interactive decision making",
+      "text-to-speech": "Text-to-speech",
+      "text-to-video": "Text-to-video",
+      "tool use via apis": "Tool use via APIs",
+      "web navigation": "Web navigation",
+      "web search": "Web search",
+      "zero-shot dense retrieval": "Zero-shot dense retrieval",
+      "zero-shot knowledge completion": "Zero-shot knowledge completion",
+      "dynamic group chat": "Dynamic group chat"
+    },
+    "dataset": {
+      "2wikimultihopqa": "2WikiMultiHopQA",
+      "alfworld": "ALFWorld",
+      "apibench": "APIBench",
+      "aqua": "AQuA",
+      "arc-challenge": "ARC-Challenge",
+      "asdiv": "ASDiv",
+      "asqa": "ASQA",
+      "ambignq": "AmbigNQ",
+      "arguana": "ArguAna",
+      "beir": "BEIR",
+      "berri": "BERRI",
+      "behind the tech podcast transcripts": "Behind the Tech podcast transcripts",
+      "cc-100": "CC-100",
+      "ccnet": "CCNet",
+      "csqa": "CSQA",
+      "chatbot arena": "Chatbot Arena",
+      "common crawl": "Common Crawl",
+      "curatedtrec": "CuratedTREC",
+      "dateset": "DATESET",
+      "dbpedia-entity": "DBPedia-Entity",
+      "fever": "FEVER",
+      "fiqa": "FiQA",
+      "gsm8k": "GSM8K",
+      "google-re": "Google-RE",
+      "hotpotqa": "HotpotQA",
+      "huggingface": "HuggingFace",
+      "infineon developer community forum questions": "Infineon Developer Community forum questions",
+      "infineon product datasheets": "Infineon product datasheets",
+      "infineon product selection guides": "Infineon product selection guides",
+      "lama": "LAMA",
+      "lambada": "LAMBADA",
+      "lotte-search": "LOTTE",
+      "math": "MATH",
+      "mawps": "MAWPS",
+      "mlqa": "MLQA",
+      "mmlu": "MMLU",
+      "ms marco": "MS MARCO",
+      "mt-bench": "MT-Bench",
+      "mr.tydi": "Mr.TyDi",
+      "multihop-rag news articles": "MultiHop-RAG news articles",
+      "narrativeqa": "NarrativeQA",
+      "natural questions": "Natural Questions",
+      "popqa": "PopQA",
+      "pubhealth": "PubHealth",
+      "qasper": "QASPER",
+      "quality": "QuALITY",
+      "squad": "SQuAD",
+      "svamp": "SVAMP",
+      "saycan": "SayCan",
+      "scifact": "SciFact",
+      "searchqa": "SearchQA",
+      "strategyqa": "StrategyQA",
+      "t-rex": "T-REx",
+      "trec dl19": "TREC DL19",
+      "trec dl20": "TREC DL20",
+      "trec-covid": "TREC-COVID",
+      "trec-news": "TREC-NEWS",
+      "templama": "TempLAMA",
+      "tensorflow hub": "TensorFlow Hub",
+      "the pile": "The Pile",
+      "torchhub": "TorchHub",
+      "triviaqa": "TriviaQA",
+      "truthfulqa": "TruthfulQA",
+      "webquestions": "WebQuestions",
+      "webshop": "WebShop",
+      "wikieval": "WikiEval",
+      "wikitext": "WikiText",
+      "x2-retrieval": "X2-Retrieval",
+      "task planning dataset": "task planning dataset"
+    },
+    "metric": {
+      "accuracy": "Accuracy",
+      "answer relevance": "Answer Relevance",
+      "average score": "Average score",
+      "bleu": "BLEU",
+      "bleu-1": "BLEU-1",
+      "bleu-4": "BLEU-4",
+      "bits per byte": "Bits per byte",
+      "comprehensiveness": "Comprehensiveness",
+      "context relevance": "Context Relevance",
+      "directness": "Directness",
+      "distinct-3": "Distinct-3",
+      "diversity": "Diversity",
+      "empowerment": "Empowerment",
+      "error rate": "Error rate",
+      "exact match": "Exact Match",
+      "f1": "F1",
+      "factscore": "FactScore",
+      "faithfulness": "Faithfulness",
+      "gpt-4 score": "GPT-4 Score",
+      "hallucination rate": "Hallucination rate",
+      "hit rate": "Hit Rate",
+      "map": "MAP",
+      "mauve": "MAUVE",
+      "meteor": "METEOR",
+      "mmlu": "MMLU",
+      "mrr": "MRR",
+      "mt-bench score": "MT-Bench score",
+      "ndcg@10": "NDCG@10",
+      "passing rate": "Passing Rate",
+      "perplexity": "Perplexity",
+      "precision": "Precision",
+      "rouge": "ROUGE",
+      "rouge-l": "ROUGE-L",
+      "rationality": "Rationality",
+      "recall": "Recall",
+      "recall@100": "Recall@100",
+      "recall@1000": "Recall@1000",
+      "recall@5": "Recall@5",
+      "success rate": "Success Rate",
+      "top-1 retrieval accuracy": "Top-1 retrieval accuracy",
+      "top-20 retrieval accuracy": "Top-20 retrieval accuracy",
+      "truthfulqa": "TruthfulQA",
+      "agreement rate": "agreement rate",
+      "average number of claim clusters": "average number of claim clusters",
+      "average number of extracted claims": "average number of extracted claims",
+      "average win rate": "average win rate",
+      "consistency": "consistency",
+      "lines of code": "lines of code",
+      "normalized edit distance": "normalized Edit Distance",
+      "number of user interactions": "number of user interactions",
+      "runtime": "runtime",
+      "weighted cross entropy loss": "weighted cross entropy loss"
+    }
+  },
+  "limitation_themes": {
+    "A single retrieval based on the original query may be insufficient for complex issues requiring adequate context information.": "Retrieval quality bounds end-task accuracy",
+    "ChatGPT often struggles with selecting the sentences from the context that are crucial, especially for longer contexts.": "Retrieval quality bounds end-task accuracy",
+    "DPR may lack sufficient capacity to represent salient rare phrases, as shown in qualitative examples.": "Retrieval quality bounds end-task accuracy",
+    "DPR underperforms BM25 on SQuAD, which the authors attribute to high lexical overlap between questions and passages and dataset bias from a small set of Wikipedia articles.": "Retrieval quality bounds end-task accuracy",
+    "For some tasks such as story generation, the retrieval component can collapse and learn to retrieve the same documents regardless of the input, after which the generator ignores the documents and the model performs equivalently to BART.": "Retrieval quality bounds end-task accuracy",
+    "Generated queries can be insufficiently relevant, causing answers to stray off topic from the original query.": "Retrieval quality bounds end-task accuracy",
+    "Naive RAG retrieval often struggles with precision and recall, causing irrelevant chunk selection and missing crucial information.": "Retrieval quality bounds end-task accuracy",
+    "Off-the-shelf retrieval models trained primarily on knowledge-intensive tasks show limited effectiveness for open-ended generation such as instruction following.": "Retrieval quality bounds end-task accuracy",
+    "ReAct is sensitive to non-informative search results, which can derail reasoning and be hard to recover from.": "Retrieval quality bounds end-task accuracy",
+    "Some MS-MARCO questions cannot be answered in a way that matches the reference answer without access to the gold passages.": "Retrieval quality bounds end-task accuracy",
+    "Some MS-MARCO questions cannot be answered using Wikipedia alone.": "Retrieval quality bounds end-task accuracy",
+    "TART-dual shows performance deterioration on some datasets such as Touche-2020 and Climate-FEVER.": "Retrieval quality bounds end-task accuracy",
+    "The method assumes the query is not ambiguous and leaves ambiguous queries and diversity to future work.": "Retrieval quality bounds end-task accuracy",
+    "The presence of noise or contradictory information during retrieval can harm output quality, so robustness remains a challenge.": "Retrieval quality bounds end-task accuracy",
+    "The system cannot provide definitively negative answers when documents do not explicitly state that a feature is absent.": "Retrieval quality bounds end-task accuracy",
+    "The system often gives general guidance for troubleshooting when the database lacks the needed product-specific documentation.": "Retrieval quality bounds end-task accuracy",
+    "Using a web search engine as the retriever has limitations, and neural dense retrievers built on professional, filtered knowledge bases may achieve better and more controllable retrieval.": "Retrieval quality bounds end-task accuracy",
+    "Building the dense index is much more expensive than sparse indexing: computing embeddings for 21M passages and building the FAISS index take hours, whereas Lucene indexing is much cheaper.": "Efficiency and scalability costs",
+    "Chain-of-thought reasoning emerges only at large model scales, making real-world serving costly.": "Efficiency and scalability costs",
+    "Efficiency is a challenge because multiple interactions with LLMs throughout the workflow increase response time.": "Efficiency and scalability costs",
+    "Limited maximum token length makes it hard to connect numerous models and include their descriptions.": "Efficiency and scalability costs",
+    "Production challenges remain, including retrieval efficiency, document recall in large knowledge bases, and data security such as preventing disclosure of document sources or metadata.": "Safety, security, and oversight gaps",
+    "RAG-Fusion has slower answer time than traditional RAG due to the second LLM API call with multiple queries and more documents.": "Efficiency and scalability costs",
+    "RAG-Sequence decoding for longer output sequences can require many forward passes because the candidate set can become large.": "Efficiency and scalability costs",
+    "TART-full relies on reranking after an initial lightweight retrieval stage, so efficiency remains an open issue compared with more efficient retrieval architectures.": "Efficiency and scalability costs",
+    "The collapsed tree approach requires cosine similarity search over all nodes in the tree.": "Efficiency and scalability costs",
+    "The model is not efficient when scaling to large numbers of support passages.": "Efficiency and scalability costs",
+    "About 4% of generated summaries contained minor hallucinations.": "Hallucination, grounding, and weak synthesis",
+    "Empowerment results were mixed, and the authors note that GraphRAG may lose specific examples, quotes, and citations; they suggest tuning element extraction prompts to retain more of these details.": "Hallucination, grounding, and weak synthesis",
+    "Generation may hallucinate or produce irrelevant, toxic, or biased outputs not supported by retrieved context.": "Hallucination, grounding, and weak synthesis",
+    "Generation models may overly rely on augmented information and merely echo retrieved content without synthesis.": "Hallucination, grounding, and weak synthesis",
+    "Integrating retrieved information with tasks can yield disjointed or incoherent outputs, redundancy, and stylistic inconsistency.": "Hallucination, grounding, and weak synthesis",
+    "It can still generate outputs that are not fully supported by the citations.": "Hallucination, grounding, and weak synthesis",
+    "Summarization can be a lossy means of compression.": "Hallucination, grounding, and weak synthesis",
+    "The generated hypothetical document can be unreal, factually ungrounded, and contain false details.": "Hallucination, grounding, and weak synthesis",
+    "Answer relevance agreement is lower because the differences between candidate answers are often very subtle.": "Evaluation ambiguity and immature measurement",
+    "Context relevance was the hardest quality dimension to evaluate.": "Evaluation ambiguity and immature measurement",
+    "For claim-based comparison with LLM judgments, defining ties for claim-based metrics was difficult because outcomes were sensitive to the threshold choice.": "Evaluation ambiguity and immature measurement",
+    "For claim-based diversity evaluation, results were sensitive to the chosen clustering distance threshold.": "Evaluation ambiguity and immature measurement",
+    "The GPT-3 relative componentwise performance measure is only a proxy for similarity and could be confounded by dataset-specific scaling effects.": "LLM-as-judge and benchmark bias",
+    "The approach is hard to evaluate empirically because many questions do not have a single expected answer, making standard metrics less effective.": "Evaluation ambiguity and immature measurement",
+    "The current analysis would be strengthened by comparing fabrication rates, for example with approaches like SelfCheckGPT.": "Evaluation ambiguity and immature measurement",
+    "There is a notable paucity of research dedicated to evaluating the distinct characteristics of RAG models, and evaluation is not yet mature or standardized.": "Evaluation ambiguity and immature measurement",
+    "Within helpfulness, multiple dimensions such as accuracy, relevance, and creativity are combined into a single metric.": "Evaluation ambiguity and immature measurement",
+    "LLM judges exhibit position bias.": "LLM-as-judge and benchmark bias",
+    "LLM judges exhibit verbosity bias.": "LLM-as-judge and benchmark bias",
+    "LLM judges have limited capability in grading math and reasoning questions.": "LLM-as-judge and benchmark bias",
+    "LLM judges may show self-enhancement bias, though the study cannot determine this conclusively.": "LLM-as-judge and benchmark bias",
+    "ML APIs in the benchmark may produce biased predictions if trained on skewed data, potentially disadvantaging certain sub-groups.": "LLM-as-judge and benchmark bias",
+    "The benchmark focuses on ML APIs, which may limit generalization beyond the ML domain.": "LLM-as-judge and benchmark bias",
+    "Their co-occurrence-based bias analyses have limitations and do not imply the dataset is free of bias.": "LLM-as-judge and benchmark bias",
+    "Their profanity analysis is only a proxy for profanity because determining whether a word or phrase is profane depends on context.": "LLM-as-judge and benchmark bias",
+    "As FEVER uses a different Wikipedia dump, directly tackling FEVER's evidence extraction sub-task is not straightforward.": "Limited generalization, transfer, and data coverage",
+    "Direct cross-dataset application causes a 3\u20135 point drop in top-20 retrieval accuracy relative to the best fine-tuned model.": "Limited generalization, transfer, and data coverage",
+    "Documents may still be duplicated across the train/validation/test splits despite deduplication efforts.": "Limited generalization, transfer, and data coverage",
+    "In multilingual retrieval, the authors observe gaps between HyDE and fine-tuned mContrieverFT and hypothesize that the non-English languages considered are under-trained in both pre-training and instruction learning stages.": "Limited generalization, transfer, and data coverage",
+    "Reducing the number of training passages leads to a decrease in accuracy.": "Limited generalization, transfer, and data coverage",
+    "The evaluation focused only on sensemaking questions over two corpora of about 1 million tokens each, so more work is needed to understand generalization across domains and use cases.": "Limited generalization, transfer, and data coverage",
+    "The language identification used to estimate language composition provides only a rough estimate and does not support reliable conclusions for low-resource languages.": "Limited generalization, transfer, and data coverage",
+    "The paper notes the need for further scaling up the number of instruction-annotated retrieval datasets, indicating current dataset coverage is still limited.": "Limited generalization, transfer, and data coverage",
+    "The work limits SELF-RAG training data size to 150k instances, and the authors note that further expanding training data may lead to further improvements.": "Limited generalization, transfer, and data coverage",
+    "There is a trade-off between generalization and specialization across downstream tasks, and adding training compromises direct-transfer scalability compared with few-shot in-context learning.": "Limited generalization, transfer, and data coverage",
+    "They did not perform Pile-wide deduplication due to memory constraints.": "Limited generalization, transfer, and data coverage",
+    "Allowing LLM agents to make changes in external environments through code execution or function calls, such as installing packages, could be risky.": "Safety, security, and oversight gaps",
+    "Fully autonomous agent conversations can pose risks in high-risk applications and require fail-safes and effective human oversight.": "Safety, security, and oversight gaps",
+    "Honesty and harmlessness are not evaluated in this work.": "Safety, security, and oversight gaps",
+    "Increasing the number of agents and other degrees of freedom may introduce new safety challenges.": "Safety, security, and oversight gaps",
+    "The proposed mitigations are preliminary, and the authors expect more advanced methods can be developed.": "Safety, security, and oversight gaps",
+    "The study emphasizes helpfulness but largely neglects safety.": "Safety, security, and oversight gaps",
+    "As workflows scale and grow more complex, they may become difficult to log, track, debug, and adjust.": "Agent and workflow instability",
+    "Instability arises because LLMs are uncontrollable and may fail to follow instructions or give incorrect answers, causing workflow exceptions.": "Agent and workflow instability",
+    "LLMs do not follow all instructions perfectly, so additional mechanisms are needed to handle exceptions and faults.": "Agent and workflow instability",
+    "Planning heavily relies on the capability of the LLM, so the generated plan is not always feasible or optimal.": "Agent and workflow instability",
+    "The model can repetitively generate previous thoughts and actions and fail to break out of loops.": "Agent and workflow instability",
+    "There may not be a one-size-fits-all design for multi-agent workflows; optimal agent topology, roles, and interaction patterns remain unclear.": "Agent and workflow instability",
+    "It remains an open question whether the model is actually reasoning rather than only emulating human thought processes.": "Reasoning reliability and process fidelity",
+    "ReAct has higher reasoning error rate than CoT because the interleaved reasoning-action-observation structure reduces flexibility in formulating reasoning steps.": "Reasoning reliability and process fidelity",
+    "There is no guarantee of correct reasoning paths, so chains of thought can lead to both correct and incorrect answers.": "Reasoning reliability and process fidelity",
+    "Under prompting, ReAct has limited support of reasoning and acting behaviors.": "Reasoning reliability and process fidelity",
+    "Manually annotating reasoning traces and actions at scale is challenging, motivating bootstrapping and finetuning.": "Tool-use limitations and sample inefficiency",
+    "Manually augmenting exemplars with chains of thought may be minimal in few-shot settings but could be prohibitively costly for finetuning.": "Tool-use limitations and sample inefficiency",
+    "Models trained with Toolformer are often sensitive to the exact wording of the input when deciding whether to call an API.": "Tool-use limitations and sample inefficiency",
+    "The method can be very sample-inefficient for some tools, such as the calculator API.": "Tool-use limitations and sample inefficiency",
+    "Toolformer cannot use tools in a chain because API calls for each tool are generated independently.": "Architectural rigidity and lack of interactive retrieval",
+    "Toolformer cannot use tools interactively, such as browsing search results or refining search queries.": "Architectural rigidity and lack of interactive retrieval",
+    "Toolformer does not take tool-dependent computational cost into account when deciding whether to make an API call.": "Tool-use limitations and sample inefficiency",
+    "Complex tasks with large action spaces require more demonstrations, which can exceed the input length limit of in-context learning.": "Architectural rigidity and lack of interactive retrieval",
+    "The Gaussian assumption in GMMs may not perfectly align with the sparse and skewed distribution of text data.": "Architectural rigidity and lack of interactive retrieval",
+    "The authors hypothesize that smaller model size and limited interactions between query and document embeddings make instruction-following retrieval more challenging for bi-encoders.": "Architectural rigidity and lack of interactive retrieval",
+    "The method is designed for a one-turn retrieve-then-read framework and does not provide the flexible multi-step retrieval interaction used by LLM-agent approaches.": "Architectural rigidity and lack of interactive retrieval",
+    "The retrieval component is not integrated into the model and the system is not trained end-to-end.": "Architectural rigidity and lack of interactive retrieval",
+    "Using less powerful instruction-following language models can negatively impact the performance of a fine-tuned encoder.": "Architectural rigidity and lack of interactive retrieval",
+    "Performance differences on FiQA and DBPedia may be due to under-specified instructions, and more elaborative instructions may help.": "Prompt and instruction sensitivity",
+    "Users may need to rewrite or engineer prompts to get the intended generated queries.": "Prompt and instruction sensitivity",
+    "The work is still in its early experimental stages.": "Other"
+  },
+  "raw": {
+    "2004.04906v3_Dense_Passage_Retrieval_for_Open-Domain_Question_Answering.pdf": {
+      "essence": "This paper introduces Dense Passage Retriever (DPR), a simple BERT-based dual-encoder dense retrieval method trained only on question\u2013passage pairs that substantially improves passage retrieval and end-to-end open-domain QA over BM25 and prior systems on multiple benchmarks.",
+      "proposes": [
+        "DPR"
+      ],
+      "uses": [
+        "BERT",
+        "dual-encoder architecture",
+        "FAISS",
+        "BM25",
+        "Lucene"
+      ],
+      "tasks": [
+        "Open-domain question answering",
+        "Document retrieval"
+      ],
+      "datasets": [
+        "Natural Questions",
+        "TriviaQA",
+        "WebQuestions",
+        "CuratedTREC",
+        "SQuAD"
+      ],
+      "metrics": [
+        "Top-1 retrieval accuracy",
+        "Recall@5",
+        "Top-20 retrieval accuracy",
+        "Recall@100",
+        "Exact Match"
+      ],
+      "limitations": [
+        "DPR underperforms BM25 on SQuAD, which the authors attribute to high lexical overlap between questions and passages and dataset bias from a small set of Wikipedia articles.",
+        "DPR may lack sufficient capacity to represent salient rare phrases, as shown in qualitative examples.",
+        "Building the dense index is much more expensive than sparse indexing: computing embeddings for 21M passages and building the FAISS index take hours, whereas Lucene indexing is much cheaper.",
+        "Direct cross-dataset application causes a 3\u20135 point drop in top-20 retrieval accuracy relative to the best fine-tuned model."
+      ]
+    },
+    "2005.11401v4_Retrieval-Augmented_Generation_for_Knowledge-Intensive_NLP_Tasks.pdf": {
+      "essence": "This paper introduces Retrieval-Augmented Generation (RAG), a framework that combines a pre-trained seq2seq generator with a dense Wikipedia retriever and jointly fine-tunes them end-to-end for knowledge-intensive NLP tasks.",
+      "proposes": [
+        "Retrieval-Augmented Generation",
+        "RAG-Sequence",
+        "RAG-Token",
+        "Thorough Decoding",
+        "Fast Decoding"
+      ],
+      "uses": [
+        "DPR",
+        "BART",
+        "BERT",
+        "Wikipedia",
+        "FAISS",
+        "BM25"
+      ],
+      "tasks": [
+        "Open-domain question answering",
+        "Abstractive question answering",
+        "Question generation",
+        "Fact verification",
+        "Sequence classification"
+      ],
+      "datasets": [
+        "Natural Questions",
+        "TriviaQA",
+        "WebQuestions",
+        "CuratedTREC",
+        "MS MARCO",
+        "SearchQA",
+        "FEVER"
+      ],
+      "metrics": [
+        "Exact Match",
+        "BLEU-1",
+        "BLEU-1",
+        "ROUGE-L",
+        "Accuracy",
+        "Distinct-3"
+      ],
+      "limitations": [
+        "Some MS-MARCO questions cannot be answered in a way that matches the reference answer without access to the gold passages.",
+        "Some MS-MARCO questions cannot be answered using Wikipedia alone.",
+        "For some tasks such as story generation, the retrieval component can collapse and learn to retrieve the same documents regardless of the input, after which the generator ignores the documents and the model performs equivalently to BART.",
+        "As FEVER uses a different Wikipedia dump, directly tackling FEVER's evidence extraction sub-task is not straightforward.",
+        "RAG-Sequence decoding for longer output sequences can require many forward passes because the candidate set can become large."
+      ]
+    },
+    "2007.01282v2_Leveraging_Passage_Retrieval_with_Generative_Models_for_Open_Domain_Qu.pdf": {
+      "essence": "This paper introduces a retrieval-augmented generative open-domain QA approach, Fusion-in-Decoder, that processes retrieved passages independently in the encoder and jointly in the decoder, achieving state-of-the-art results on Natural Questions and TriviaQA.",
+      "proposes": [
+        "Fusion-in-Decoder"
+      ],
+      "uses": [
+        "BM25",
+        "DPR",
+        "T5",
+        "BART",
+        "Adam"
+      ],
+      "tasks": [
+        "Open-domain question answering"
+      ],
+      "datasets": [
+        "Natural Questions",
+        "TriviaQA",
+        "SQuAD"
+      ],
+      "metrics": [
+        "Exact Match",
+        "F1"
+      ],
+      "limitations": [
+        "The model is not efficient when scaling to large numbers of support passages.",
+        "The retrieval component is not integrated into the model and the system is not trained end-to-end.",
+        "Reducing the number of training passages leads to a decrease in accuracy."
+      ]
+    },
+    "2101.00027v1_The_Pile_An_800GB_Dataset_of_Diverse_Text_for_Language_Modeling.pdf": {
+      "essence": "This paper introduces The Pile, an 825.18 GiB English text corpus built from 22 diverse high-quality components for training and benchmarking large-scale language models, and shows that models trained on it outperform models trained on Raw CC and CC-100 across Pile components and on downstream evaluations.",
+      "proposes": [
+        "The Pile",
+        "Pile-CC",
+        "OpenWebText2",
+        "BookCorpus2",
+        "USPTO Backgrounds",
+        "YouTube Subtitles"
+      ],
+      "uses": [
+        "GPT-2",
+        "GPT-3",
+        "justext",
+        "OpenWebText",
+        "BookCorpus",
+        "Books3",
+        "PG-19",
+        "EuroParl"
+      ],
+      "tasks": [
+        "Language modeling",
+        "Language model benchmarking",
+        "Cross-domain generalization evaluation"
+      ],
+      "datasets": [
+        "The Pile",
+        "CC-100",
+        "Common Crawl",
+        "WikiText",
+        "LAMBADA"
+      ],
+      "metrics": [
+        "Bits per byte",
+        "Perplexity",
+        "Accuracy"
+      ],
+      "limitations": [
+        "Documents may still be duplicated across the train/validation/test splits despite deduplication efforts.",
+        "The GPT-3 relative componentwise performance measure is only a proxy for similarity and could be confounded by dataset-specific scaling effects.",
+        "The language identification used to estimate language composition provides only a rough estimate and does not support reliable conclusions for low-resource languages.",
+        "Their profanity analysis is only a proxy for profanity because determining whether a word or phrase is profane depends on context.",
+        "Their co-occurrence-based bias analyses have limitations and do not imply the dataset is free of bias.",
+        "They did not perform Pile-wide deduplication due to memory constraints."
+      ]
+    },
+    "2201.11903v6_Chain-of-Thought_Prompting_Elicits_Reasoning_in_Large_Language_Models.pdf": {
+      "essence": "The paper introduces Chain-of-Thought prompting, showing that providing few-shot exemplars with intermediate natural-language reasoning steps can elicit multi-step reasoning in sufficiently large language models and substantially improve arithmetic, commonsense, and symbolic reasoning performance.",
+      "proposes": [
+        "Chain-of-Thought"
+      ],
+      "uses": [
+        "PaLM",
+        "LaMDA",
+        "GPT-3",
+        "UL2",
+        "Codex",
+        "standard prompting"
+      ],
+      "tasks": [
+        "Arithmetic reasoning",
+        "Commonsense reasoning",
+        "Symbolic reasoning",
+        "Math problem solving",
+        "Instruction following"
+      ],
+      "datasets": [
+        "GSM8K",
+        "SVAMP",
+        "ASDiv",
+        "AQuA",
+        "MAWPS",
+        "CSQA",
+        "StrategyQA",
+        "SayCan"
+      ],
+      "metrics": [
+        "Accuracy",
+        "Success Rate"
+      ],
+      "limitations": [
+        "It remains an open question whether the model is actually reasoning rather than only emulating human thought processes.",
+        "Manually augmenting exemplars with chains of thought may be minimal in few-shot settings but could be prohibitively costly for finetuning.",
+        "There is no guarantee of correct reasoning paths, so chains of thought can lead to both correct and incorrect answers.",
+        "Chain-of-thought reasoning emerges only at large model scales, making real-world serving costly."
+      ]
+    },
+    "2210.03629v3_ReAct_Synergizing_Reasoning_and_Acting_in_Language_Models.pdf": {
+      "essence": "This paper introduces ReAct, a prompting paradigm that interleaves reasoning traces and task-specific actions in language models to improve performance and interpretability across knowledge-intensive reasoning and interactive decision-making tasks.",
+      "proposes": [
+        "ReAct",
+        "ReAct\u2192CoT-SC",
+        "CoT-SC\u2192ReAct",
+        "ReAct"
+      ],
+      "uses": [
+        "Chain-of-Thought",
+        "Self-Consistency",
+        "PaLM",
+        "GPT-3",
+        "Wikipedia API",
+        "Inner Monologue"
+      ],
+      "tasks": [
+        "Multi-hop question answering",
+        "Fact verification",
+        "Text-based interactive decision making",
+        "Web navigation"
+      ],
+      "datasets": [
+        "HotpotQA",
+        "FEVER",
+        "ALFWorld",
+        "WebShop"
+      ],
+      "metrics": [
+        "Exact Match",
+        "Accuracy",
+        "Success Rate",
+        "Average score"
+      ],
+      "limitations": [
+        "Under prompting, ReAct has limited support of reasoning and acting behaviors.",
+        "Complex tasks with large action spaces require more demonstrations, which can exceed the input length limit of in-context learning.",
+        "ReAct has higher reasoning error rate than CoT because the interleaved reasoning-action-observation structure reduces flexibility in formulating reasoning steps.",
+        "The model can repetitively generate previous thoughts and actions and fail to break out of loops.",
+        "ReAct is sensitive to non-informative search results, which can derail reasoning and be hard to recover from.",
+        "Manually annotating reasoning traces and actions at scale is challenging, motivating bootstrapping and finetuning."
+      ]
+    },
+    "2211.09260v2_Task-aware_Retrieval_with_Instructions.pdf": {
+      "essence": "This paper introduces retrieval with instructions as a new retrieval formulation, along with the BERRI benchmark and TART models, showing strong zero-shot and cross-task retrieval performance when explicit natural-language instructions are provided.",
+      "proposes": [
+        "Retrieval with Instructions",
+        "BERRI",
+        "TART",
+        "TART",
+        "TART",
+        "X2-Retrieval",
+        "instruction-unfollowing negative samples"
+      ],
+      "uses": [
+        "Contriever",
+        "ms-marco-MiniLM-L-12-v2",
+        "T0-3B",
+        "FLAN-T5",
+        "EncT5",
+        "Contriever"
+      ],
+      "tasks": [
+        "Retrieval with instructions",
+        "Zero-shot dense retrieval",
+        "Cross-task cross-domain retrieval",
+        "Document retrieval",
+        "Reranking"
+      ],
+      "datasets": [
+        "BERRI",
+        "BEIR",
+        "LOTTE-Search",
+        "X2-Retrieval"
+      ],
+      "metrics": [
+        "NDCG@10",
+        "Recall@5",
+        "Recall@5"
+      ],
+      "limitations": [
+        "TART-dual shows performance deterioration on some datasets such as Touche-2020 and Climate-FEVER.",
+        "The authors hypothesize that smaller model size and limited interactions between query and document embeddings make instruction-following retrieval more challenging for bi-encoders.",
+        "TART-full relies on reranking after an initial lightweight retrieval stage, so efficiency remains an open issue compared with more efficient retrieval architectures.",
+        "The paper notes the need for further scaling up the number of instruction-annotated retrieval datasets, indicating current dataset coverage is still limited."
+      ]
+    },
+    "2212.10496v1_Precise_Zero-Shot_Dense_Retrieval_without_Relevance_Labels.pdf": {
+      "essence": "This paper introduces HyDE, a zero-shot dense retrieval method that uses an instruction-following language model to generate hypothetical documents and an unsupervised contrastive encoder to retrieve real documents without relevance labels.",
+      "proposes": [
+        "HyDE",
+        "HyDE"
+      ],
+      "uses": [
+        "InstructGPT",
+        "Contriever",
+        "Contriever",
+        "Pyserini",
+        "BM25"
+      ],
+      "tasks": [
+        "Zero-shot dense retrieval",
+        "Web search",
+        "Question answering retrieval",
+        "Fact verification retrieval",
+        "Multilingual retrieval"
+      ],
+      "datasets": [
+        "TREC DL19",
+        "TREC DL20",
+        "SciFact",
+        "Arguana",
+        "TREC-COVID",
+        "FiQA",
+        "DBPedia-Entity",
+        "TREC-NEWS",
+        "Mr.Tydi"
+      ],
+      "metrics": [
+        "MAP",
+        "NDCG@10",
+        "Recall@100",
+        "Recall@1000",
+        "MRR"
+      ],
+      "limitations": [
+        "The method assumes the query is not ambiguous and leaves ambiguous queries and diversity to future work.",
+        "The generated hypothetical document can be unreal, factually ungrounded, and contain false details.",
+        "In multilingual retrieval, the authors observe gaps between HyDE and fine-tuned mContrieverFT and hypothesize that the non-English languages considered are under-trained in both pre-training and instruction learning stages.",
+        "Performance differences on FiQA and DBPedia may be due to under-specified instructions, and more elaborative instructions may help.",
+        "Using less powerful instruction-following language models can negatively impact the performance of a fine-tuned encoder."
+      ]
+    },
+    "2302.04761v1_Toolformer_Language_Models_Can_Teach_Themselves_to_Use_Tools.pdf": {
+      "essence": "This paper introduces Toolformer, a self-supervised method for training a language model to decide when and how to call external APIs and incorporate their outputs to improve zero-shot task performance without harming core language modeling ability.",
+      "proposes": [
+        "Toolformer",
+        "DATESET"
+      ],
+      "uses": [
+        "GPT-J",
+        "CCNet",
+        "Atlas",
+        "BM25",
+        "KILT",
+        "NLLB",
+        "fastText"
+      ],
+      "tasks": [
+        "Tool use via APIs",
+        "Language modeling",
+        "Zero-shot knowledge completion",
+        "Math problem solving",
+        "Question answering",
+        "Multilingual question answering",
+        "Temporal question answering"
+      ],
+      "datasets": [
+        "CCNet",
+        "LAMA",
+        "SQuAD",
+        "Google-RE",
+        "T-REx",
+        "ASDiv",
+        "SVAMP",
+        "MAWPS",
+        "WebQuestions",
+        "Natural Questions",
+        "TriviaQA",
+        "MLQA",
+        "TempLAMA",
+        "DATESET",
+        "WikiText"
+      ],
+      "metrics": [
+        "Accuracy",
+        "Perplexity",
+        "weighted cross entropy loss"
+      ],
+      "limitations": [
+        "Toolformer cannot use tools in a chain because API calls for each tool are generated independently.",
+        "Toolformer cannot use tools interactively, such as browsing search results or refining search queries.",
+        "Models trained with Toolformer are often sensitive to the exact wording of the input when deciding whether to call an API.",
+        "The method can be very sample-inefficient for some tools, such as the calculator API.",
+        "Toolformer does not take tool-dependent computational cost into account when deciding whether to make an API call."
+      ]
+    },
+    "2303.17580v4_HuggingGPT_Solving_AI_Tasks_with_ChatGPT_and_its_Friends_in_Hugging_Fa.pdf": {
+      "essence": "This paper introduces HuggingGPT, an LLM-powered agent that uses ChatGPT to plan tasks, select Hugging Face models by their descriptions, execute them with dependency handling, and synthesize multimodal results for complex AI requests.",
+      "proposes": [
+        "HuggingGPT",
+        "inter-model cooperation protocol"
+      ],
+      "uses": [
+        "ChatGPT",
+        "Hugging Face",
+        "GPT-3.5",
+        "InstructGPT",
+        "GPT-4"
+      ],
+      "tasks": [
+        "Task planning",
+        "Model selection",
+        "Dialogue generation",
+        "Image captioning",
+        "Object detection",
+        "Image classification",
+        "Text-to-speech",
+        "Text-to-video"
+      ],
+      "datasets": [
+        "task planning dataset",
+        "task planning dataset"
+      ],
+      "metrics": [
+        "Accuracy",
+        "Precision",
+        "Recall",
+        "F1",
+        "normalized Edit Distance",
+        "GPT-4 Score",
+        "Passing Rate",
+        "Rationality",
+        "Success Rate"
+      ],
+      "limitations": [
+        "Planning heavily relies on the capability of the LLM, so the generated plan is not always feasible or optimal.",
+        "Efficiency is a challenge because multiple interactions with LLMs throughout the workflow increase response time.",
+        "Limited maximum token length makes it hard to connect numerous models and include their descriptions.",
+        "Instability arises because LLMs are uncontrollable and may fail to follow instructions or give incorrect answers, causing workflow exceptions."
+      ]
+    },
+    "2305.14283v3_Query_Rewriting_for_Retrieval-Augmented_Large_Language_Models.pdf": {
+      "essence": "This paper introduces Rewrite-Retrieve-Read, a retrieval-augmented LLM framework that rewrites queries before web retrieval and can train a small rewriter with LLM feedback via reinforcement learning to improve QA performance.",
+      "proposes": [
+        "Rewrite-Retrieve-Read",
+        "Rewrite-Retrieve-Read",
+        "Rewrite-Retrieve-Read"
+      ],
+      "uses": [
+        "T5",
+        "Proximal Policy Optimization",
+        "Generalized Advantage Estimation",
+        "BM25",
+        "Bing search engine",
+        "ChatGPT",
+        "Vicuna"
+      ],
+      "tasks": [
+        "Open-domain question answering",
+        "Multiple-choice question answering",
+        "Query rewriting",
+        "Retrieval-augmented language modeling"
+      ],
+      "datasets": [
+        "HotpotQA",
+        "AmbigNQ",
+        "PopQA",
+        "MMLU"
+      ],
+      "metrics": [
+        "Exact Match",
+        "F1",
+        "Hit Rate"
+      ],
+      "limitations": [
+        "There is a trade-off between generalization and specialization across downstream tasks, and adding training compromises direct-transfer scalability compared with few-shot in-context learning.",
+        "The method is designed for a one-turn retrieve-then-read framework and does not provide the flexible multi-step retrieval interaction used by LLM-agent approaches.",
+        "Using a web search engine as the retriever has limitations, and neural dense retrievers built on professional, filtered knowledge bases may achieve better and more controllable retrieval."
+      ]
+    },
+    "2305.15334v1_Gorilla_Large_Language_Model_Connected_with_Massive_APIs.pdf": {
+      "essence": "This paper introduces Gorilla, a retrieve-aware finetuned LLaMA-7B model for generating accurate API calls, along with APIBench for benchmarking large-scale API use across model hubs.",
+      "proposes": [
+        "Gorilla",
+        "APIBench"
+      ],
+      "uses": [
+        "LLaMA",
+        "Self-Instruct",
+        "GPT-4",
+        "BM25",
+        "LlamaIndex",
+        "AST sub-tree matching"
+      ],
+      "tasks": [
+        "API call generation",
+        "Tool use via APIs",
+        "Constraint-aware API invocation",
+        "Adapting to test-time API documentation changes"
+      ],
+      "datasets": [
+        "APIBench",
+        "TorchHub",
+        "TensorFlow Hub",
+        "HuggingFace"
+      ],
+      "metrics": [
+        "Accuracy",
+        "Hallucination rate",
+        "Error rate",
+        "Accuracy"
+      ],
+      "limitations": [
+        "The benchmark focuses on ML APIs, which may limit generalization beyond the ML domain.",
+        "ML APIs in the benchmark may produce biased predictions if trained on skewed data, potentially disadvantaging certain sub-groups."
+      ]
+    },
+    "2306.05685v4_Judging_LLM-as-a-Judge_with_MT-Bench_and_Chatbot_Arena.pdf": {
+      "essence": "This paper systematically studies LLM-as-a-judge for chatbot evaluation and introduces the MT-Bench and Chatbot Arena benchmarks, showing that strong judges like GPT-4 achieve over 80% agreement with human preferences.",
+      "proposes": [
+        "LLM-as-a-judge",
+        "MT-Bench",
+        "Chatbot Arena",
+        "LLM-as-a-judge",
+        "LLM-as-a-judge",
+        "LLM-as-a-judge",
+        "LLM-as-a-judge",
+        "LLM-as-a-judge"
+      ],
+      "uses": [
+        "GPT-4",
+        "GPT-3.5",
+        "Claude-v1",
+        "LLaMA",
+        "Vicuna",
+        "RLHF",
+        "Chain-of-Thought"
+      ],
+      "tasks": [
+        "Chatbot evaluation",
+        "Human preference evaluation",
+        "Chatbot evaluation",
+        "Instruction-following evaluation",
+        "LLM-as-a-judge"
+      ],
+      "datasets": [
+        "MT-Bench",
+        "Chatbot Arena",
+        "MMLU",
+        "TruthfulQA"
+      ],
+      "metrics": [
+        "agreement rate",
+        "average win rate",
+        "MT-Bench score",
+        "MMLU",
+        "TruthfulQA",
+        "consistency",
+        "Error rate"
+      ],
+      "limitations": [
+        "The study emphasizes helpfulness but largely neglects safety.",
+        "Honesty and harmlessness are not evaluated in this work.",
+        "Within helpfulness, multiple dimensions such as accuracy, relevance, and creativity are combined into a single metric.",
+        "LLM judges exhibit position bias.",
+        "LLM judges exhibit verbosity bias.",
+        "LLM judges may show self-enhancement bias, though the study cannot determine this conclusively.",
+        "LLM judges have limited capability in grading math and reasoning questions.",
+        "The proposed mitigations are preliminary, and the authors expect more advanced methods can be developed."
+      ]
+    },
+    "2308.08155v2_AutoGen_Enabling_Next-Gen_LLM_Applications_via_Multi-Agent_Conversatio.pdf": {
+      "essence": "This paper introduces AutoGen, an open-source framework for building LLM applications through customizable multi-agent conversations programmed via unified conversational interfaces and flexible control flows.",
+      "proposes": [
+        "AutoGen",
+        "ConversableAgent",
+        "conversation programming",
+        "ConversableAgent",
+        "AssistantAgent",
+        "UserProxyAgent",
+        "GroupChatManager",
+        "Retrieval-Augmented Generation"
+      ],
+      "uses": [
+        "GPT-4",
+        "GPT-3.5",
+        "ReAct",
+        "OptiGuide",
+        "Chroma",
+        "SBERT",
+        "ALFWorld",
+        "Natural Questions"
+      ],
+      "tasks": [
+        "Multi-agent LLM application development",
+        "Math problem solving",
+        "Retrieval-augmented question answering",
+        "Retrieval-augmented code generation",
+        "Text-based interactive decision making",
+        "Multi-agent coding",
+        "Dynamic group chat",
+        "Conversational chess"
+      ],
+      "datasets": [
+        "MATH",
+        "Natural Questions",
+        "ALFWorld"
+      ],
+      "metrics": [
+        "Success Rate",
+        "Accuracy",
+        "F1",
+        "Recall",
+        "runtime",
+        "number of user interactions",
+        "lines of code"
+      ],
+      "limitations": [
+        "The work is still in its early experimental stages.",
+        "There may not be a one-size-fits-all design for multi-agent workflows; optimal agent topology, roles, and interaction patterns remain unclear.",
+        "As workflows scale and grow more complex, they may become difficult to log, track, debug, and adjust.",
+        "Increasing the number of agents and other degrees of freedom may introduce new safety challenges.",
+        "Fully autonomous agent conversations can pose risks in high-risk applications and require fail-safes and effective human oversight.",
+        "Allowing LLM agents to make changes in external environments through code execution or function calls, such as installing packages, could be risky.",
+        "LLMs do not follow all instructions perfectly, so additional mechanisms are needed to handle exceptions and faults."
+      ]
+    },
+    "2309.15217v2_Ragas_Automated_Evaluation_of_Retrieval_Augmented_Generation.pdf": {
+      "essence": "This paper introduces Ragas, a reference-free framework for automated evaluation of Retrieval-Augmented Generation systems via metrics for faithfulness, answer relevance, and context relevance, and validates it on the new WikiEval dataset.",
+      "proposes": [
+        "Ragas",
+        "WikiEval"
+      ],
+      "uses": [
+        "ChatGPT",
+        "GPT-3.5",
+        "text-embedding-ada-002",
+        "LlamaIndex",
+        "LangChain"
+      ],
+      "tasks": [
+        "Retrieval-Augmented Generation evaluation",
+        "Faithfulness evaluation",
+        "Answer relevance evaluation",
+        "Context relevance evaluation"
+      ],
+      "datasets": [
+        "WikiEval"
+      ],
+      "metrics": [
+        "Faithfulness",
+        "Answer Relevance",
+        "Context Relevance",
+        "Accuracy"
+      ],
+      "limitations": [
+        "Answer relevance agreement is lower because the differences between candidate answers are often very subtle.",
+        "Context relevance was the hardest quality dimension to evaluate.",
+        "ChatGPT often struggles with selecting the sentences from the context that are crucial, especially for longer contexts."
+      ]
+    },
+    "2310.11511v1_Self-RAG_Learning_to_Retrieve_Generate_and_Critique_through_Self-Refle.pdf": {
+      "essence": "SELF-RAG is a retrieval-augmented language modeling framework that trains a single LM to adaptively retrieve, generate, and self-critique with reflection tokens, improving factuality, controllability, and citation quality across diverse tasks.",
+      "proposes": [
+        "SELF-RAG",
+        "SELF-RAG",
+        "SELF-RAG"
+      ],
+      "uses": [
+        "Llama 2",
+        "GPT-4",
+        "Contriever",
+        "Google Programmable Search",
+        "GTR-XXL",
+        "vLLM"
+      ],
+      "tasks": [
+        "Open-domain question answering",
+        "Fact verification",
+        "Multiple-choice reasoning",
+        "Biography generation",
+        "Long-document question answering",
+        "Instruction following"
+      ],
+      "datasets": [
+        "PopQA",
+        "TriviaQA",
+        "PubHealth",
+        "ARC-Challenge",
+        "ASQA"
+      ],
+      "metrics": [
+        "Accuracy",
+        "FactScore",
+        "Exact Match",
+        "ROUGE",
+        "MAUVE",
+        "Precision",
+        "Recall"
+      ],
+      "limitations": [
+        "It can still generate outputs that are not fully supported by the citations.",
+        "Off-the-shelf retrieval models trained primarily on knowledge-intensive tasks show limited effectiveness for open-ended generation such as instruction following.",
+        "The work limits SELF-RAG training data size to 150k instances, and the authors note that further expanding training data may lead to further improvements."
+      ]
+    },
+    "2312.10997v5_Retrieval-Augmented_Generation_for_Large_Language_Models_A_Survey.pdf": {
+      "essence": "This survey systematically organizes Retrieval-Augmented Generation for large language models into Naive, Advanced, and Modular paradigms, reviews techniques across retrieval, generation, and augmentation, and summarizes tasks, datasets, evaluation methods, challenges, and future directions.",
+      "proposes": [
+        "Naive RAG",
+        "Advanced RAG",
+        "Modular RAG"
+      ],
+      "uses": [],
+      "tasks": [
+        "Question answering",
+        "Information Extraction",
+        "Dialogue generation",
+        "Code Search",
+        "Fact verification",
+        "Text Summarization",
+        "Recommendation",
+        "Machine Translation"
+      ],
+      "datasets": [
+        "Natural Questions",
+        "TriviaQA",
+        "SQuAD",
+        "WebQuestions",
+        "PopQA",
+        "MS MARCO",
+        "HotpotQA",
+        "2WikiMultiHopQA"
+      ],
+      "metrics": [
+        "Exact Match",
+        "F1",
+        "Accuracy",
+        "BLEU",
+        "ROUGE",
+        "Hit Rate",
+        "MRR",
+        "NDCG@10"
+      ],
+      "limitations": [
+        "Naive RAG retrieval often struggles with precision and recall, causing irrelevant chunk selection and missing crucial information.",
+        "Generation may hallucinate or produce irrelevant, toxic, or biased outputs not supported by retrieved context.",
+        "Integrating retrieved information with tasks can yield disjointed or incoherent outputs, redundancy, and stylistic inconsistency.",
+        "A single retrieval based on the original query may be insufficient for complex issues requiring adequate context information.",
+        "Generation models may overly rely on augmented information and merely echo retrieved content without synthesis.",
+        "There is a notable paucity of research dedicated to evaluating the distinct characteristics of RAG models, and evaluation is not yet mature or standardized.",
+        "The presence of noise or contradictory information during retrieval can harm output quality, so robustness remains a challenge.",
+        "Production challenges remain, including retrieval efficiency, document recall in large knowledge bases, and data security such as preventing disclosure of document sources or metadata."
+      ]
+    },
+    "2401.18059v1_RAPTOR_Recursive_Abstractive_Processing_for_Tree-Organized_Retrieval.pdf": {
+      "essence": "This paper introduces RAPTOR, a tree-based retrieval method that recursively clusters and summarizes text chunks so language models can retrieve context at multiple levels of abstraction for question answering over long documents.",
+      "proposes": [
+        "RAPTOR",
+        "tree traversal",
+        "collapsed tree"
+      ],
+      "uses": [
+        "SBERT",
+        "Gaussian Mixture Models",
+        "UMAP",
+        "Bayesian Information Criterion",
+        "Expectation-Maximization",
+        "GPT-3.5",
+        "BM25",
+        "DPR"
+      ],
+      "tasks": [
+        "Retrieval-augmented question answering",
+        "Long-document question answering",
+        "Multiple-choice question answering",
+        "Abstractive question answering"
+      ],
+      "datasets": [
+        "NarrativeQA",
+        "QASPER",
+        "QuALITY"
+      ],
+      "metrics": [
+        "Accuracy",
+        "F1",
+        "ROUGE-L",
+        "BLEU-1",
+        "BLEU-4",
+        "METEOR"
+      ],
+      "limitations": [
+        "The collapsed tree approach requires cosine similarity search over all nodes in the tree.",
+        "The Gaussian assumption in GMMs may not perfectly align with the sparse and skewed distribution of text data.",
+        "About 4% of generated summaries contained minor hallucinations.",
+        "Summarization can be a lossy means of compression."
+      ]
+    },
+    "2402.03367v2_RAG-Fusion_a_New_Take_on_Retrieval-Augmented_Generation.pdf": {
+      "essence": "The paper evaluates an Infineon chatbot built with RAG-Fusion and reports that generating multiple queries and fusing retrieved results with reciprocal rank fusion improves answer accuracy and comprehensiveness over traditional RAG, while increasing latency and sometimes reducing topical relevance.",
+      "proposes": [],
+      "uses": [
+        "RAG-Fusion",
+        "Retrieval-Augmented Generation",
+        "RAG-Fusion"
+      ],
+      "tasks": [
+        "Product question answering",
+        "Sales strategy question answering",
+        "Customer-oriented product question answering"
+      ],
+      "datasets": [
+        "Infineon Developer Community forum questions",
+        "Infineon product datasheets",
+        "Infineon product selection guides"
+      ],
+      "metrics": [
+        "Accuracy",
+        "Answer Relevance",
+        "Comprehensiveness",
+        "runtime"
+      ],
+      "limitations": [
+        "RAG-Fusion has slower answer time than traditional RAG due to the second LLM API call with multiple queries and more documents.",
+        "Generated queries can be insufficiently relevant, causing answers to stray off topic from the original query.",
+        "The system often gives general guidance for troubleshooting when the database lacks the needed product-specific documentation.",
+        "The approach is hard to evaluate empirically because many questions do not have a single expected answer, making standard metrics less effective.",
+        "Users may need to rewrite or engineer prompts to get the intended generated queries.",
+        "The system cannot provide definitively negative answers when documents do not explicitly state that a feature is absent."
+      ]
+    },
+    "2404.16130v2_From_Local_to_Global_A_Graph_RAG_Approach_to_Query-Focused_Summarizati.pdf": {
+      "essence": "This paper introduces GraphRAG, a graph-based retrieval-augmented generation method that builds an LLM-derived knowledge graph and hierarchical community summaries to answer global query-focused summarization questions over large text corpora more comprehensively and diversely than a conventional vector RAG baseline.",
+      "proposes": [
+        "GraphRAG"
+      ],
+      "uses": [
+        "Leiden community detection",
+        "LLM-as-a-judge",
+        "Claimify",
+        "graspologic"
+      ],
+      "tasks": [
+        "Retrieval-augmented generation",
+        "Query-focused summarization",
+        "Question answering over private text corpora",
+        "Global sensemaking"
+      ],
+      "datasets": [
+        "Behind the Tech podcast transcripts",
+        "MultiHop-RAG news articles"
+      ],
+      "metrics": [
+        "Comprehensiveness",
+        "Diversity",
+        "Empowerment",
+        "Directness",
+        "average number of extracted claims",
+        "average number of claim clusters"
+      ],
+      "limitations": [
+        "The evaluation focused only on sensemaking questions over two corpora of about 1 million tokens each, so more work is needed to understand generalization across domains and use cases.",
+        "The current analysis would be strengthened by comparing fabrication rates, for example with approaches like SelfCheckGPT.",
+        "Empowerment results were mixed, and the authors note that GraphRAG may lose specific examples, quotes, and citations; they suggest tuning element extraction prompts to retain more of these details.",
+        "For claim-based diversity evaluation, results were sensitive to the chosen clustering distance threshold.",
+        "For claim-based comparison with LLM judgments, defining ties for claim-based metrics was difficult because outcomes were sensitive to the threshold choice."
+      ]
+    }
+  }
+}
