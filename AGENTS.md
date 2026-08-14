@@ -151,6 +151,47 @@ HTTP client with redirects enabled before `session.initialize()`; a plain `httpx
 `follow_redirects=False` and can surface a misleading `500 Internal Server Error`. The current MCP client works and
 negotiates the endpoint's supported protocol version when `follow_redirects=True`.
 
+## `begin_create_*` in microsoft-fabric-api cannot be waited on
+
+Verified against the pinned `microsoft-fabric-api==0.1.0b20`. The package ships **no async surface at all** — no
+`aio` subpackage, no `async def begin_*`, no `AsyncLROPoller`, and no `asyncio` import anywhere in the
+distribution — so `await` is not an alternative to what follows. Polling is the only option.
+
+`FabricClient.lakehouse` and `FabricClient.ontology` resolve to the `extensions` packages, not the `generated`
+ones. Their `begin_create_*` methods do **not** return the `LROPoller` their own docstrings and type hints
+advertise. They create the poller, attach an `_LROResultExtractor` as a done callback, and return the extractor:
+
+```python
+extractor = _LROResultExtractor[_models.Ontology]()
+poller = super().begin_create_ontology(..., polling=LROBasePolling(...))
+poller.add_done_callback(extractor)
+return extractor  # the poller itself is discarded
+```
+
+The extractor exists for a real reason: Fabric's LRO protocol returns the created item from a *separate*
+`GET /v1/operations/{id}/result` call, which `azure-core`'s stock poller never makes. The problem is the shape it
+was given. Three consequences, none of which fail loudly:
+
+- The extractor has no `wait()`, `done()` or `result()`. Its `result` is a **property**, so `.result()` calls
+  whatever the property returned and raises `TypeError: 'Lakehouse' object is not callable`.
+- There is no way to block on it. `.result` is `None` while the create is in flight, so the only option is to spin
+  on it — which is exactly what the SDK's own blocking `create_ontology` / `create_lakehouse` wrappers do, in an
+  **unbounded** `while extractor.result is None: time.sleep(5)`. Registration order is *not* the problem here:
+  `add_done_callback` invokes the callback immediately when the operation has already finished, so a create that
+  succeeds populates the extractor either way.
+- A **failed** operation is never re-raised, and this is what makes the spin dangerous. `LROPoller._start()` stores
+  the exception on the discarded poller, where only `wait()` would surface it. On that path the extractor's own
+  callback also raises `AttributeError: 'NoneType' object has no attribute 'additional_properties'` inside the
+  background thread, which Python prints as a stray traceback and discards. `.result` then stays `None` **forever**,
+  so the SDK's unbounded loop hangs and a failure is indistinguishable from slowness.
+
+Poll for the item by display name instead, with a deadline, and word the timeout so it does not claim the operation
+is merely slow. `wait_for_created_item` in `infra/create-lakehouse.py` does this for both item types.
+
+The split is consistent and worth checking before adding a call: `begin_create_*` on `items` returns an extractor,
+while `begin_load_table` and every `begin_update_*_definition` return real `LROPoller` objects where `.result()`
+is correct. Verify with `inspect.getsource`, not the type hints, which are wrong for the extractor cases.
+
 ## Open Fabric Data Agent issue
 
 Fabric Data Agent NL2GQL can generate Cypher-style `WHERE` clauses for Fabric Graph queries, but the Fabric Graph

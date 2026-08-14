@@ -35,6 +35,7 @@ import time
 import traceback
 import uuid
 import warnings
+from collections.abc import Callable
 from datetime import datetime, timedelta
 
 import requests
@@ -313,15 +314,58 @@ def add_workspace_member(workspace_id: str, user_oid: str, user_email: str, role
             log_message(f"WARNING: Failed to add user to workspace: {error}")
 
 
+def wait_for_created_item(
+    finder: Callable[[], dict | None],
+    kind: str,
+    name: str,
+    workspace_id: str,
+    timeout: int = 300,
+    interval: int = 5,
+) -> dict:
+    """Poll for an item created by a long running operation, by display name.
+
+    `microsoft-fabric-api` (0.1.0b20) does not return the `LROPoller` for these creates.
+    It attaches an `_LROResultExtractor` as a done callback and returns that instead, so
+    there is nothing to wait on: `result` is a property that stays empty while the create
+    is in flight, and the package ships no async variant to await either. The SDK's own
+    blocking wrappers spin on that property without a deadline. That is safe only while
+    the create succeeds -- because nothing ever calls `LROPoller.wait()`, a *failed*
+    operation is never re-raised and the property stays empty forever, which is why the
+    timeout below cannot assume the item is merely slow.
+    """
+    deadline = time.monotonic() + timeout
+    while True:
+        existing = finder()
+        if existing:
+            return existing
+        if time.monotonic() >= deadline:
+            raise RuntimeError(
+                f"Gave up after {timeout}s waiting for {kind} '{name}' to appear in "
+                f"workspace {workspace_id}. The create either is still running or "
+                f"failed: the Fabric SDK discards the poller for this operation, so a "
+                f"failure is not raised here. Check the {kind} in the Fabric portal, "
+                f"and confirm the workspace is on a supported, active capacity."
+            )
+        time.sleep(interval)
+
+
 def create_lakehouse(workspace_id: str, name: str) -> dict:
     """Create a lakehouse in the specified workspace."""
     log_message(f"Creating lakehouse '{name}'...")
     try:
-        lakehouse = get_fabric_client().lakehouse.items.begin_create_lakehouse(
+        get_fabric_client().lakehouse.items.begin_create_lakehouse(
             workspace_id, CreateLakehouseRequest(display_name=name)
-        ).result
-        log_message(f"Lakehouse created: {lakehouse.id}")
-        return {"id": lakehouse.id, "displayName": lakehouse.display_name}
+        )
+        # `result` is populated by a done callback that has usually already fired for a
+        # lakehouse, but relying on that is a race. Resolve the item by name instead.
+        created = wait_for_created_item(
+            lambda: find_lakehouse(workspace_id, name),
+            "lakehouse",
+            name,
+            workspace_id,
+        )
+        log_message(f"Lakehouse created: {created['id']}")
+        return created
     except HttpResponseError as error:
         if is_http_status(error, 409):
             log_message(f"Lakehouse '{name}' already exists. Fetching existing...")
@@ -335,12 +379,20 @@ def create_lakehouse(workspace_id: str, name: str) -> dict:
         raise
 
 
-def get_existing_lakehouse(workspace_id: str, name: str) -> dict:
-    """Find an existing lakehouse by name."""
+def find_lakehouse(workspace_id: str, name: str) -> dict | None:
+    """Find a lakehouse by display name, or return None if it does not exist."""
     for lakehouse in get_fabric_client().lakehouse.items.list_lakehouses(workspace_id):
         if lakehouse.display_name == name:
-            log_message(f"Found existing lakehouse: {lakehouse.id}")
             return {"id": lakehouse.id, "displayName": lakehouse.display_name}
+    return None
+
+
+def get_existing_lakehouse(workspace_id: str, name: str) -> dict:
+    """Find an existing lakehouse by name."""
+    existing = find_lakehouse(workspace_id, name)
+    if existing:
+        log_message(f"Found existing lakehouse: {existing['id']}")
+        return existing
     log_message(f"ERROR: Lakehouse '{name}' not found in workspace.")
     sys.exit(1)
 
@@ -1145,17 +1197,14 @@ def wait_for_ontology(
     workspace_id: str, name: str, timeout: int = 300, interval: int = 5
 ) -> dict:
     """Poll for an ontology by display name until its creation operation completes."""
-    deadline = time.monotonic() + timeout
-    while True:
-        existing = get_existing_ontology(workspace_id, name)
-        if existing:
-            return existing
-        if time.monotonic() >= deadline:
-            raise RuntimeError(
-                f"Timed out after {timeout}s waiting for ontology '{name}' "
-                f"to appear in workspace {workspace_id}."
-            )
-        time.sleep(interval)
+    return wait_for_created_item(
+        lambda: get_existing_ontology(workspace_id, name),
+        "ontology",
+        name,
+        workspace_id,
+        timeout,
+        interval,
+    )
 
 
 def create_or_get_ontology(workspace_id: str, name: str) -> dict:
