@@ -244,33 +244,6 @@ az bicep build --file infra/main.bicep --stdout > /dev/null
 azd show
 ```
 
-On a network that blocks `files.pythonhosted.org`, every one of these fails at the resolver with
-`Failed to fetch`. Managed Microsoft devices are configured this way. Point uv at an Azure Artifacts
-feed with a PyPI upstream, created by following
-[Consume packages from PyPI](https://learn.microsoft.com/azure/devops/artifacts/python/use-packages-from-pypi),
-using a personal access token carrying the **Packaging > Read** scope:
-
-```bash
-export UV_DEFAULT_INDEX="https://<FEED>:<TOKEN>@pkgs.dev.azure.com/<ORGANIZATION>/_packaging/<FEED>/pypi/simple/"
-```
-
-Insert the project name before `_packaging` for a project-scoped feed. Export the variable from your
-shell profile; never write the token into a `pip.conf`, lockfile, or anything else in the repository.
-The same variable applies to the per-agent `uv sync` and `uv lock` commands under `src/`, and to
-`uv run` for the notebooks.
-
-Two details differ from the linked article, which configures pip. It sets `extra-index-url`, which
-keeps pypi.org in the list and still fails when it is unreachable, so replace the default index
-instead. Its `artifacts-keyring` flow also cannot bootstrap itself here, because installing that
-package needs the very index it authenticates; once the feed resolves you can switch to
-`uv tool install keyring --with artifacts-keyring` with `UV_KEYRING_PROVIDER=subprocess` and drop the
-token from the URL.
-
-Prefer tools already present in the synced environment over installing new ones: a blocked index turns
-`uv run --with <package>` into a hard failure rather than a slow path. Note that a warm uv cache masks
-the problem entirely until you touch a genuinely new package, and that resolution succeeding before the
-download fails makes this look like a network flake rather than a blocked host.
-
 Validate the hosted-agent package separately:
 
 ```bash
