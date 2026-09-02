@@ -1193,18 +1193,7 @@ def get_existing_ontology(workspace_id: str, name: str) -> dict | None:
     return None
 
 
-def wait_for_ontology(
-    workspace_id: str, name: str, timeout: int = 300, interval: int = 5
-) -> dict:
-    """Poll for an ontology by display name until its creation operation completes."""
-    return wait_for_created_item(
-        lambda: get_existing_ontology(workspace_id, name),
-        "ontology",
-        name,
-        workspace_id,
-        timeout,
-        interval,
-    )
+
 
 
 def create_or_get_ontology(workspace_id: str, name: str) -> dict:
@@ -1242,7 +1231,12 @@ def create_or_get_ontology(workspace_id: str, name: str) -> dict:
     )
     # The SDK resolves this long running operation through an asynchronous done
     # callback, so the returned result is still empty here. Poll for the item.
-    created = wait_for_ontology(workspace_id, name)
+    created = wait_for_created_item(
+        lambda: get_existing_ontology(workspace_id, name),
+        "ontology",
+        name,
+        workspace_id,
+    )
     log_message(f"Ontology created: {created['id']}")
     return created
 
