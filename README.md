@@ -144,6 +144,15 @@ The dev container includes a Redis server, which is used by the `agent_history_r
     [the hosted Work IQ toolbox agent](#enable-the-hosted-work-iq-toolbox-agent).
     You can also set any of these later and re-run `azd provision`.
 
+    The Fabric scripts build portal links from `https://app.fabric.microsoft.com`. If your tenant uses a
+    different Fabric host, set it in the same way, before you provision:
+
+    ```shell
+    azd env set FABRIC_PORTAL_BASE_URL https://<your-fabric-host>
+    ```
+
+    This only affects the links that are printed and written to `.env`, not which resources are created.
+
 4. Provision the Azure resources:
 
     ```shell
