@@ -153,9 +153,9 @@ negotiates the endpoint's supported protocol version when `follow_redirects=True
 
 ## `begin_create_*` in microsoft-fabric-api cannot be waited on
 
-Verified against the pinned `microsoft-fabric-api==0.1.0b20`. The package ships **no async surface at all** — no
+Verified against the pinned `microsoft-fabric-api==0.1.0b20`. The package ships **no async surface at all**: no
 `aio` subpackage, no `async def begin_*`, no `AsyncLROPoller`, and no `asyncio` import anywhere in the
-distribution — so `await` is not an alternative to what follows. Polling is the only option.
+distribution, so `await` is not an alternative to what follows. Polling is the only option.
 
 `FabricClient.lakehouse` and `FabricClient.ontology` resolve to the `extensions` packages, not the `generated`
 ones. Their `begin_create_*` methods do **not** return the `LROPoller` their own docstrings and type hints
@@ -175,7 +175,7 @@ was given. Three consequences, none of which fail loudly:
 - The extractor has no `wait()`, `done()` or `result()`. Its `result` is a **property**, so `.result()` calls
   whatever the property returned and raises `TypeError: 'Lakehouse' object is not callable`.
 - There is no way to block on it. `.result` is `None` while the create is in flight, so the only option is to spin
-  on it — which is exactly what the SDK's own blocking `create_ontology` / `create_lakehouse` wrappers do, in an
+  on it, which is exactly what the SDK's own blocking `create_ontology` / `create_lakehouse` wrappers do, in an
   **unbounded** `while extractor.result is None: time.sleep(5)`. Registration order is *not* the problem here:
   `add_done_callback` invokes the callback immediately when the operation has already finished, so a create that
   succeeds populates the extractor either way.
