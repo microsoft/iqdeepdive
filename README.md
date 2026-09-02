@@ -34,6 +34,7 @@ All of the infrastructure for deployment is included in the repository, using th
   * [Seed sample mailbox data](#seed-sample-mailbox-data)
 * [Run the notebooks](#run-the-notebooks)
 * [Run and invoke the agents](#run-and-invoke-the-agents)
+* [Build an ontology over your own papers](#build-an-ontology-over-your-own-papers)
 * [Resources](#resources)
 
 ## Azure account requirements
@@ -416,6 +417,20 @@ azd ai agent invoke agent-toolbox-workiq \
 Direct source deployment is used because the final agent requires no custom OS packages. Foundry's
 remote build resolves each agent folder's `pyproject.toml` and `uv.lock`, avoiding an unnecessary
 container registry and image-build path.
+
+## Build an ontology over your own papers
+
+A companion example points the same two IQ surfaces at a literature of your own. It builds a citation
+graph, a Fabric Graph Model, a Fabric ontology and a Foundry IQ knowledge base from nothing but a list of
+arXiv ids. It is kept outside this repository so that the core sample stays small:
+
+* [Research literature track](https://github.com/hieunhums/iqdeepdive/tree/research-literature-track),
+  with the
+  [walkthrough](https://github.com/hieunhums/iqdeepdive/blob/research-literature-track/README.md#build-an-ontology-over-your-own-papers)
+
+Twenty seed papers expand to 119 papers and 1,077 authors by crawling one hop in each direction, plus the
+methods, tasks, datasets, metrics and reported limitations extracted from the seed set. Swapping in a
+different literature is a one-file edit, and the Foundry IQ half runs without a Fabric capacity.
 
 ## Resources
 
