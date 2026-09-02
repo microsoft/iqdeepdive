@@ -33,7 +33,7 @@ FABRIC_WORKSPACE_ID = os.getenv("FABRIC_WORKSPACE_ID", "").strip()
 LAKEHOUSE_NAME = os.getenv("LAKEHOUSE_NAME", "ContosoDIYLakehouse")
 FABRIC_GRAPH_NAME = os.getenv("FABRIC_GRAPH_NAME", "ContosoDIYReviewGraph")
 FABRIC_PORTAL_BASE_URL = os.getenv(
-    "FABRIC_PORTAL_BASE_URL", "https://msit.powerbi.com"
+    "FABRIC_PORTAL_BASE_URL", "https://app.fabric.microsoft.com"
 ).rstrip("/")
 FABRIC_API_URL = "https://api.fabric.microsoft.com"
 REFRESH_TIMEOUT_SECONDS = 300

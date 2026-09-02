@@ -14,7 +14,7 @@ Environment variables (from .env):
   FABRIC_WORKSPACE_ID  - Existing Fabric workspace GUID
   FABRIC_CAPACITY_ID   - Fabric capacity GUID or ARM resource ID for workspace creation
     FABRIC_TENANT_ID     - Required Microsoft Entra tenant ID for Fabric auth
-    FABRIC_PORTAL_BASE_URL - Fabric UI host (default: https://msit.powerbi.com)
+    FABRIC_PORTAL_BASE_URL - Fabric UI host (default: https://app.fabric.microsoft.com)
     LAKEHOUSE_NAME       - Name for the lakehouse (default: ContosoDIYLakehouse)
   FABRIC_ONTOLOGY_ID   - Existing ontology GUID to update, if known
     FABRIC_ONTOLOGY_NAME - Name for the ontology (default: ContosoDIYOntology)
@@ -31,9 +31,11 @@ import io
 import json
 import os
 import sys
+import time
 import traceback
 import uuid
 import warnings
+from collections.abc import Callable
 from datetime import datetime, timedelta
 
 import requests
@@ -78,7 +80,7 @@ WORKSPACE_NAME = os.getenv("FABRIC_WORKSPACE_NAME", "ContosoDIYWorkspace")
 FABRIC_CAPACITY_ID = os.getenv("FABRIC_CAPACITY_ID", "")
 FABRIC_TENANT_ID = os.getenv("FABRIC_TENANT_ID", "").strip()
 FABRIC_PORTAL_BASE_URL = os.getenv(
-    "FABRIC_PORTAL_BASE_URL", "https://msit.powerbi.com"
+    "FABRIC_PORTAL_BASE_URL", "https://app.fabric.microsoft.com"
 ).rstrip("/")
 FABRIC_ONTOLOGY_ID = os.getenv("FABRIC_ONTOLOGY_ID", "")
 FABRIC_ONTOLOGY_NAME = os.getenv("FABRIC_ONTOLOGY_NAME", "ContosoDIYOntology")
@@ -312,15 +314,58 @@ def add_workspace_member(workspace_id: str, user_oid: str, user_email: str, role
             log_message(f"WARNING: Failed to add user to workspace: {error}")
 
 
+def wait_for_created_item(
+    finder: Callable[[], dict | None],
+    kind: str,
+    name: str,
+    workspace_id: str,
+    timeout: int = 300,
+    interval: int = 5,
+) -> dict:
+    """Poll for an item created by a long running operation, by display name.
+
+    `microsoft-fabric-api` (0.1.0b20) does not return the `LROPoller` for these creates.
+    It attaches an `_LROResultExtractor` as a done callback and returns that instead, so
+    there is nothing to wait on: `result` is a property that stays empty while the create
+    is in flight, and the package ships no async variant to await either. The SDK's own
+    blocking wrappers spin on that property without a deadline. That is safe only while
+    the create succeeds -- because nothing ever calls `LROPoller.wait()`, a *failed*
+    operation is never re-raised and the property stays empty forever, which is why the
+    timeout below cannot assume the item is merely slow.
+    """
+    deadline = time.monotonic() + timeout
+    while True:
+        existing = finder()
+        if existing:
+            return existing
+        if time.monotonic() >= deadline:
+            raise RuntimeError(
+                f"Gave up after {timeout}s waiting for {kind} '{name}' to appear in "
+                f"workspace {workspace_id}. The create either is still running or "
+                f"failed: the Fabric SDK discards the poller for this operation, so a "
+                f"failure is not raised here. Check the {kind} in the Fabric portal, "
+                f"and confirm the workspace is on a supported, active capacity."
+            )
+        time.sleep(interval)
+
+
 def create_lakehouse(workspace_id: str, name: str) -> dict:
     """Create a lakehouse in the specified workspace."""
     log_message(f"Creating lakehouse '{name}'...")
     try:
-        lakehouse = get_fabric_client().lakehouse.items.begin_create_lakehouse(
+        get_fabric_client().lakehouse.items.begin_create_lakehouse(
             workspace_id, CreateLakehouseRequest(display_name=name)
-        ).result()
-        log_message(f"Lakehouse created: {lakehouse.id}")
-        return {"id": lakehouse.id, "displayName": lakehouse.display_name}
+        )
+        # `result` is populated by a done callback that has usually already fired for a
+        # lakehouse, but relying on that is a race. Resolve the item by name instead.
+        created = wait_for_created_item(
+            lambda: find_lakehouse(workspace_id, name),
+            "lakehouse",
+            name,
+            workspace_id,
+        )
+        log_message(f"Lakehouse created: {created['id']}")
+        return created
     except HttpResponseError as error:
         if is_http_status(error, 409):
             log_message(f"Lakehouse '{name}' already exists. Fetching existing...")
@@ -334,12 +379,20 @@ def create_lakehouse(workspace_id: str, name: str) -> dict:
         raise
 
 
-def get_existing_lakehouse(workspace_id: str, name: str) -> dict:
-    """Find an existing lakehouse by name."""
+def find_lakehouse(workspace_id: str, name: str) -> dict | None:
+    """Find a lakehouse by display name, or return None if it does not exist."""
     for lakehouse in get_fabric_client().lakehouse.items.list_lakehouses(workspace_id):
         if lakehouse.display_name == name:
-            log_message(f"Found existing lakehouse: {lakehouse.id}")
             return {"id": lakehouse.id, "displayName": lakehouse.display_name}
+    return None
+
+
+def get_existing_lakehouse(workspace_id: str, name: str) -> dict:
+    """Find an existing lakehouse by name."""
+    existing = find_lakehouse(workspace_id, name)
+    if existing:
+        log_message(f"Found existing lakehouse: {existing['id']}")
+        return existing
     log_message(f"ERROR: Lakehouse '{name}' not found in workspace.")
     sys.exit(1)
 
@@ -1140,6 +1193,9 @@ def get_existing_ontology(workspace_id: str, name: str) -> dict | None:
     return None
 
 
+
+
+
 def create_or_get_ontology(workspace_id: str, name: str) -> dict:
     """Create a Fabric IQ ontology item, or reuse an existing one with the same name."""
     if FABRIC_ONTOLOGY_ID:
@@ -1166,15 +1222,23 @@ def create_or_get_ontology(workspace_id: str, name: str) -> dict:
         return existing
 
     log_message(f"Creating ontology '{name}'...")
-    ontology = get_fabric_client().ontology.items.begin_create_ontology(
+    get_fabric_client().ontology.items.begin_create_ontology(
         workspace_id,
         CreateOntologyRequest(
             display_name=name,
             description="Ontology for the Contoso DIY lakehouse data.",
         ),
-    ).result()
-    log_message(f"Ontology created: {ontology.id}")
-    return {"id": ontology.id, "displayName": ontology.display_name}
+    )
+    # The SDK resolves this long running operation through an asynchronous done
+    # callback, so the returned result is still empty here. Poll for the item.
+    created = wait_for_created_item(
+        lambda: get_existing_ontology(workspace_id, name),
+        "ontology",
+        name,
+        workspace_id,
+    )
+    log_message(f"Ontology created: {created['id']}")
+    return created
 
 
 def update_ontology_definition(

@@ -112,14 +112,33 @@ def exercise_lakehouse_create(client: FabricClient, workspace_id: str) -> None:
 
     print(f"\nCreating temporary lakehouse: {probe_name}")
     try:
-        poller = client.lakehouse.items.begin_create_lakehouse(
+        extractor = client.lakehouse.items.begin_create_lakehouse(
             workspace_id,
             CreateLakehouseRequest(
                 display_name=probe_name,
                 description="Temporary microsoft-fabric-api SDK probe.",
             ),
         )
-        lakehouse = poller.result()
+        # `begin_create_*` returns an `_LROResultExtractor`, not an `LROPoller`. Its
+        # `result` is a property filled in by a done callback, so whether it is populated
+        # here depends on whether the operation finished first. Report which happened.
+        lakehouse = extractor.result
+        if lakehouse is None:
+            print("  extractor.result was empty; resolving by name instead")
+            lakehouse = next(
+                (
+                    item
+                    for item in client.lakehouse.items.list_lakehouses(workspace_id)
+                    if display_name(item) == probe_name
+                ),
+                None,
+            )
+            if lakehouse is None:
+                raise RuntimeError(
+                    f"Lakehouse '{probe_name}' did not appear after creation."
+                )
+        else:
+            print("  extractor.result was populated by the done callback")
         probe_id = item_id(lakehouse)
         retrieved = client.lakehouse.items.get_lakehouse(workspace_id, probe_id)
         print(f"Created and retrieved: {display_name(retrieved)} ({probe_id})")

@@ -29,7 +29,7 @@ SEMANTIC_MODEL_NAME = os.getenv(
     "FABRIC_WEB_ANALYTICS_SEMANTIC_MODEL_NAME", "ContosoWebAnalytics"
 )
 FABRIC_PORTAL_BASE_URL = os.getenv(
-    "FABRIC_PORTAL_BASE_URL", "https://msit.powerbi.com"
+    "FABRIC_PORTAL_BASE_URL", "https://app.fabric.microsoft.com"
 ).rstrip("/")
 
 
