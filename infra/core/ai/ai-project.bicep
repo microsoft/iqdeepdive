@@ -211,6 +211,7 @@ output search object = {
   serviceName: azureAiSearch.outputs.searchServiceName
   serviceEndpoint: 'https://${azureAiSearch.outputs.searchServiceName}.search.windows.net'
   connectionName: azureAiSearch.outputs.searchConnectionName
+  principalId: azureAiSearch.outputs.searchServicePrincipalId
 }
 output storage object = {
   accountName: storage.outputs.storageAccountName

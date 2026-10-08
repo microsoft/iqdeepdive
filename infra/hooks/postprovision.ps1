@@ -5,6 +5,8 @@ uv run --locked python infra/setup-env.py
 
 Write-Host "Creating the shared Search indexes and the HR agent knowledge base..."
 if ($env:ENABLE_WORK_IQ_KB_TOOLBOX -eq "true") {
+    Write-Host "Creating the Work IQ Entra application and federated credential for Azure AI Search..."
+    uv run --locked python infra/create-workiq-entra.py --apply
     uv run --locked python infra/create-search-indexes.py --include-workiq
 } else {
     uv run --locked python infra/create-search-indexes.py

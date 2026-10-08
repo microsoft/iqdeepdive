@@ -208,26 +208,25 @@ Provisioning writes the generated identifiers and portal links to `.env`:
 ### Enable Work IQ retrieval for Azure AI Search
 
 The `foundryiq-workiq.ipynb` notebook and the Work IQ knowledge base use a Work IQ knowledge source in
-Azure AI Search. This preview is disabled by
-default and must be approved by Microsoft. An identity with Owner or Contributor on the subscription
-must register the preview feature and then re-register the Search resource provider:
+Azure AI Search. Azure AI Search authenticates to Work IQ as a customer-owned Microsoft Entra app through a
+federated credential that trusts the Search service's managed identity. Work IQ usage is billed through
+Copilot credits.
 
-```bash
-az feature register \
-  --namespace Microsoft.Search \
-  --name EnableFoundryIQWithWorkIQ \
-  --subscription "<subscription-id>"
-az provider register \
-  --namespace Microsoft.Search \
-  --subscription "<subscription-id>"
-```
+Prerequisites:
 
-A Microsoft Entra administrator must also submit the
-[Work IQ access request form](https://aka.ms/foundry-iq-work-iq-admin-consent-form). The subscription
-role holder and Entra administrator can be different people. Wait for Microsoft to approve the request
-before running the Work IQ notebooks. See
-[Request access to Work IQ retrieval](https://learn.microsoft.com/azure/search/agentic-knowledge-source-how-to-work-iq#request-access-to-work-iq-retrieval)
-for the current requirements.
+- A usage-based billing plan (Copilot credits) for Work IQ configured in Copilot Studio, with each user
+  assigned to it.
+- A Microsoft Entra Global Administrator who enables the Work IQ API in the tenant.
+- An identity running `azd provision` with the Cloud Application Administrator role, or the Microsoft Graph
+  application permissions `Application.ReadWrite.All`, `DelegatedPermissionGrant.ReadWrite.All`, and
+  `Directory.Read.All`.
+
+`infra/create-workiq-entra.py` runs from the postprovision hook when `ENABLE_WORK_IQ_KB_TOOLBOX` is `true`.
+It creates or reuses a single-tenant Entra app that exposes `access_as_user`, grants tenant-wide admin consent
+for `WorkIQAgent.Ask`, adds the federated credential for the Search identity (`SEARCH_SERVICE_PRINCIPAL_ID`),
+and writes `WORK_IQ_ENTRA_APP_ID`, `WORK_IQ_ENTRA_TENANT_ID`, and `WORK_IQ_FEDERATED_CREDENTIAL_ID` to `.env`.
+No client secret is created. See
+[Create a Work IQ knowledge source](https://learn.microsoft.com/azure/search/agentic-knowledge-source-how-to-work-iq).
 
 ### Enable the hosted Foundry IQ Work IQ agent
 

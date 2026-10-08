@@ -14,6 +14,7 @@ from azure.search.documents.indexes.aio import SearchIndexClient
 from azure.search.documents.indexes.models import (
     AzureOpenAIVectorizer,
     AzureOpenAIVectorizerParameters,
+    EntraAppAuthentication,
     KnowledgeBase,
     KnowledgeBaseAzureOpenAIModel,
     KnowledgeSourceReference,
@@ -22,6 +23,7 @@ from azure.search.documents.indexes.models import (
     SearchIndexKnowledgeSource,
     SearchIndexKnowledgeSourceParameters,
     WorkIQKnowledgeSource,
+    WorkIQKnowledgeSourceParameters,
 )
 from azure.search.documents.knowledgebases.models import (
     KnowledgeRetrievalLowReasoningEffort,
@@ -170,6 +172,13 @@ async def create_workiq_knowledge_base(
             knowledge_source=WorkIQKnowledgeSource(
                 name=workiq_source_name,
                 description="Microsoft 365 workplace context for the signed-in user.",
+                work_iq_parameters=WorkIQKnowledgeSourceParameters(
+                    entra_app_authentication=EntraAppAuthentication(
+                        application_id=os.environ["WORK_IQ_ENTRA_APP_ID"],
+                        federated_credential_id=os.environ["WORK_IQ_FEDERATED_CREDENTIAL_ID"],
+                        tenant_id=os.getenv("WORK_IQ_ENTRA_TENANT_ID") or os.environ["AZURE_TENANT_ID"],
+                    )
+                ),
             )
         )
 

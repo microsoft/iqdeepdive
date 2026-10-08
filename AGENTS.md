@@ -74,6 +74,9 @@ Fabric API. Provisioning creates or updates the TMDL and PBIR definitions by dis
   endpoint, creates or updates the Direct Lake semantic model, and writes its ID and portal URL to `.env`.
 - `infra/create-web-analytics-report.py`: binds the source-controlled PBIR definition to the semantic model,
   creates or updates the Power BI report, and writes its ID and portal URL to `.env`.
+- `infra/create-workiq-entra.py`: opt-in (`ENABLE_WORK_IQ_KB_TOOLBOX`) Graph setup of the Entra app and federated
+  credential that Azure AI Search uses to authenticate the Work IQ knowledge source. It writes
+  `WORK_IQ_ENTRA_APP_ID`, `WORK_IQ_ENTRA_TENANT_ID`, and `WORK_IQ_FEDERATED_CREDENTIAL_ID` to `.env`.
 - `infra/create-toolbox-workiq.py`: opt-in Graph SDK setup for the Work IQ service principal, single-tenant Entra
   app, delegated consent, OAuth2 `RemoteA2A` connection, callback URI, and separate Work IQ toolbox.
 - `infra/create-lakehouse.py`: creates optional Fabric lakehouse and ontology resources.

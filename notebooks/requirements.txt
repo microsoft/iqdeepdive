@@ -1,6 +1,6 @@
 aiohttp>=3.13.5
 azure-identity==1.25.2
-azure-search-documents==12.1.0b1
+azure-search-documents==12.1.0b2
 azure-storage-file-datalake==12.23.0
 httpx>=0.28.1
 ipykernel==7.3.0

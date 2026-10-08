@@ -135,6 +135,8 @@ output AZURE_AI_SEARCH_SERVICE_NAME string = aiProject.outputs.search.serviceNam
 output AZURE_AI_SEARCH_SERVICE_ENDPOINT string = aiProject.outputs.search.serviceEndpoint
 output AZURE_SEARCH_SERVICE_NAME string = aiProject.outputs.search.serviceName
 output AZURE_SEARCH_SERVICE_ENDPOINT string = aiProject.outputs.search.serviceEndpoint
+@description('Azure AI Search system-assigned managed identity principal ID (federated credential subject for Work IQ)')
+output SEARCH_SERVICE_PRINCIPAL_ID string = aiProject.outputs.search.principalId
 
 output AZURE_STORAGE_CONNECTION_NAME string = aiProject.outputs.storage.connectionName
 output AZURE_STORAGE_ACCOUNT_NAME string = aiProject.outputs.storage.accountName
