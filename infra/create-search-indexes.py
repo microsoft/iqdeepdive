@@ -174,9 +174,9 @@ async def create_workiq_knowledge_base(
                 description="Microsoft 365 workplace context for the signed-in user.",
                 work_iq_parameters=WorkIQKnowledgeSourceParameters(
                     entra_app_authentication=EntraAppAuthentication(
-                        application_id=os.environ["WORK_IQ_ENTRA_APP_ID"],
-                        federated_credential_id=os.environ["WORK_IQ_FEDERATED_CREDENTIAL_ID"],
-                        tenant_id=os.getenv("WORK_IQ_ENTRA_TENANT_ID") or os.environ["AZURE_TENANT_ID"],
+                        application_id=os.environ["WORK_IQ_SEARCH_ENTRA_APP_ID"],
+                        federated_credential_id=os.environ["WORK_IQ_SEARCH_FEDERATED_CREDENTIAL_ID"],
+                        tenant_id=os.getenv("WORK_IQ_SEARCH_ENTRA_TENANT_ID") or os.environ["AZURE_TENANT_ID"],
                     )
                 ),
             )

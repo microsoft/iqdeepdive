@@ -7,9 +7,9 @@ tenant-wide admin consent, and creates a federated credential for the search ser
 
 It writes these non-secret values to .env for the notebook and knowledge base helper:
 
-- WORK_IQ_ENTRA_APP_ID: application (client) ID
-- WORK_IQ_ENTRA_TENANT_ID: directory (tenant) ID of the app
-- WORK_IQ_FEDERATED_CREDENTIAL_ID: object ID of the federated credential
+- WORK_IQ_SEARCH_ENTRA_APP_ID: application (client) ID
+- WORK_IQ_SEARCH_ENTRA_TENANT_ID: directory (tenant) ID of the app
+- WORK_IQ_SEARCH_FEDERATED_CREDENTIAL_ID: object ID of the federated credential
 
 No client secret is created. The signed-in user always authorizes retrieval, so Work IQ honors
 Microsoft 365 permissions. See:
@@ -336,11 +336,11 @@ def create_federated_credential(
 def save_env(app_id: str, tenant_id: str, federated_credential_id: str) -> None:
     """Persist the non-secret Work IQ values to .env."""
     ENV_PATH.touch()
-    set_key(ENV_PATH, "WORK_IQ_ENTRA_APP_ID", app_id, quote_mode="never")
-    set_key(ENV_PATH, "WORK_IQ_ENTRA_TENANT_ID", tenant_id, quote_mode="never")
+    set_key(ENV_PATH, "WORK_IQ_SEARCH_ENTRA_APP_ID", app_id, quote_mode="never")
+    set_key(ENV_PATH, "WORK_IQ_SEARCH_ENTRA_TENANT_ID", tenant_id, quote_mode="never")
     set_key(
         ENV_PATH,
-        "WORK_IQ_FEDERATED_CREDENTIAL_ID",
+        "WORK_IQ_SEARCH_FEDERATED_CREDENTIAL_ID",
         federated_credential_id,
         quote_mode="never",
     )
@@ -351,14 +351,14 @@ def apply() -> None:
     tenant_id = require_env("AZURE_TENANT_ID")
     search_principal_id = require_env("SEARCH_SERVICE_PRINCIPAL_ID")
     search_service_name = require_env("AZURE_AI_SEARCH_SERVICE_NAME")
-    display_name = os.getenv("WORK_IQ_ENTRA_APP_NAME", f"IQDeepDive-WorkIQ-{search_service_name}")
+    display_name = os.getenv("WORK_IQ_SEARCH_ENTRA_APP_NAME", f"IQDeepDive-WorkIQ-{search_service_name}")
 
     graph = GraphClient(create_credential(tenant_id))
 
     work_iq_sp = get_or_create_work_iq_sp(graph)
     scope_id = work_iq_scope_id(work_iq_sp)
 
-    application = find_application(graph, os.getenv("WORK_IQ_ENTRA_APP_ID", ""), display_name)
+    application = find_application(graph, os.getenv("WORK_IQ_SEARCH_ENTRA_APP_ID", ""), display_name)
     if application:
         print(f"Reusing Work IQ application {application['appId']}.")
     else:
@@ -378,8 +378,8 @@ def apply() -> None:
 
     save_env(application["appId"], tenant_id, federated_credential_id)
     print("Work IQ Entra app configured.")
-    print(f"  WORK_IQ_ENTRA_APP_ID={application['appId']}")
-    print(f"  WORK_IQ_FEDERATED_CREDENTIAL_ID={federated_credential_id}")
+    print(f"  WORK_IQ_SEARCH_ENTRA_APP_ID={application['appId']}")
+    print(f"  WORK_IQ_SEARCH_FEDERATED_CREDENTIAL_ID={federated_credential_id}")
 
 
 def dry_run() -> None:

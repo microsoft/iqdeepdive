@@ -224,7 +224,7 @@ Prerequisites:
 `infra/create-workiq-entra.py` runs from the postprovision hook when `ENABLE_WORK_IQ_KB_TOOLBOX` is `true`.
 It creates or reuses a single-tenant Entra app that exposes `access_as_user`, grants tenant-wide admin consent
 for `WorkIQAgent.Ask`, adds the federated credential for the Search identity (`SEARCH_SERVICE_PRINCIPAL_ID`),
-and writes `WORK_IQ_ENTRA_APP_ID`, `WORK_IQ_ENTRA_TENANT_ID`, and `WORK_IQ_FEDERATED_CREDENTIAL_ID` to `.env`.
+and writes `WORK_IQ_SEARCH_ENTRA_APP_ID`, `WORK_IQ_SEARCH_ENTRA_TENANT_ID`, and `WORK_IQ_SEARCH_FEDERATED_CREDENTIAL_ID` to `.env`.
 No client secret is created. See
 [Create a Work IQ knowledge source](https://learn.microsoft.com/azure/search/agentic-knowledge-source-how-to-work-iq).
 
