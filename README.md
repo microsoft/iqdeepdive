@@ -44,8 +44,9 @@ In order to run all of the examples, you will need a tenant with multiple licens
 * Quota in one region for `gpt-5.4`, and `text-embedding-3-large`
 * For Fabric IQ notebooks: A Fabric-capable tenant and a Fabric/Power BI license (or active Fabric trial), with permission to create an F2 capacity
 * For Web IQ notebook: Access to the private preview with an assigned `WEB_IQ_KEY`
-* For Work IQ notebooks and agents: A Microsoft 365 Copilot license for each caller, a tenant enabled for Work IQ,
+* For Work IQ notebooks and agents: Work IQ access for each caller (a Microsoft 365 Copilot license for the direct notebooks and agents, and a Copilot credits plan for Work IQ through Azure AI Search), a tenant enabled for Work IQ,
   and a Global Administrator for the one-time Entra app registration and admin consent
+* For Work IQ through Azure AI Search: the Search service's managed identity must be in the same tenant as your subscription (`az search service show --query identity.tenantId`). A service whose identity belongs to another tenant, for example after a subscription tenant move, cannot authenticate to Azure OpenAI or Work IQ.
 
 ## Getting started
 
@@ -222,7 +223,9 @@ Prerequisites:
   `Directory.Read.All`.
 
 `infra/create-workiq-entra.py` runs from the postprovision hook when `ENABLE_WORK_IQ_KB_TOOLBOX` is `true`.
-It creates or reuses a single-tenant Entra app that exposes `access_as_user`, grants tenant-wide admin consent
+It is used by the `foundryiq-workiq.ipynb` notebook and other callers that can pass the user assertion as
+`query_work_iq_source_authorization` together with a Search-scoped user token as `query_source_authorization`.
+Both are required: without the Search token, Work IQ results are withheld. The script creates or reuses a single-tenant Entra app that exposes `access_as_user`, grants tenant-wide admin consent
 for `WorkIQAgent.Ask`, adds the federated credential for the Search identity (`SEARCH_SERVICE_PRINCIPAL_ID`),
 and writes `WORK_IQ_SEARCH_ENTRA_APP_ID`, `WORK_IQ_SEARCH_ENTRA_TENANT_ID`, and `WORK_IQ_SEARCH_FEDERATED_CREDENTIAL_ID` to `.env`.
 No client secret is created. See
@@ -241,10 +244,12 @@ azd ai agent invoke agent-toolbox-foundryiq-workiq \
   "Search my recent emails for Professional Claw Hammer and summarize requested actions. Use the knowledge base and its Work IQ source."
 ```
 
-Postprovision creates `workiq-knowledge-source`, combines it with the shared HR and health index
-sources in `multisource-workiq-knowledge-base`, and publishes `workiq-knowledge-tools`. The notebook
-`foundryiq-workiq.ipynb` remains an independent walkthrough of the same Search configuration and is
-not required to deploy the agent.
+Postprovision creates `workiq-toolbox-knowledge-source`, combines it with the shared HR and health index
+sources in `multisource-workiq-knowledge-base`, and publishes `workiq-knowledge-tools`. This source does not
+use the Entra app: Toolbox forwards only the signed-in user's Search-scoped token, and an Entra-app source
+also requires the `x-ms-query-work-iq-source-authorization` assertion, which Toolbox cannot send. The
+notebook `foundryiq-workiq.ipynb` uses the Entra-app source and its own `multisource-workiq-entra-knowledge-base`,
+so it does not change the agent's knowledge base and is not required to deploy the agent.
 
 The dedicated `workiq-kb-mcp-connection` must target the same knowledge-base MCP URL used by the
 Toolbox tool. Do not reuse `kb-mcp-connection`, whose target is `contoso-company-kb-minimal`. Toolbox uses the

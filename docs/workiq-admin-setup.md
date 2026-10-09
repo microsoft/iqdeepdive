@@ -59,6 +59,20 @@ Entra app, the `work-iq-connection` RemoteA2A connection, and the `work-iq-tools
 grants the admin consent above automatically when run by a Global Administrator. See the
 [Work IQ tool docs](https://learn.microsoft.com/azure/foundry/agents/how-to/tools/work-iq).
 
+If multiple projects share one Foundry resource, set `WORK_IQ_CONNECTION_NAME` to a unique value
+before provisioning because connection names are unique across the parent resource. Override
+`CUSTOM_FOUNDRY_WORKIQ_TOOLBOX_NAME` when the toolbox also needs an environment-specific name.
+
+## Which Entra app is which
+
+This repository uses three separate Work IQ Entra apps:
+
+| App | Created by | Env vars | Used by |
+|---|---|---|---|
+| Direct client (`ENTRA_APP_ID`) | This guide | `ENTRA_APP_ID`, `ENTRA_TENANT_ID` | `workiq-*` notebooks, called directly against the Work IQ gateway |
+| `RemoteA2A` connection app | `infra/create-toolbox-workiq.py` | `WORK_IQ_ENTRA_APP_ID` | `agent-toolbox-workiq`, `agent-workiq-maf` |
+| Azure AI Search app | `infra/create-workiq-entra.py` | `WORK_IQ_SEARCH_ENTRA_*` | `foundryiq-workiq.ipynb` (Search calls Work IQ through a federated credential, billed with Copilot credits) |
+
 ## Troubleshooting
 
 | Symptom | Fix |
