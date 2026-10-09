@@ -262,16 +262,16 @@ wheels = [
 
 [[package]]
 name = "azure-search-documents"
-version = "12.1.0b1"
+version = "12.1.0b2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "azure-core" },
     { name = "isodate" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/64/e7/844213c704b4731106a46e1c0a826be8ee8100449d37c9b3d6a0196c964a/azure_search_documents-12.1.0b1.tar.gz", hash = "sha256:ac342de0df9e6f52aea92e0eae2b905cb75573ca2538670fbbc0e9bbc64b3076", size = 465181, upload-time = "2026-05-28T21:52:56.844Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/86/bf/af84127683331d25590cc6294263049756303ded29175c9589bc5a7aafcc/azure_search_documents-12.1.0b2.tar.gz", hash = "sha256:6113e1feafbb76ac6e3876b4fa93eb998da227e71a85cf263307585f7161d032", size = 647484, upload-time = "2026-08-28T23:19:32.792Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d1/7f/30452e4f2d6cf41a2eee7150f6b5f4b5b1cd22cc3b73525b19479c6cd421/azure_search_documents-12.1.0b1-py3-none-any.whl", hash = "sha256:b701848b9994c81a16b6acfcdf8a33e5fe0e6a39f1b0e2a4bd07d67a4990117a", size = 403824, upload-time = "2026-05-28T21:52:58.59Z" },
+    { url = "https://files.pythonhosted.org/packages/a5/ea/d8286fcbb791de68c10824dbf6e727430ef517540cc636c88d0514903312/azure_search_documents-12.1.0b2-py3-none-any.whl", hash = "sha256:bd18655b5bff6f9b4f57ea3e70122498fd1aedae0eb10636d11aedfd8db1b6aa", size = 515140, upload-time = "2026-08-28T23:19:34.544Z" },
 ]
 
 [[package]]
@@ -857,7 +857,7 @@ requires-dist = [
     { name = "azure-ai-projects", specifier = ">=2.3.0,<2.4.0" },
     { name = "azure-identity", specifier = ">=1.25.2" },
     { name = "azure-mgmt-authorization", specifier = ">=4.0.0" },
-    { name = "azure-search-documents", specifier = "==12.1.0b1" },
+    { name = "azure-search-documents", specifier = "==12.1.0b2" },
     { name = "azure-storage-file-datalake", specifier = ">=12.23.0" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "ipykernel", specifier = "==7.3.0" },
@@ -1409,7 +1409,7 @@ name = "pexpect"
 version = "4.9.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "ptyprocess", marker = "sys_platform != 'win32'" },
+    { name = "ptyprocess" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/42/92/cc564bf6381ff43ce1f4d06852fc19a2f11d180f23dc32d9588bee2f149d/pexpect-4.9.0.tar.gz", hash = "sha256:ee7d41123f3c9911050ea2c2dac107568dc43b2d3b0c7557a33212c398ead30f", size = 166450, upload-time = "2023-11-25T09:07:26.339Z" }
 wheels = [
