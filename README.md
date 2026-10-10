@@ -247,7 +247,10 @@ azd ai agent invoke agent-toolbox-foundryiq-workiq \
 Postprovision creates `workiq-toolbox-knowledge-source`, combines it with the shared HR and health index
 sources in `multisource-workiq-knowledge-base`, and publishes `workiq-knowledge-tools`. This source does not
 use the Entra app: Toolbox forwards only the signed-in user's Search-scoped token, and an Entra-app source
-also requires the `x-ms-query-work-iq-source-authorization` assertion, which Toolbox cannot send. The
+also requires the `x-ms-query-work-iq-source-authorization` assertion, which Toolbox cannot send. The Learn
+page documents the Copilot credits plan and the Entra app for the `2026-08-01-preview` Work IQ knowledge source,
+and this older source is created with the `2026-05-01-preview` API, so callers of this agent need a
+Microsoft 365 Copilot license rather than relying on Copilot credits. The
 notebook `foundryiq-workiq.ipynb` uses the Entra-app source and its own `multisource-workiq-entra-knowledge-base`,
 so it does not change the agent's knowledge base and is not required to deploy the agent.
 

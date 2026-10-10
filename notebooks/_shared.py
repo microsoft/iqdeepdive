@@ -56,6 +56,12 @@ def get_user_token() -> str:
             if "user_code" not in flow:
                 raise RuntimeError(f"Device flow failed: {flow.get('error_description', flow)}")
             print(flow["message"])
+            try:
+                import webbrowser
+
+                webbrowser.open(f"{flow['verification_uri']}?otc={flow['user_code']}")
+            except Exception:
+                pass
             result = app.acquire_token_by_device_flow(flow)
         else:
             result = app.acquire_token_interactive(scopes)

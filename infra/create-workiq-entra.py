@@ -43,6 +43,7 @@ WORK_IQ_SCOPE_ID_FALLBACK = "0b1715fd-f4bf-4c63-b16d-5be31f9847c2"
 
 # Scope the notebook requests through the customer-owned app.
 CLIENT_SCOPE = "access_as_user"
+AZURE_CLI_CLIENT_ID = "04b07795-8ddb-461a-bbee-02f9e1bf7b46"
 TOKEN_EXCHANGE_AUDIENCE = "api://AzureADTokenExchange"
 
 # Retry Graph throttling and transient errors, and wait for newly created objects to replicate.
@@ -227,10 +228,12 @@ def create_application(graph: GraphClient, display_name: str, work_iq_scope: str
 
 
 def configure_application(graph: GraphClient, application: dict) -> None:
-    """Set the identifier URI and pre-authorize the app as its own client.
+    """Set the identifier URI and pre-authorize the sign-in clients for access_as_user.
 
-    This lets the notebook request api://<app-id>/access_as_user without an extra consent
-    prompt. It is idempotent, so a rerun completes an app that a previous run left unfinished.
+    The app itself and the Azure CLI client (the default client of azure-identity's interactive and
+    device code credentials) are pre-authorized. A notebook can then sign the user in once and request both
+    the Azure AI Search token and api://<app-id>/access_as_user without an extra consent prompt. It is
+    idempotent, so a rerun completes an app that a previous run left unfinished.
     """
     app_id = application["appId"]
     scopes = (application.get("api") or {}).get("oauth2PermissionScopes") or []
@@ -239,10 +242,13 @@ def configure_application(graph: GraphClient, application: dict) -> None:
         raise RuntimeError(f"Application {app_id} does not expose the {CLIENT_SCOPE} scope.")
     identifier = f"api://{app_id}"
     authorized = (application.get("api") or {}).get("preAuthorizedApplications") or []
-    if identifier in (application.get("identifierUris") or []) and any(
-        item.get("appId") == app_id for item in authorized
+    wanted = [app_id, AZURE_CLI_CLIENT_ID]
+    if identifier in (application.get("identifierUris") or []) and all(
+        any(item.get("appId") == client for item in authorized) for client in wanted
     ):
         return
+    kept = [item for item in authorized if item.get("appId") not in wanted]
+    pre_authorized = [*kept, *({"appId": client, "delegatedPermissionIds": [scope["id"]]} for client in wanted)]
     wait_until_ready(
         "configure the application",
         lambda: graph.patch(
@@ -251,7 +257,7 @@ def configure_application(graph: GraphClient, application: dict) -> None:
                 "identifierUris": [identifier],
                 "api": {
                     "oauth2PermissionScopes": scopes,
-                    "preAuthorizedApplications": [{"appId": app_id, "delegatedPermissionIds": [scope["id"]]}],
+                    "preAuthorizedApplications": pre_authorized,
                 },
             },
         ),
