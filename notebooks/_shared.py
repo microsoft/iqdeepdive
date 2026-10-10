@@ -14,8 +14,10 @@ WORK_IQ_GATEWAY = os.environ.get("WORK_IQ_GATEWAY", "https://workiq.svc.cloud.mi
 WORK_IQ_SCOPE = os.environ.get(
     "WORK_IQ_SCOPE", "api://workiq.svc.cloud.microsoft/WorkIQAgent.Ask"
 )
-ENTRA_APP_ID = os.environ.get("ENTRA_APP_ID", "")
-ENTRA_TENANT_ID = os.environ.get("ENTRA_TENANT_ID", "common")
+ENTRA_APP_ID = os.environ.get("ENTRA_APP_ID") or os.environ.get("WORK_IQ_SEARCH_ENTRA_APP_ID", "")
+ENTRA_TENANT_ID = (
+    os.environ.get("ENTRA_TENANT_ID") or os.environ.get("WORK_IQ_SEARCH_ENTRA_TENANT_ID") or "common"
+)
 
 
 def get_user_token() -> str:
@@ -27,7 +29,9 @@ def get_user_token() -> str:
     from msal import PublicClientApplication, SerializableTokenCache
 
     if not ENTRA_APP_ID:
-        raise RuntimeError("Set ENTRA_APP_ID in .env — see docs/workiq-admin-setup.md")
+        raise RuntimeError(
+            "Set WORK_IQ_SEARCH_ENTRA_APP_ID (run infra/create-workiq-entra.py) — see docs/workiq-admin-setup.md"
+        )
 
     import tempfile
 
