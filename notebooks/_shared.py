@@ -46,7 +46,15 @@ def get_user_token() -> str:
     accounts = app.get_accounts()
     result = app.acquire_token_silent(scopes, account=accounts[0]) if accounts else None
     if not result:
-        result = app.acquire_token_interactive(scopes)
+        if os.environ.get("CODESPACES") == "true":
+            # A browser pop-up is not available in GitHub Codespaces, so sign in with a device code.
+            flow = app.initiate_device_flow(scopes=scopes)
+            if "user_code" not in flow:
+                raise RuntimeError(f"Device flow failed: {flow.get('error_description', flow)}")
+            print(flow["message"])
+            result = app.acquire_token_by_device_flow(flow)
+        else:
+            result = app.acquire_token_interactive(scopes)
 
     if cache.has_state_changed:
         open(cache_path, "w").write(cache.serialize())
