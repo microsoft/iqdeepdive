@@ -53,7 +53,11 @@ if ($env:ENABLE_FABRIC_ITEMS -eq "true") {
 }
 
 if ($env:ENABLE_WORK_IQ -eq "true") {
-    Write-Host "Creating the Work IQ Entra application, connection, and toolbox..."
+    if ($env:ENABLE_WORK_IQ_KB_TOOLBOX -ne "true") {
+        Write-Host "Creating the Work IQ Entra application..."
+        uv run --locked python infra/create-workiq-entra.py --apply
+    }
+    Write-Host "Creating the Work IQ connection and toolbox..."
     uv run --locked python infra/create-toolbox-workiq.py --apply
 }
 

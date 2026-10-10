@@ -16,8 +16,8 @@ not configure a model. Several hosted agents use `contoso-company-kb-minimal`:
 `agent-foundryiq-mcp` connects through the Azure AI Search knowledge-base MCP endpoint,
 `agent-foundryiq-api` calls the knowledge-base retrieval API with a custom Python tool, and
 `agent-toolbox-foundryiq` connects through a Foundry toolbox.
-`agent-toolbox-workiq` uses a separate OAuth2 `RemoteA2A` connection and toolbox to access the signed-in
-user's Microsoft 365 work context through Work IQ.
+`agent-toolbox-workiq` uses a separate OAuth2 `RemoteA2A` connection and toolbox, backed by the shared Work IQ
+Entra app, to access the signed-in user's Microsoft 365 work context through Work IQ.
 `agent-toolbox-foundryiq-workiq` instead connects through a Foundry toolbox to the multi-source
 knowledge base created by `infra/create-search-indexes.py --include-workiq`. Its dedicated PMI connection must target that exact
 knowledge-base MCP URL so Toolbox emits the user's Search-scoped query-source authorization.
@@ -77,8 +77,9 @@ Fabric API. Provisioning creates or updates the TMDL and PBIR definitions by dis
 - `infra/create-workiq-entra.py`: opt-in (`ENABLE_WORK_IQ_KB_TOOLBOX`) Graph setup of the Entra app and federated
   credential that Azure AI Search uses to authenticate the Work IQ knowledge source. It writes
   `WORK_IQ_SEARCH_ENTRA_APP_ID`, `WORK_IQ_SEARCH_ENTRA_TENANT_ID`, and `WORK_IQ_SEARCH_FEDERATED_CREDENTIAL_ID` to `.env`.
-- `infra/create-toolbox-workiq.py`: opt-in Graph SDK setup for the Work IQ service principal, single-tenant Entra
-  app, delegated consent, OAuth2 `RemoteA2A` connection, callback URI, and separate Work IQ toolbox.
+- `infra/create-toolbox-workiq.py`: opt-in Graph SDK setup that reuses the shared Work IQ Entra app
+  (`WORK_IQ_SEARCH_ENTRA_APP_ID`) when present, adds delegated consent, a client secret and the callback URI,
+  creates the OAuth2 `RemoteA2A` connection, and publishes the separate Work IQ toolbox.
 - `infra/create-lakehouse.py`: creates optional Fabric lakehouse and ontology resources.
 - `infra/setup-env.py`: writes generated Azure outputs to the local `.env` used by notebooks and local agent runs.
 - `infra/hooks/postprovision.sh` and `infra/hooks/postprovision.ps1`: run after infrastructure provisioning to

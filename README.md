@@ -269,10 +269,11 @@ azd env set ENABLE_WORK_IQ true
 azd provision
 ```
 
-The postprovision helper creates or reuses the Work IQ service principal, creates a single-tenant Entra
-application with delegated `WorkIQAgent.Ask`, grants admin consent, creates the OAuth2 `RemoteA2A`
-connection, adds Foundry's returned callback URI to the application, and publishes `work-iq-tools`.
-The generated client secret is sent directly to the connection and is not written to `.env`.
+The postprovision helper first runs `infra/create-workiq-entra.py` (the shared Work IQ Entra app described
+above). It then creates or reuses the Work IQ service principal, reuses that application, adds a client secret
+and Foundry's returned callback URI to it, creates the OAuth2 `RemoteA2A` connection, and publishes
+`work-iq-tools`. The generated client secret is sent directly to the connection and is not written to `.env`.
+If `WORK_IQ_SEARCH_ENTRA_APP_ID` is not set, the helper creates its own application instead.
 
 Admin consent allows the application to request `WorkIQAgent.Ask`; it does not authorize individual
 users. On a caller's first Work IQ request, the agent returns an `oauth_consent_request` containing a

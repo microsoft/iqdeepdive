@@ -33,9 +33,10 @@ when `ENTRA_APP_ID` is not set, so no separate app registration is needed.
 The hosted `workmate-agent` connects to Work IQ through a Foundry **`RemoteA2A`** project
 connection targeting `https://workiq.svc.cloud.microsoft/a2a/`, `authType=OAuth2`, **BYO Entra app
 only** (scopes `WorkIQAgent.Ask` + `offline_access`). VNet-restricted Foundry projects are not
-supported. `infra/create-workiq-toolbox.py` (run by `azd up`'s postprovision hook) creates the
-Entra app, the `work-iq-connection` RemoteA2A connection, and the `work-iq-tools` toolbox — and
-grants the admin consent above automatically when run by a Global Administrator. See the
+supported. `infra/create-toolbox-workiq.py` (run by `azd up`'s postprovision hook) reuses the app above,
+adds a client secret and the Foundry callback URI to it, and creates the `work-iq-connection` RemoteA2A
+connection and the `work-iq-tools` toolbox. The secret goes straight to the connection and is not written to
+`.env`. Admin consent is already granted by `create-workiq-entra.py`. See the
 [Work IQ tool docs](https://learn.microsoft.com/azure/foundry/agents/how-to/tools/work-iq).
 
 If multiple projects share one Foundry resource, set `WORK_IQ_CONNECTION_NAME` to a unique value
@@ -44,12 +45,13 @@ before provisioning because connection names are unique across the parent resour
 
 ## Which Entra app is which
 
-This repository uses two Work IQ Entra apps:
+One Work IQ Entra app (created by `infra/create-workiq-entra.py`, `WORK_IQ_SEARCH_ENTRA_*`) serves every Work IQ path:
 
-| App | Created by | Env vars | Used by |
-|---|---|---|---|
-| `RemoteA2A` connection app | `infra/create-toolbox-workiq.py` | `WORK_IQ_ENTRA_APP_ID` | `agent-toolbox-workiq`, `agent-workiq-maf` |
-| Work IQ app | `infra/create-workiq-entra.py` | `WORK_IQ_SEARCH_ENTRA_*` | `foundryiq-workiq.ipynb` (Search calls Work IQ through a federated credential, billed with Copilot credits) and sign-in for the direct `workiq-*` notebooks |
+| Path | How the app is used |
+|---|---|
+| `foundryiq-workiq.ipynb` | Azure AI Search calls Work IQ as the app through a federated credential (billed with Copilot credits) |
+| Direct `workiq-*` notebooks | Interactive sign-in for `api://<app>/access_as_user` |
+| `agent-toolbox-workiq`, `agent-workiq-maf` | The app's client secret backs the Foundry `RemoteA2A` OAuth2 connection |
 
 ## Troubleshooting
 

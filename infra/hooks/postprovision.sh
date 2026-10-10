@@ -53,7 +53,11 @@ if [ "${ENABLE_FABRIC_ITEMS:-false}" = "true" ]; then
 fi
 
 if [ "${ENABLE_WORK_IQ:-false}" = "true" ]; then
-    echo "Creating the Work IQ Entra application, connection, and toolbox..."
+    if [ "${ENABLE_WORK_IQ_KB_TOOLBOX:-false}" != "true" ]; then
+        echo "Creating the Work IQ Entra application..."
+        uv run --locked python infra/create-workiq-entra.py --apply
+    fi
+    echo "Creating the Work IQ connection and toolbox..."
     uv run --locked python infra/create-toolbox-workiq.py --apply
 fi
 

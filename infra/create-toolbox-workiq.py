@@ -345,7 +345,9 @@ async def apply() -> None:
                 )
             application = await get_or_create_application(
                 graph_client,
-                os.getenv("WORK_IQ_ENTRA_APP_ID") or existing_client_id,
+                os.getenv("WORK_IQ_SEARCH_ENTRA_APP_ID")
+                or os.getenv("WORK_IQ_ENTRA_APP_ID")
+                or existing_client_id,
                 scope_id,
             )
             await grant_admin_consent(graph_client, application, work_iq_principal)
