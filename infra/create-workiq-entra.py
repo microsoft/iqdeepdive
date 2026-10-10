@@ -200,13 +200,9 @@ def create_application(graph: GraphClient, display_name: str, work_iq_scope: str
     exposed_scope = {
         "id": str(uuid.uuid4()),
         "adminConsentDisplayName": "Access Azure AI Search as the signed-in user",
-        "adminConsentDescription": (
-            "Allow Azure AI Search to call Work IQ on behalf of the signed-in user."
-        ),
+        "adminConsentDescription": ("Allow Azure AI Search to call Work IQ on behalf of the signed-in user."),
         "userConsentDisplayName": "Access Work IQ on your behalf",
-        "userConsentDescription": (
-            "Allow Azure AI Search to query Work IQ using your Microsoft 365 permissions."
-        ),
+        "userConsentDescription": ("Allow Azure AI Search to query Work IQ using your Microsoft 365 permissions."),
         "value": CLIENT_SCOPE,
         "type": "User",
         "isEnabled": True,
@@ -255,9 +251,7 @@ def configure_application(graph: GraphClient, application: dict) -> None:
                 "identifierUris": [identifier],
                 "api": {
                     "oauth2PermissionScopes": scopes,
-                    "preAuthorizedApplications": [
-                        {"appId": app_id, "delegatedPermissionIds": [scope["id"]]}
-                    ],
+                    "preAuthorizedApplications": [{"appId": app_id, "delegatedPermissionIds": [scope["id"]]}],
                 },
             },
         ),
@@ -283,8 +277,7 @@ def grant_admin_consent(graph: GraphClient, client_sp_id: str, work_iq_sp_id: st
 
     def attempt() -> None:
         existing = graph.get(
-            "/oauth2PermissionGrants"
-            f"?$filter=clientId eq '{client_sp_id}' and resourceId eq '{work_iq_sp_id}'"
+            f"/oauth2PermissionGrants?$filter=clientId eq '{client_sp_id}' and resourceId eq '{work_iq_sp_id}'"
         )
         _raise_for_graph(existing)
         for grant in existing.json().get("value", []):
